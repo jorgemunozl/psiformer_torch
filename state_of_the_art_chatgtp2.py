@@ -27,7 +27,8 @@ x=tokens.to('cuda')
 """
 
 with open('/content/input.txt','r',encoding='utf-8') as f:
-  text = f.read()
+text = f.read()
+
 text= text[:1000]
 tokens = enc.encode(text)
 B, T = 4, 32
@@ -40,14 +41,6 @@ y.to('cuda')
 # deco dataclass -> Basemodel
 # Config = dataclass(Config), then dataclass is a function!
 
-class Config(pydantic.BaseModel):
-  n_layer   :int = 12  # number of layer in the transformer arquitecture
-  block_size:int = 1024 # block size, which is the context
-  vocab_size:int = 50257 #  quantity of words, tokens, 5000 words + 256 + 1  tokenization, so the matrix embedding should be 768x50257,
-                       # and what about the unembedding matrix
-  n_head    :int = 12  # numbers of head per layer, how we have 12 layers so we have 144 heads.
-  n_embd    :int = 768 # number of parameters for each token, one word could be expresed using 768
-                        # We can't try with another hyper parameter. We would need more parameters!
 
 class CausalSelfAttention(nn.Module): #Another class, for what reason we use the Causal name?
   def __init__(self,config):
@@ -127,92 +120,7 @@ class Layer(nn.Module): #This contains the three classes.
 
 from transformers import GPT2LMHeadModel # huggin face stuff
 
-class MODEL(nn.Module): #lets make a model=MODEl() #so this is
-  def __init__(self,config):
 
-    super().__init__() # that super is weird, for what I want it?
-
-    self.config=config
-
-    self.transformer=nn.ModuleDict(dict(
-
-        wte=nn.Embedding(config.vocab_size,config.n_embd),      # wte=weight tokenization embedding, creating a tensor with that dimension
-
-        wpe=nn.Embedding(config.block_size,config.n_embd),      # wpe= weight possitional encodding, another a tensor basically to count the "context"
-
-        #Layers = [Layer(config) for _ in range(config.n_layer)], # Creating the 12 Layers.
-
-        h=nn.ModuleList([Layer(config) for _ in range(config.n_layer)]), # Module list for
-
-        ln_f=nn.LayerNorm(config.n_embd) # Another normalization!
-
-        )
-    ) #Transformer architecture prepare the Embedding, charge the head for each layer and add the Normalization layer, basically makes everything.
-    # What return this??
-
-    self.lm_head=nn.Linear(config.n_embd,config.vocab_size,bias=False) #a linear layer with input config.n_emb, output config.vocab_size
-
-
-  # let's charge parameters from hugging face repo.
-  # -------------start---------------
-  #  deco classmethod. from_pretrained=classmethod(from_pretrained)
-  #  cls, what it means?
-  #
-  # classmethod
-  def from_pretrained(cls, model_type): #well is only "download" a bunch of tensors.
-        """Loads pretrained GPT-2 model weights from huggingface"""
-        assert model_type in {'gpt2', 'gpt2-medium', 'gpt2-large', 'gpt2-xl'}
-
-        print("loading weights from pretrained gpt: %s" % model_type)
-
-        # n_layer, n_head and n_embd are determined from model_type
-        config_args = {
-            'gpt2':         dict(n_layer=12, n_head=12, n_embd=768),  # 124M params
-            'gpt2-medium':  dict(n_layer=24, n_head=16, n_embd=1024), # 350M params
-            'gpt2-large':   dict(n_layer=36, n_head=20, n_embd=1280), # 774M params
-            'gpt2-xl':      dict(n_layer=48, n_head=25, n_embd=1600), # 1558M params
-        }[model_type]
-
-        config_args['vocab_size'] = 50257 # always 50257 for GPT model checkpoints
-
-        config_args['block_size'] = 1024 # always 1024 for GPT model checkpoints
-
-
-
-        config = Config(**config_args)
-
-        model = MODEL(config)
-
-        sd = model.state_dict()
-
-        sd_keys = sd.keys()
-        sd_keys = [k for k in sd_keys if not k.endswith('.attn.bias')] # discard this mask / buffer, not a param
-
-        # init a huggingface/transformers model
-        model_hf = GPT2LMHeadModel.from_pretrained(model_type)
-        sd_hf = model_hf.state_dict()
-
-        # copy while ensuring all of the parameters are aligned and match in names and shapes
-        sd_keys_hf = sd_hf.keys()
-        sd_keys_hf = [k for k in sd_keys_hf if not k.endswith('.attn.masked_bias')] # ignore these, just a buffer
-        sd_keys_hf = [k for k in sd_keys_hf if not k.endswith('.attn.bias')] # same, just the mask (buffer)
-        transposed = ['attn.c_attn.weight', 'attn.c_proj.weight', 'mlp.c_fc.weight', 'mlp.c_proj.weight']
-        # basically the openai checkpoints use a "Conv1D" module, but we only want to use a vanilla Linear
-        # this means that we have to transpose these weights when we import them
-        assert len(sd_keys_hf) == len(sd_keys), f"mismatched keys: {len(sd_keys_hf)} != {len(sd_keys)}"
-        for k in sd_keys_hf:
-            if any(k.endswith(w) for w in transposed):
-                # special treatment for the Conv1D weights we need to transpose
-                assert sd_hf[k].shape[::-1] == sd[k].shape
-                with torch.no_grad():
-                    sd[k].copy_(sd_hf[k].t())
-            else:
-                # vanilla copy over the other parameters
-                assert sd_hf[k].shape == sd[k].shape
-                with torch.no_grad():
-                    sd[k].copy_(sd_hf[k])
-
-        return model
 
   from_pretrained=classmethod(from_pretrained) #decorator make it clean.
 
@@ -239,22 +147,15 @@ class MODEL(nn.Module): #lets make a model=MODEl() #so this is
       loss=F.cross_entropy(logits.view(-1,logits.size(-1)),target.view(-1))
     return logits, loss # so MODEL return logits raw number , ready to applied a softmax and then a topk
 
-"""GOAL:Obtain the context of one word
-FOR THAT WE HAVE: key, query, value for each token,
-"""
 
-model = MODEL(Config()) # Randoms parameters
-model.to(device)
 #model = MODEL.from_pretrained('gpt2') #creating and charging parameters for the model
 #model.eval() #evaluation mode, kill the gradients?
 
 logits, loss = model(x,y)
 print(logits,loss)
 
-import sys; sys.exit(0)
-
-import tiktoken                      #to tokenize, I don't made a tokenizer!! this is a completele decoder transformer
-enc = tiktoken.get_encoding('gpt2') #tokens specificaly to gpt2!
+import tiktoken
+enc = tiktoken.get_encoding('gpt2')
 
 torch.manual_seed(42) # random seed
 torch.cuda.manual_seed(42) # manual_seed
