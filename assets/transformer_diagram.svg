@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="300" viewBox="0 0 800 300">
+  <style>
+    .title { font: bold 16px sans-serif; }
+    .label { font: 12px sans-serif; }
+    .box { fill: #f6f8fa; stroke: #2b6cb0; stroke-width: 2; rx: 8; }
+    .arrow { stroke: #2b6cb0; stroke-width: 2; fill: none; marker-end: url(#arrowhead); }
+  </style>
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#2b6cb0" />
+    </marker>
+  </defs>
+
+  <rect x="20" y="30" width="200" height="60" class="box"/>
+  <text x="130" y="60" text-anchor="middle" class="label">Electron/basis sequence</text>
+
+  <rect x="300" y="10" width="200" height="100" class="box"/>
+  <text x="400" y="40" text-anchor="middle" class="label">Transformer encoder</text>
+  <text x="400" y="60" text-anchor="middle" class="label">(self-attention)</text>
+
+  <rect x="580" y="30" width="200" height="60" class="box"/>
+  <text x="680" y="60" text-anchor="middle" class="label">Wavefunction / energy output</text>
+
+  <path d="M220 60 L300 60" class="arrow" />
+  <path d="M500 60 L580 60" class="arrow" />
+
+  <!-- attention inset -->
+  <g transform="translate(320,130)">
+    <rect x="0" y="0" width="140" height="120" rx="6" fill="#fff7ed" stroke="#dd6b20" stroke-width="1.5"/>
+    <text x="70" y="20" text-anchor="middle" class="label">Attention</text>
+    <circle cx="35" cy="60" r="10" fill="#68d391"/>
+    <circle cx="70" cy="60" r="10" fill="#68d391"/>
+    <circle cx="105" cy="60" r="10" fill="#68d391"/>
+    <path d="M35 60 L70 60 L105 60" stroke="#dd6b20" stroke-width="1.2" fill="none" stroke-dasharray="3 3"/>
+  </g>
+
+  <text x="20" y="18" class="title">Transformer attention → many-electron interactions</text>
+</svg>

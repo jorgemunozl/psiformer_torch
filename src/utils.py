@@ -2,6 +2,7 @@ import math
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from transformers import GPT2LMHeadModel
 
 
 def get_device():
@@ -94,6 +95,7 @@ class MODEL(nn.Module):
             )
         )
 
+    @classmethod
     def from_pretrained(cls, model_type):
         """Loads pretrained GPT-2 model weights from huggingface"""
         assert model_type in {'gpt2', 'gpt2-medium', 'gpt2-large', 'gpt2-xl'}
@@ -113,44 +115,36 @@ class MODEL(nn.Module):
         sd_keys = sd.keys()
         sd_keys = [k for k in sd_keys if not k.endswith('.attn.bias')]
 
-        # init a huggingface/transformers model
         model_hf = GPT2LMHeadModel.from_pretrained(model_type)
         sd_hf = model_hf.state_dict()
-
-        # copy while ensuring all of the parameters are aligned and match in names and shapes
         sd_keys_hf = sd_hf.keys()
-        sd_keys_hf = [k for k in sd_keys_hf if not k.endswith('.attn.masked_bias')] # ignore these, just a buffer
-        sd_keys_hf = [k for k in sd_keys_hf if not k.endswith('.attn.bias')] # same, just the mask (buffer)
-        transposed = ['attn.c_attn.weight', 'attn.c_proj.weight', 'mlp.c_fc.weight', 'mlp.c_proj.weight']
-        # basically the openai checkpoints use a "Conv1D" module, but we only want to use a vanilla Linear
-        # this means that we have to transpose these weights when we import them
-        assert len(sd_keys_hf) == len(sd_keys), f"mismatched keys: {len(sd_keys_hf)} != {len(sd_keys)}"
+        sd_keys_hf = [k for k in sd_keys_hf if not k.endswith('.attn.masked_bias')]
+        sd_keys_hf = [k for k in sd_keys_hf if not k.endswith('.attn.bias')]
+        transposed = ['attn.c_attn.weight',
+                      'attn.c_proj.weight',
+                      'mlp.c_fc.weight',
+                      'mlp.c_proj.weight']
+        warning = f"mismatched keys: {len(sd_keys_hf)} != {len(sd_keys)}"
+        assert len(sd_keys_hf) == len(sd_keys), warning
         for k in sd_keys_hf:
             if any(k.endswith(w) for w in transposed):
-                # special treatment for the Conv1D weights we need to transpose
                 assert sd_hf[k].shape[::-1] == sd[k].shape
                 with torch.no_grad():
                     sd[k].copy_(sd_hf[k].t())
             else:
-                # vanilla copy over the other parameters
                 assert sd_hf[k].shape == sd[k].shape
                 with torch.no_grad():
                     sd[k].copy_(sd_hf[k])
         return model
 
     def forward(self, idx, target=None):
-        B, T = idx.size()  # idx is a matrix, B: Batch, T: Sequence Length
-
+        B, T = idx.size()  # # idx   B: Batch, T: Sequence Length
         tok_emb = self.transformer.wte(idx)
         pos_emb = self.transformer.wpe(torch.arange(T, device=idx.device))
-
         x = tok_emb + pos_emb
 
         for block in self.transformer.h:
             x = block(x)
-        x = self.transformer.ln_f(x)  # Normalize
+        x = self.transformer.ln_f(x)
         logits = self.lm_head(x)
-
-        if target is not None:
-            loss=F.cross_entropy(logits.view(-1,logits.size(-1)),target.view(-1))
-        return logits, loss # so MODEL return logits raw number , ready to applied a softmax and then a topk
+        return logits

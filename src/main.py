@@ -1,31 +1,41 @@
 import tiktoken
 import torch
-from config import MODEL
-from utils import get_device
+import torch.nn.functional as F
+from utils import get_device, MODEL
+from config import Config, outPut
 
-device = get_device()
+torch.manual_seed(42)
+torch.cuda.manual_seed(42)
 
-model = MODEL(Config())
-model.to(device)
 
-def main():
+def main(sentence):
+
+    device = get_device()
+    model = MODEL(Config())
+    model.to(device)
+    max_length = outPut.max_length
+    max_return_sequences = outPut.max_return_seq
+
     enc = tiktoken.get_encoding('gpt2')
-    torch.manual_seed(42) # random seed
-    torch.cuda.manual_seed(42) # manual_seed
+    tokens = enc.encode(sentence)
+    tokens = torch.tensor(tokens, dtype=torch.long)
+    x = tokens.to(device)
+
     while x.size(1) < max_length:
-    with torch.no_grad(): # Let's take the
-        logits = model(x)  # first call to MODEL IMPORTANT, shape (1,T,vocab_size) , (1,number of words, features per word)
-        logits = logits[:,-1,:] #only last token
-        probs = F.softmax(logits,dim=-1) #Softmax
-        topk_probs, topk_indices =torch.topk(probs,50,dim=-1) #choose the 50 "words" more probably
-        ix = torch.multinomial(topk_probs,1) # from those 50 choose randomly one.
-        xcol = torch.gather(topk_indices,-1,ix) # assign that choose?
-        x = torch.cat((x, xcol),dim=1) #append to form a sentence
+        with torch.no_grad():
+            logits = model(x)
+            logits = logits[:, -1, :]
+            probs = F.softmax(logits, dim=-1)
+            topk_probs, topk_indices = torch.topk(probs, 50, dim=-1)
+            ix = torch.multinomial(topk_probs, 1)
+            xcol = torch.gather(topk_indices, -1, ix)
+            x = torch.cat((x, xcol), dim=1)
 
     for i in range(max_return_sequences):
-        tokens = x[i,:max_length].tolist()
+        tokens = x[i, :max_length].tolist()
         decoded = enc.decode(tokens)
-        print(">",decoded)
+        print(">", decoded)
+
 
 if __name__ == "__main__":
-    main()
+    main("Hello my name is")

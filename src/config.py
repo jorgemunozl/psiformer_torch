@@ -1,11 +1,17 @@
-import pydantic
-import torch.nn as nn
-import torch
+from pydantic import BaseModel, Field
 
 
-class Config(pydantic.BaseModel):
-    n_layer: int = 12
-    block_size: int = 1024  # block size, which is the context
+class Config(BaseModel):
+    n_layer: int = Field(default=4,
+                         description="")
+    block_size: int = 1024
     vocab_size: int = 50257
     n_head: int = 12
     n_embd: int = 768
+
+
+class outPut(BaseModel):
+    max_length: int = Field(default=4,
+                            description="")
+    max_return_seq: int = Field(default=4,
+                                description="")
