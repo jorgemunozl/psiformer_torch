@@ -116,14 +116,4 @@ Replace the example command above with your own runner or flags as needed.
 
 ## License
 
-This project is provided under the repository license. See `LICENSE` if
-present, or contact the repository owner for reuse terms.
-
----
-
-If you'd like, I can also:
-
-- Add a short example `configs/toy_system.yaml` and a minimal `requirements.txt`.
-- Add a runnable toy example and unit test to validate the CPU-only setup.
-
-Tell me which of the extras you'd like next.
+This project is provided under the repository license.
