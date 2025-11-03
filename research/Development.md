@@ -1,6 +1,6 @@
 ---
 date: 2025-10-23 19:32
-modified: 2025-11-02 17:15
+modified: 2025-11-03 11:56
 ---
 # Development of a Transformed based architecture to solve the Time Independent Many Electron Schrodinger Equation
 
@@ -135,7 +135,34 @@ They are a quite example of it.
 
 examples @shangSolvingManyelectronSchrodinger2025 Related work
 
-### Neural Networksee
+### Multi Layer Perceptron
+
+A MLP is a nonlinear function $\mathcal{F}:\mathbb{R}^{\text{in}}\to \mathbb{R}^{\text{out}}$.  @nielsenNeuralNetworksDeep2015
+
+A MLP could be see it like the composition of $L$ layers, the first layer is called the input layers, the last  output layer and the intermediates hidden layers.
+
+Let $\mathbf{z}^{(l)}$ be a affine map of the follow form. $l\in \{ L,L-1,\dots,2 \}$
+$$
+\mathbf{z}^{(l)}=\mathbf{W}^{(l)}\mathbf{a}^{(l-1)}+\mathbf{b}^{(l)}
+$$
+
+Where $\mathbf{W}^{(l)}$ is the weight matrix and $\mathbf{b}^{(l)}$ the bias vector of the $l$ layer.  
+
+Let $\sigma ^{(l)}$ be a nonlinear function of the $l$ layers (typically Softmax,  Relu, Tanh.)
+
+$$
+f^{(l)}=\sigma ^{(l)}\circ \mathbf{z}^{(l)}
+$$
+
+$$
+\mathcal{F}=f^{(L)}\circ f^{(L-1)}\circ\dots \circ f^{(1)}
+$$
+
+For our paremeters:
+
+$$\{ \mathbf{W}^{(l)},\mathbf{b}^{(l)}\}_{l=2}^{L}=\theta$$
+
+You train the MLP with a training data set using backpropatation a loss function anda optimizer. Additionally you can use regularization techniques to improve the performance of the MLP:
 
 ### RNN
 
