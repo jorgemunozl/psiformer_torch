@@ -1,6 +1,6 @@
 ---
 date: 2025-10-23 19:32
-modified: 2025-11-04 19:02
+modified: 2025-11-05 13:28
 ---
 # Development of a Transformed based architecture to solve the Time Independent Many Electron Schrodinger Equation
 
@@ -62,12 +62,32 @@ In order to solve the problem we have to grasp the physics laws that our solutio
 
 ### The Schrodinger Equation
 
-The schrodinger equation was presented in a series of publication made it by Schrodinger in the year 1916.
+The Schrodinger equation was presented in a series of publication made it by Schrodinger in the year 1916. He derived the time dependent equation:
+We search the complex $\psi$ function called **wave function**, $\lvert \psi \rvert^{2}$ is a probability distribution telling the probability of find a particle (electron) is a specific position.
+This function is rule by the equation:
+$$
+i\hbar \frac{\partial \psi}{\partial t}=\hat{H}\psi
+$$
+$i$ is the complex unit, $\hbar$ is the [[Reduced Planck Constant]] equals to 
+The $\hat{H}$ is a Hermitian linear operator called the Hamiltonian which represents the total energy of the system
 
-It was received pretty well by the scientific community. 
+$$
+\hat{H}=\vec{P}+V(x)
+$$
+Where $\vec{P}$ is the Linear Momentum Operator $V$ the potential energy of the system.
+$\vec{P}$ takes the form of: @Zettili2009
+$$
+-\frac{1}{2}\sum \nabla^{2}
+$$
 
-And its relevance is high, in principle it is able to explain all the atomic phenomena and all the facts of chemical bindings.
+And $V$ depends on the specific system.
 
+The time independent form could be derived from the time dependent form.
+
+$$
+\hat{H}\psi=E\psi
+$$
+Where $E$ is the total energy of the system.
 ### The many electron Schrodinger Equation
 
 In quantum chemistry is regular used atomic units, the unit of distance is the Bohr Radious and the unit of energy is Hartree (Ha).
@@ -76,34 +96,38 @@ In its time-independent form the Schrodinger equation can be written as a eigenf
 
 
 $$ \hat{H}\psi(\mathbf{x}_{0},\dots ,\mathbf{x}_{n})=E\psi(\mathbf{x}_{1},\dots ,\mathbf{x}_{n}) $$
-
-Where $\hat{H}$ is a Hermitian linear operator called the Hamiltonian and the scalar eigenvalue $E$ corresponds to the energy of a particular solution.
-
+Where $\mathbf{x}_{i}=\{ \mathbf{r}_{i},\sigma \}$,  $\mathbf{r}_{i}$ is the position of each electron and protons and $\sigma \in \{ \uparrow.\downarrow \}$ is the spin.
+In this case the potential energy of the system we have to consider the repulsion between the electrons.
 $$
 U=\frac{1}{4\pi\varepsilon_{0}}\frac{e^{2}}{\lvert r_{i}-r_{j} \rvert }
 $$
-
-Using atomic units we [[Quantum Chemistry units|Atomic Units]]:
-
+The attraction between protons and electrons.
+$$
+U=-\frac{1}{4\pi\varepsilon_{0}}\frac{eZ_{i}}{\lvert r_{i}-R_{i} \rvert }
+$$
+Where $Z_{i}$ is the atomic number.
+And the repulsion between protons.
+$$
+U=\frac{1}{4\pi\varepsilon_{0}}\frac{Z_{i}Z_{j}}{\lvert Z_{i}-Z_{j} \rvert }
+$$
+Thus the potential energy is the sum of those three terms.
+To avoid write those constants each time we use atomic [[Quantum Chemistry units|Atomic Units]].
 The Hamiltonian using the [[Quantum Chemistry units]] becomes:
-
 $$ \hat{H}=-\frac{1}{2}\sum \nabla^{2}+\sum \frac{1}{\lvert r_{i}-r_{j} \rvert }-\sum \frac{Z_{I}}{\lvert r_{i}-R_{I} \rvert }+\sum \frac{Z_{I}Z_{J}}{\lvert R_{i}-R_{j} \rvert } $$
-
-Where $Z_{I}$ are the [[atomic number]] $r_{i}$ is the distance from a reference frame 
-
 Now the [[Fermi Dirac Statistics]] tell us that this solution of this equation should be **anti symmetric** this is:
-
 $$
 \psi(\dots,\mathbf{x}_{i},\dots,\mathbf{x}_{j},\dots)=-\psi(\dots ,\mathbf{x}_{j},\dots ,\mathbf{x}_{i},\dots)
 $$
+The potential energy becomes infinite when two electrons overlap , this could be formalized via the [[Kato Cusp Conditions]], a Jastrow factor $\exp(\mathcal{J})$. The explicit form of $\mathcal{J}$ depends on the.
+$$
+\lim_{ l \to 0 } \left( \frac{\partial \psi}{\partial r_{iI}} \right)=-Z\psi(r_{iI}=0)
+$$
 
-The potential energy becomes infinite when two electrons overlap , this could be formalized via the [[Kato Cusp Conditions]], a Jastrow factor $\exp(\mathcal{J})$. The explicit form of $\mathcal{J}$ depends on the author.
-
-
-
-
+$$
+\lim_{ l \to 0 } \left( \frac{\partial \psi}{\partial r_{ij}} \right)=\frac{1}{2}\psi(r_{ij}=0)
+$$
+Where $r_{iI}(r_{ij})$ is an electron-nuclear (electron-electron) distance, $Z_{I}$ is the nuclear charge of the $I\text{-th}$ nucleous and ave implies a spherical averaging over all directions.
 ## Approximating a solution
-
 Find possible solution in the traditional way is prohibitively hard. So what people have doing and it seem that it becomes a success is guess that solution and using another techniques to improve the solution, to this guess solution we called **Ansatz**.
 
 Once that you have your Ansatz, which normally depends on depends on certain parameters.
