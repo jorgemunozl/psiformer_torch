@@ -1,6 +1,6 @@
 ---
 date: 2025-10-23 19:32
-modified: 2025-11-03 11:56
+modified: 2025-11-04 19:02
 ---
 # Development of a Transformed based architecture to solve the Time Independent Many Electron Schrodinger Equation
 
@@ -27,47 +27,44 @@ modified: 2025-11-03 11:56
 
 ---
 
-[[observations 1]]
-
 # Abstract
 
-With accurate solutions to the many electron Schrodinger equation all the chemistry could derived from first principles. Try to find analytical is prohibitively hard due the intrinsic relations between each component on a molecule. In this work I develop the use of a architecture based on the Transformer architecture to tackle this problem.
+With accurate solutions to the many electron Schrodinger equation all the chemistry could be derived from first principles. Try to find analytical is prohibitively hard due the intrinsic relations between each component on a molecule (electrons and protons). Recently Deep Learning approaches had been used like the FermiNet and Pauli Net but they lack of of scalables architectures such that maintain the acceptables errors even on large molecules.
+In this work I develop the a architecture based on the Transformer to tackle this problems.
 
 # Introduction
 
-The success of deep Learning across different fields like protein folding  @jumper2021highly, visual modeling @dosovitskiy2021imageworth16x16words, ODEs solvers @RAISSI2019686 has sparked great interest from the scientific community to apply DL methods to their fields. 
+The success of deep Learning across different fields like protein folding  @jumper2021highly, visual modeling @dosovitskiy2021imageworth16x16words, and PDEs solvers @RAISSI2019686 has sparked great interest from the scientific community to apply DL methods to their fields. 
 
-Quantum Chemistry, specifically finding a good aproximmation for the Quantum Many-Body wave eqaution  the is one of those places where have shown that deep learning could overpass traditional methods @Luo_2019 , @Qiao_2020, but there is still many challenges specifically, the computational power needed for large molecules becomes prohibitively expensive. 
+
+specifically finding a good aproximmation for the Quantum Many-Body wave eqaution  the is one of those places where have shown that deep learning could overpass traditional methods @Luo_2019 , @Qiao_2020, but there is still many challenges specifically, the computational power needed for large molecules becomes prohibitively expensive. 
 
 Tackling that problem the Transformer architecture had demonstrate that scaling laws are not so much complicated for him. Cite
 
 Motivated for that in this work I develop a transformer architecture called Psifomer. @vonglehn2023selfattentionansatzabinitioquantum  
 
 # Objectives
-
-- Obtain a model which is able to replicate the energy ground states of certain atoms.
-- Compare our model with another State of the art methods to solve the Many electrons Schrodinger equation
-
-
+- Obtain a model which is able to approximate the ground state state energy of the carbon atom.
+- Compare our model with another state of the art methods to solve the many electrons Schrodinger equation respect the ground state energy.
+- Prove empirically computational efficiency supremacy over traditional methods.
 # Overview
 
-I provide an outline of the model architecture and procedure 
-In theoretical frame work we  will and in methodology we will 
+This work is structured as follow:
+The theoretical framework introduces the foundations of quantum many-body theory, the structure of the Schrodinger equation for many electrons like also foundational concepts of Deep Learning, the Transformer architecture and Fermi Net a architecture that use Neural Networks to solve the problem and this work is built up on.
+The concepts presented in this section provide the physical and mathematical context for the proposed model.
 
+The part where the model itself is introduced.
 
+The methodology section details a brief construction of the **Psiformer** and the environment which is going to be use.
 # Theoretical Framework
 
 In order to solve the problem we have to grasp the physics laws that our solution have to follow, 
-
-## The problem
-
-We consider the follow:
 
 ### The Schrodinger Equation
 
 The schrodinger equation was presented in a series of publication made it by Schrodinger in the year 1916.
 
-It was received pretty well by the scientific comunnity. 
+It was received pretty well by the scientific community. 
 
 And its relevance is high, in principle it is able to explain all the atomic phenomena and all the facts of chemical bindings.
 
