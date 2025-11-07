@@ -1,6 +1,6 @@
 ---
 date: 2025-10-23 19:32
-modified: 2025-11-05 13:28
+modified: 2025-11-07 13:40
 ---
 # Development of a Transformed based architecture to solve the Time Independent Many Electron Schrodinger Equation
 
@@ -29,24 +29,22 @@ modified: 2025-11-05 13:28
 
 # Abstract
 
-With accurate solutions to the many electron Schrodinger equation all the chemistry could be derived from first principles. Try to find analytical is prohibitively hard due the intrinsic relations between each component on a molecule (electrons and protons). Recently Deep Learning approaches had been used like the FermiNet and Pauli Net but they lack of of scalables architectures such that maintain the acceptables errors even on large molecules.
-In this work I develop the a architecture based on the Transformer to tackle this problems.
-
+With accurate solutions to the many electron Schrodinger equation all the chemistry could be derived from first principles. Try to find analytical is prohibitively hard due the intrinsic and chaotic relations between each component on a molecule (electrons and protons). Recently, due to its high flexibility deep learning approaches had been already used for this problem, FermiNet and Pauli Net are two good examples, these have advanced accuracy, yet computational cost or error typically grows steeply with system size, limiting applicability to larger molecules. They also lack of strong architectures designed to capture long-range electronic correlations with scalable attention. In this work I develop the Psiformer a transformer-based ansatz that couples scalable attention with physics-aware structure. I  formulate training via Variational MonteCarlo and the evaluation will be do it by comparing against another traditional methods.
 # Introduction
 
-The success of deep Learning across different fields like protein folding  @jumper2021highly, visual modeling @dosovitskiy2021imageworth16x16words, and PDEs solvers @RAISSI2019686 has sparked great interest from the scientific community to apply DL methods to their fields. 
+The success of deep Learning across different fields like protein folding @jumper2021highly, visual modeling @dosovitskiy2021imageworth16x16words, and PDEs solvers @RAISSI2019686 . Motivated by these successes, the community has explored neural approaches for quantum many-body problems, seeking accurate and scalable approximations to the many-electron wave function.
 
+The electronic structure problem remains challenging: the wave functions lives in $3N$-dimensional space, additionally it must satisfy certain properties due to physical laws (anti symmetry and sharp features). Traditional methods balance accuracy and lost, but often struggle on correlated systems.
 
 specifically finding a good aproximmation for the Quantum Many-Body wave eqaution  the is one of those places where have shown that deep learning could overpass traditional methods @Luo_2019 , @Qiao_2020, but there is still many challenges specifically, the computational power needed for large molecules becomes prohibitively expensive. 
 
-Tackling that problem the Transformer architecture had demonstrate that scaling laws are not so much complicated for him. Cite
+Tackling that problem the Transformer architecture had demonstrate that scaling laws are not so much complicated for him.
 
 Motivated for that in this work I develop a transformer architecture called Psifomer. @vonglehn2023selfattentionansatzabinitioquantum  
-
 # Objectives
 - Obtain a model which is able to approximate the ground state state energy of the carbon atom.
 - Compare our model with another state of the art methods to solve the many electrons Schrodinger equation respect the ground state energy.
-- Prove empirically computational efficiency supremacy over traditional methods.
+- Look for improvements when try to tackle larger molecules. 
 # Overview
 
 This work is structured as follow:
@@ -59,7 +57,6 @@ The methodology section details a brief construction of the **Psiformer** and th
 # Theoretical Framework
 
 In order to solve the problem we have to grasp the physics laws that our solution have to follow, 
-
 ### The Schrodinger Equation
 
 The Schrodinger equation was presented in a series of publication made it by Schrodinger in the year 1916. He derived the time dependent equation:
@@ -77,13 +74,11 @@ $$
 Where $\vec{P}$ is the Linear Momentum Operator $V$ the potential energy of the system.
 $\vec{P}$ takes the form of: @Zettili2009
 $$
--\frac{1}{2}\sum \nabla^{2}
+\vec{P}=-\frac{1}{2}\sum \nabla^{2}
 $$
 
 And $V$ depends on the specific system.
-
 The time independent form could be derived from the time dependent form.
-
 $$
 \hat{H}\psi=E\psi
 $$
@@ -97,7 +92,7 @@ In its time-independent form the Schrodinger equation can be written as a eigenf
 
 $$ \hat{H}\psi(\mathbf{x}_{0},\dots ,\mathbf{x}_{n})=E\psi(\mathbf{x}_{1},\dots ,\mathbf{x}_{n}) $$
 Where $\mathbf{x}_{i}=\{ \mathbf{r}_{i},\sigma \}$,  $\mathbf{r}_{i}$ is the position of each electron and protons and $\sigma \in \{ \uparrow.\downarrow \}$ is the spin.
-In this case the potential energy of the system we have to consider the repulsion between the electrons.
+In this case the potential energy of the system we have to consider the repulsion between the electrons
 $$
 U=\frac{1}{4\pi\varepsilon_{0}}\frac{e^{2}}{\lvert r_{i}-r_{j} \rvert }
 $$
@@ -112,6 +107,9 @@ U=\frac{1}{4\pi\varepsilon_{0}}\frac{Z_{i}Z_{j}}{\lvert Z_{i}-Z_{j} \rvert }
 $$
 Thus the potential energy is the sum of those three terms.
 To avoid write those constants each time we use atomic [[Quantum Chemistry units|Atomic Units]].
+
+The distances are.
+
 The Hamiltonian using the [[Quantum Chemistry units]] becomes:
 $$ \hat{H}=-\frac{1}{2}\sum \nabla^{2}+\sum \frac{1}{\lvert r_{i}-r_{j} \rvert }-\sum \frac{Z_{I}}{\lvert r_{i}-R_{I} \rvert }+\sum \frac{Z_{I}Z_{J}}{\lvert R_{i}-R_{j} \rvert } $$
 Now the [[Fermi Dirac Statistics]] tell us that this solution of this equation should be **anti symmetric** this is:
@@ -122,42 +120,33 @@ The potential energy becomes infinite when two electrons overlap , this could be
 $$
 \lim_{ l \to 0 } \left( \frac{\partial \psi}{\partial r_{iI}} \right)=-Z\psi(r_{iI}=0)
 $$
-
 $$
 \lim_{ l \to 0 } \left( \frac{\partial \psi}{\partial r_{ij}} \right)=\frac{1}{2}\psi(r_{ij}=0)
 $$
 Where $r_{iI}(r_{ij})$ is an electron-nuclear (electron-electron) distance, $Z_{I}$ is the nuclear charge of the $I\text{-th}$ nucleous and ave implies a spherical averaging over all directions.
 ## Approximating a solution
+
 Find possible solution in the traditional way is prohibitively hard. So what people have doing and it seem that it becomes a success is guess that solution and using another techniques to improve the solution, to this guess solution we called **Ansatz**.
 
 Once that you have your Ansatz, which normally depends on depends on certain parameters.
 
 ### Variational Monte Carlo
-
 Once that you guess an **Ansatz** you optimize using the **rayleight quotient**.
 
 $$
 \mathcal{L}=\frac{\bra{\psi} \hat{H}\ket{\psi} }{\braket{ \psi | \psi } }=\frac{\int d\mathbf{r}\psi ^{*}(\mathbf{r})\hat{H}\psi(\mathbf{r})}{\int d\mathbf{r}\psi ^{*}(\mathbf{r})\psi(\mathbf{r})}
 $$
-
-
 So how we optimized this. Here appears [[Variational Quantum Monte Carlo]].
-
 Which can be re-written as:
 $$ E_{L}(x)=\Psi ^{-1}_{\theta}(x)\hat{H}\Psi_{\theta}(x) $$
-
 $$ \mathcal{L}_{\theta}=\mathbb{E}_{x\sim \Psi^{2}_{\theta}}[E_{L}(x)] $$
-
 And here we use [[Metropolis algorithm]] to work in real life.
 
 ## Using Deep Learning
 
 They are a quite example of it.
-
 examples @shangSolvingManyelectronSchrodinger2025 Related work
-
 ### Multi Layer Perceptron
-
 A MLP is a nonlinear function $\mathcal{F}:\mathbb{R}^{\text{in}}\to \mathbb{R}^{\text{out}}$.  @nielsenNeuralNetworksDeep2015
 
 A MLP could be see it like the composition of $L$ layers, the first layer is called the input layers, the last  output layer and the intermediates hidden layers.
@@ -171,10 +160,7 @@ Where $\mathbf{W}^{(l)}$ is the weight matrix and $\mathbf{b}^{(l)}$ the bias ve
 
 Let $\sigma ^{(l)}$ be a nonlinear function of the $l$ layers (typically Softmax,  Relu, Tanh.)
 
-$$
-f^{(l)}=\sigma ^{(l)}\circ \mathbf{z}^{(l)}
-$$
-
+$$ f^{(l)}=\sigma ^{(l)}\circ \mathbf{z}^{(l)} $$
 $$
 \mathcal{F}=f^{(L)}\circ f^{(L-1)}\circ\dots \circ f^{(1)}
 $$
@@ -184,10 +170,6 @@ For our paremeters:
 $$\{ \mathbf{W}^{(l)},\mathbf{b}^{(l)}\}_{l=2}^{L}=\theta$$
 
 You train the MLP with a training data set using backpropatation a loss function anda optimizer. Additionally you can use regularization techniques to improve the performance of the MLP:
-
-### RNN
-
-
 ### Fermi Net
 
 A very important work for us is: Fermi Net @Pfau_2020  it uses different MLP to learn the forms of the orbitals. Their ansatz is: [[Fermi Net]]
@@ -258,11 +240,16 @@ You com
 ![[ferminet.png|280x315]]
 
 Motivated for the antisymmetry and the Kato cusp conditions our **Ansatz** take the form of: [
+
+### Long Short Term Memory and Recurrent Neural Networks
+
+In order to introduce to the Architecture transformer we are going to introduce the problem and what approaches exist.
+
+MLP forget things for that reason. 
 ### Transformers
 
-There exist several architectures that I can use Recurrent Neural Network, Long Short Term Memory. 
-
 @Vaswani2017 
+There exist several architectures that I can use Recurrent Neural Network, Long Short Term Memory. 
 
 Recurrent Neural Network are: [[Recurrent Neural Network]]
 And long short term memory are: [[Long Short Memory]]
@@ -274,12 +261,14 @@ Attention mechanism appear with @bahdanau2014neural but it didn't work so:
 - [[Attention mechanism]]
 - [[Self attention mechanism on one head]]
 - [[Multi-head attention]]
+### Attention and Self Attention
 $$
 \mathbf{o}_{t,i}=\sum_{j=1}^{t}\text{Softmax}\left( \frac{\mathbf{q}^{T}_{t,i}\mathbf{k}_{j,i}}{\sqrt{ d_{h} }} \right) \mathbf{v}_{j,i}
 $$
 $$
 \mathbf{u}_{t}=W^{O}[\mathbf{o}_{t,1};\mathbf{o}_{t,2};\dots ;\mathbf{o}_{t,n_{h}}]
 $$
+
 
 # Psi Former
 
