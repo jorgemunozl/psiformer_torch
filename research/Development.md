@@ -1,6 +1,6 @@
 ---
 date: 2025-10-23 19:32
-modified: 2025-11-07 13:40
+modified: 2025-11-08 10:08
 ---
 # Development of a Transformed based architecture to solve the Time Independent Many Electron Schrodinger Equation
 
@@ -26,7 +26,6 @@ modified: 2025-11-07 13:40
 	2. [Training](#Training)
 
 ---
-
 # Abstract
 
 With accurate solutions to the many electron Schrodinger equation all the chemistry could be derived from first principles. Try to find analytical is prohibitively hard due the intrinsic and chaotic relations between each component on a molecule (electrons and protons). Recently, due to its high flexibility deep learning approaches had been already used for this problem, FermiNet and Pauli Net are two good examples, these have advanced accuracy, yet computational cost or error typically grows steeply with system size, limiting applicability to larger molecules. They also lack of strong architectures designed to capture long-range electronic correlations with scalable attention. In this work I develop the Psiformer a transformer-based ansatz that couples scalable attention with physics-aware structure. I  formulate training via Variational MonteCarlo and the evaluation will be do it by comparing against another traditional methods.
@@ -37,6 +36,7 @@ The success of deep Learning across different fields like protein folding @jumpe
 The electronic structure problem remains challenging: the wave functions lives in $3N$-dimensional space, additionally it must satisfy certain properties due to physical laws (anti symmetry and sharp features). Traditional methods balance accuracy and lost, but often struggle on correlated systems.
 
 specifically finding a good aproximmation for the Quantum Many-Body wave eqaution  the is one of those places where have shown that deep learning could overpass traditional methods @Luo_2019 , @Qiao_2020, but there is still many challenges specifically, the computational power needed for large molecules becomes prohibitively expensive. 
+@ad
 
 Tackling that problem the Transformer architecture had demonstrate that scaling laws are not so much complicated for him.
 
@@ -47,25 +47,20 @@ Motivated for that in this work I develop a transformer architecture called Psif
 - Look for improvements when try to tackle larger molecules. 
 # Overview
 
-This work is structured as follow:
-The theoretical framework introduces the foundations of quantum many-body theory, the structure of the Schrodinger equation for many electrons like also foundational concepts of Deep Learning, the Transformer architecture and Fermi Net a architecture that use Neural Networks to solve the problem and this work is built up on.
+This work is structured as follow: The theoretical framework introduces the foundations of quantum many-body theory, the structure of the Schrodinger equation for many electrons like also foundational concepts of Deep Learning that are going to be used in this specific work, we are going to talk also about the Transformer architecture and Fermi Net a architecture that use Neural Networks to solve the problem and this work is built up on.
 The concepts presented in this section provide the physical and mathematical context for the proposed model.
 
 The part where the model itself is introduced.
 
 The methodology section details a brief construction of the **Psiformer** and the environment which is going to be use.
 # Theoretical Framework
-
-In order to solve the problem we have to grasp the physics laws that our solution have to follow, 
+In order to solve the problem we have to grasp the physics laws that our solution have to follow.
 ### The Schrodinger Equation
-
 The Schrodinger equation was presented in a series of publication made it by Schrodinger in the year 1916. He derived the time dependent equation:
 We search the complex $\psi$ function called **wave function**, $\lvert \psi \rvert^{2}$ is a probability distribution telling the probability of find a particle (electron) is a specific position.
 This function is rule by the equation:
-$$
-i\hbar \frac{\partial \psi}{\partial t}=\hat{H}\psi
-$$
-$i$ is the complex unit, $\hbar$ is the [[Reduced Planck Constant]] equals to 
+$$ i\hbar \frac{\partial \psi}{\partial t}=\hat{H}\psi $$
+Where $i$ is the complex unit, $\hbar$ is the [[Reduced Planck Constant]] equals to 
 The $\hat{H}$ is a Hermitian linear operator called the Hamiltonian which represents the total energy of the system
 
 $$
@@ -169,9 +164,8 @@ For our paremeters:
 
 $$\{ \mathbf{W}^{(l)},\mathbf{b}^{(l)}\}_{l=2}^{L}=\theta$$
 
-You train the MLP with a training data set using backpropatation a loss function anda optimizer. Additionally you can use regularization techniques to improve the performance of the MLP:
+You train the MLP with a training data set using backpropatation a loss function anda optimizer. Additionally you can use regularization techniques to improve the performance of the MLP.
 ### Fermi Net
-
 A very important work for us is: Fermi Net @Pfau_2020  it uses different MLP to learn the forms of the orbitals. Their ansatz is: [[Fermi Net]]
 
 $$ \psi(\mathbf{x}_{i},\dots,\mathbf{x}_{n})=\sum_{k}\omega_{k}\det[\Phi ^{k}] $$
@@ -235,18 +229,50 @@ $$
 \end{align}
 $$
 
-You com
 
 ![[ferminet.png|280x315]]
 
-Motivated for the antisymmetry and the Kato cusp conditions our **Ansatz** take the form of: [
+Until this point we have only use MLPs vanilla. 
 
-### Long Short Term Memory and Recurrent Neural Networks
+### Recurrent Neural Networks
 
-In order to introduce to the Architecture transformer we are going to introduce the problem and what approaches exist.
+To introduce the Transformer architecture, first let's introduce the problem they solve.
 
-MLP forget things for that reason. 
+MLP doesn't work to well processing sequentially data (e.g text) they tend to forget, thus we need another approach to increase the memory of the Neural Network, for this we can tweak life follow:
+
+$$
+\mathbf{a}^{(t)}=\mathbf{b}+\mathbf{W}\mathbf{h}^{(t-1)}+\mathbf{U}x^{(t)}
+$$
+But do it this ways introduce the well known problem of vanishing gradients.
+Another approach to increase the memory of neural networks are LSTMs
+
+### Long Short Term Memory
+
+LSTMs introduce a memory cell $c_{t}$ and gates that regulate information flow.
+
+LSTMs substantially improve sequence modeling across modalities.
+
+This increase the memory of neural networks but still sequencial, we have a better approach, which are another architecture based on a mechanism called attention.  
+
+
+### Attention 
+
+The first attention mechanism were introduced by using the follow:
+
+
+### Self Attention
+
+Here we use the dot product and heads. 
+$$
+\mathbf{o}_{t,i}=\sum_{j=1}^{t}\text{Softmax}\left( \frac{\mathbf{q}^{T}_{t,i}\mathbf{k}_{j,i}}{\sqrt{ d_{h} }} \right) \mathbf{v}_{j,i}
+$$
+$$
+\mathbf{u}_{t}=W^{O}[\mathbf{o}_{t,1};\mathbf{o}_{t,2};\dots ;\mathbf{o}_{t,n_{h}}]
+$$
+
+
 ### Transformers
+
 
 @Vaswani2017 
 There exist several architectures that I can use Recurrent Neural Network, Long Short Term Memory. 
@@ -261,14 +287,6 @@ Attention mechanism appear with @bahdanau2014neural but it didn't work so:
 - [[Attention mechanism]]
 - [[Self attention mechanism on one head]]
 - [[Multi-head attention]]
-### Attention and Self Attention
-$$
-\mathbf{o}_{t,i}=\sum_{j=1}^{t}\text{Softmax}\left( \frac{\mathbf{q}^{T}_{t,i}\mathbf{k}_{j,i}}{\sqrt{ d_{h} }} \right) \mathbf{v}_{j,i}
-$$
-$$
-\mathbf{u}_{t}=W^{O}[\mathbf{o}_{t,1};\mathbf{o}_{t,2};\dots ;\mathbf{o}_{t,n_{h}}]
-$$
-
 
 # Psi Former
 
