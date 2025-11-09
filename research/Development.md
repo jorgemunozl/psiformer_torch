@@ -28,25 +28,35 @@ modified: 2025-11-09 11:40
 ---
 # Abstract
 
-With accurate solutions to the many electron Schrodinger equation all the chemistry could be derived from first principles. Try to find analytical is prohibitively hard due the intrinsic and chaotic relations between each component on a molecule (electrons and protons). Recently, due to its high flexibility deep learning approaches had been already used for this problem, FermiNet and Pauli Net are two good examples, these have advanced accuracy, yet computational cost or error typically grows steeply with system size, limiting applicability to larger molecules. They also lack of strong architectures designed to capture long-range electronic correlations with scalable attention. In this work I develop the Psiformer a transformer-based ansatz that couples scalable attention with physics-aware structure. I  formulate training via Variational MonteCarlo and the evaluation will be do it by comparing against another traditional methods.
+With accurate solutions to the many-electron Schrodinger equation all the chemistry could be derived from first principles, but analytical treatment is intractable due the intrinsic strong electron-electron correlations, anti symmetry and cusp behavior. Recently, due to its high flexibility deep learning approaches had been applied for this problem, neural wave function models such as FermiNet and PauliNet are two good examples, these have advanced accuracy, yet computational cost and error typically grows steeply with system size, limiting applicability to larger molecules. They also lack of strong architectures designed to capture long-range electronic correlations with scalable attention. In this work I develop the Psiformer a transformer-based ansatz that couples scalable attention with physics-aware structure. Training is formulated within Variational Monte Carlo (VMC), evaluation will be do it by comparing against another traditional methods, I also outline design questions for further improvement, including sparsified/global attention and optimizer choices inspired by recent transformer advances.
 # Introduction
 
-The success of deep Learning across different fields like protein folding @jumper2021highly, visual modeling @dosovitskiy2021imageworth16x16words, and PDEs solvers @RAISSI2019686 . Motivated by these successes, the community has explored neural approaches for quantum many-body problems, seeking accurate and scalable approximations to the many-electron wave function.
+The electronic structure problem remains challenging: the wave functions  which describes fully the systems lives in a $3N$-dimensional space ($N$ number of electrons, each one lives on the 3 dimensional space, interesting molecules have around 10 electrons), additionally it must satisfy certain properties due to physical laws plus that the solutions lives on the complex space.
 
-The electronic structure problem remains challenging: the wave functions lives in $3N$-dimensional space, additionally it must satisfy certain properties due to physical laws (anti symmetry and sharp features). Traditional methods balance accuracy and lost, but often struggle on correlated systems.
+Although the governing laws have been known for a century—see Schrödinger’s formulation of wave mechanics [Schrödinger, 1926]—obtaining practical approximations to the quantum many-body wavefunction remains difficult. Established approaches such as density-functional theory, the Born–Oppenheimer separation, and structured variational ansätze trade generality for tractability by imposing specific functional forms or approximations to correlation. These choices are effective within their regimes but can struggle for strongly correlated systems or scale poorly with electron count. This is where modern learning-based methods enter: instead of fixing the functional form, we learn it, while enforcing essential physics (antisymmetry, cusp behavior, permutation symmetry).
 
-specifically finding a good aproximmation for the Quantum Many-Body wave eqaution  the is one of those places where have shown that deep learning could overpass traditional methods @Luo_2019 , @Qiao_2020, but there is still many challenges specifically, the computational power needed for large molecules becomes prohibitively expensive. 
-@ad
+Deep learning has reshaped several scientific domains, from protein structure prediction @jumper2021highly to vision @dosovitskiy2021imageworth16x16words and PDE surrogates @RAISSI2019686. Motivated by these successes, the community has explored neural approaches for quantum many-body problems, seeking accurate and scalable approximations to the many-electron wavefunction. 
 
-Tackling that problem the Transformer architecture had demonstrate that scaling laws are not so much complicated for him.
+Thus neural wavefunction models have emerged as a promising alternative. Architectures such as **FermiNet** and **PauliNet** combine flexible function approximators with determinant structures to respect antisymmetry, improving variational expressivity. However, two practical limitations persist. First, error or compute cost often scales unfavorably with the number of electrons, restricting applicability to larger molecules. Second, mechanisms for **long-range electronic correlation**—central to Coulomb and exchange effects—are typically implicit or expensive to capture, leading to optimization difficulty and brittle generalization.
 
-Motivated for that in this work I develop a transformer architecture called Psifomer. @vonglehn2023selfattentionansatzabinitioquantum  
+Transformers offer an appealing direction. Self-attention provides direct, many-to-many interactions among tokens in a single layer, is highly parallelizable, and has empirically favorable scaling behavior in other domains (Natural Language Processing) . For electronic structure, where any electron can interact with any other and electron indices are exchangeable, attention aligns naturally with the physics: it enables global coupling without imposing an arbitrary ordering. The challenge is to embed the right **inductive biases** (distance awareness, spin structure, cusp handling) and to maintain **fermionic antisymmetry** while keeping computational cost under control.
+
+I develop **Psiformer**, a transformer-based variational ansatz for many-electron systems. Psiformer uses self-attention to construct rich per-electron features informed by electron–electron and electron–nucleus descriptors, then imposes antisymmetry explicitly via determinant-based heads. Physics-aware priors (e.g., distance/radial encodings and cusp-motivated embeddings) are incorporated to reduce sample complexity and stabilize training. The optimization is formulated within **Variational Monte Carlo (VMC)** by minimizing the variational energy. 
+
+**Contributions.**
+1. A transformer-based neural wavefunction (**Psiformer**) that separates correlation modeling (attention) from fermionic symmetry (determinant heads) while embedding Coulomb-aware priors.
+2. A VMC training recipe with practical choices for stability (feature design, damping, and optional natural-gradient preconditioning). 
+
+@vonglehn2023selfattentionansatzabinitioquantum  
+@Luo_2019 @Qiao_2020.
 # Objectives
 
 - Obtain a model which is able to approximate the ground state state energy of the carbon atom.
 - Compare our model with another state of the art methods to solve the many electrons Schrodinger equation respect the ground state energy.
-- Look for improvements when try to tackle larger molecules. 
+- Look for future improvements when try to tackle larger molecules. 
 # Overview
+
+Section 2 reviews background on neural wavefunctions and attention. Section 3 details Psiformer’s architecture and training. Section 4 presents the experimental protocol and comparisons. Section 5 discusses limitations and avenues for scaling to larger systems.
 
 This work is structured as follow: The theoretical framework introduces the foundations of quantum many-body theory, the structure of the Schrodinger equation for many electrons like also foundational concepts of Deep Learning that are going to be used in this specific work, we are going to talk also about the Transformer architecture and Fermi Net a architecture that use Neural Networks to solve the problem and this work is built up on.
 The concepts presented in this section provide the physical and mathematical context for the proposed model.
@@ -55,22 +65,22 @@ The part where the model itself is introduced.
 
 The methodology section details a brief construction of the **Psiformer** and the environment which is going to be use.
 # Theoretical Framework
-In order to solve the problem we have to grasp the physics laws that our solution have to follow.
-### The Schrodinger Equation
-The Schrodinger equation was presented in a series of publication made it by Schrodinger in the year 1916. He derived the time dependent equation:
-We search the complex $\psi$ function called **wave function**, $\lvert \psi \rvert^{2}$ is a probability distribution telling the probability of find a particle (electron) is a specific position.
-This function is rule by the equation:
-$$ i\hbar \frac{\partial \psi}{\partial t}=\hat{H}\psi $$
-Where $i$ is the complex unit, $\hbar$ is the [[Reduced Planck Constant]] equals to 
-The $\hat{H}$ is a Hermitian linear operator called the Hamiltonian which represents the total energy of the system
 
+## The physics law behind the solution
+### The Schrodinger Equation
+
+The Schrodinger equation was presented in a series of publications made it by Erwin Schrodinger in the year 1916. 
+We search the complex function $\psi$ called **wave function**, the function $\lvert \psi \rvert^{2}$ is a probability distribution telling us the probability of find an electron is a specific position. He first derived the time dependent equation:
+$$ i\hbar \frac{\partial \psi}{\partial t}=\hat{H}\psi $$
+Where $i$ is the complex unit, $\hbar$ is the [[Reduced Planck Constant]] approximate to $1.054571817\dots \times 10^{-34} J\cdot s$.
+The $\hat{H}$ is a Hermitian linear operator called the Hamiltonian which represents the total energy of the system:
 $$
 \hat{H}=\vec{P}+V(x)
 $$
 Where $\vec{P}$ is the Linear Momentum Operator $V$ the potential energy of the system.
 $\vec{P}$ takes the form of: @Zettili2009
 $$
-\vec{P}=-\frac{1}{2}\sum \nabla^{2}
+\vec{P}=-\frac{1}{2}\sum \nabla^{2}=
 $$
 
 And $V$ depends on the specific system.
@@ -118,7 +128,7 @@ $$
 \lim_{ l \to 0 } \left( \frac{\partial \psi}{\partial r_{ij}} \right)=\frac{1}{2}\psi(r_{ij}=0)
 $$
 Where $r_{iI}(r_{ij})$ is an electron-nuclear (electron-electron) distance, $Z_{I}$ is the nuclear charge of the $I\text{-th}$ nucleous and ave implies a spherical averaging over all directions.
-## Approximating a solution
+### Approximating a solution
 
 Find possible solution in the traditional way is prohibitively hard. So what people have doing and it seem that it becomes a success is guess that solution and using another techniques to improve the solution, to this guess solution we called **Ansatz**.
 
@@ -137,7 +147,6 @@ $$ \mathcal{L}_{\theta}=\mathbb{E}_{x\sim \Psi^{2}_{\theta}}[E_{L}(x)] $$
 We are going to try to minimize this expression, how? We know (for the back propagation algorithm) that for make that first we to evaluate. We need a specific $x$.
 
 The gradient of the energy is:
-
 $$
 \nabla \mathbb{E}_{x\sim \Psi}^{2}[E_{L}(x)]=2\mathbb{E}_{x\sim \Psi^{2}}[(E_{L}(x)-\mathbb{E}_{x'\sim\Psi^{2}}[E_{L}(x')])\nabla \log \lvert \Psi(x) \rvert ]
 $$
@@ -219,7 +228,7 @@ $$
 \end{vmatrix}=\det[\phi_{i}^{k}(\mathbf{x}_{j})]=\det[\Phi ^{k}]
 $$
 
-The elements of the determinant are obtained via
+The elements of the determinant are obtained via [[Obtaining the orbital fermi net flow]]
 
 $\alpha \in \{ \uparrow,\downarrow \}$
 
