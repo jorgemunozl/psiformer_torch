@@ -1,6 +1,6 @@
 ---
 date: 2025-10-23 19:32
-modified: 2025-11-08 10:08
+modified: 2025-11-09 11:40
 ---
 # Development of a Transformed based architecture to solve the Time Independent Many Electron Schrodinger Equation
 
@@ -42,6 +42,7 @@ Tackling that problem the Transformer architecture had demonstrate that scaling 
 
 Motivated for that in this work I develop a transformer architecture called Psifomer. @vonglehn2023selfattentionansatzabinitioquantum  
 # Objectives
+
 - Obtain a model which is able to approximate the ground state state energy of the carbon atom.
 - Compare our model with another state of the art methods to solve the many electrons Schrodinger equation respect the ground state energy.
 - Look for improvements when try to tackle larger molecules. 
@@ -83,8 +84,6 @@ Where $E$ is the total energy of the system.
 In quantum chemistry is regular used atomic units, the unit of distance is the Bohr Radious and the unit of energy is Hartree (Ha).
 
 In its time-independent form the Schrodinger equation can be written as a eigenfunction equation.
-
-
 $$ \hat{H}\psi(\mathbf{x}_{0},\dots ,\mathbf{x}_{n})=E\psi(\mathbf{x}_{1},\dots ,\mathbf{x}_{n}) $$
 Where $\mathbf{x}_{i}=\{ \mathbf{r}_{i},\sigma \}$,  $\mathbf{r}_{i}$ is the position of each electron and protons and $\sigma \in \{ \uparrow.\downarrow \}$ is the spin.
 In this case the potential energy of the system we have to consider the repulsion between the electrons
@@ -135,6 +134,14 @@ So how we optimized this. Here appears [[Variational Quantum Monte Carlo]].
 Which can be re-written as:
 $$ E_{L}(x)=\Psi ^{-1}_{\theta}(x)\hat{H}\Psi_{\theta}(x) $$
 $$ \mathcal{L}_{\theta}=\mathbb{E}_{x\sim \Psi^{2}_{\theta}}[E_{L}(x)] $$
+We are going to try to minimize this expression, how? We know (for the back propagation algorithm) that for make that first we to evaluate. We need a specific $x$.
+
+The gradient of the energy is:
+
+$$
+\nabla \mathbb{E}_{x\sim \Psi}^{2}[E_{L}(x)]=2\mathbb{E}_{x\sim \Psi^{2}}[(E_{L}(x)-\mathbb{E}_{x'\sim\Psi^{2}}[E_{L}(x')])\nabla \log \lvert \Psi(x) \rvert ]
+$$
+
 And here we use [[Metropolis algorithm]] to work in real life.
 
 ## Using Deep Learning
@@ -165,13 +172,44 @@ For our paremeters:
 $$\{ \mathbf{W}^{(l)},\mathbf{b}^{(l)}\}_{l=2}^{L}=\theta$$
 
 You train the MLP with a training data set using backpropatation a loss function anda optimizer. Additionally you can use regularization techniques to improve the performance of the MLP.
+
+### Natural gradient Descent
+
+We need this topic because our optimizer use it. There exist different methods to update our parameters. Like Gradient Descent, Stochastic, [[Adaptive Moment Estimation]] ADAM, but in this work we are going to use gone completely different. 
+
+$$
+\Delta \theta _{\text{nat}}=-\eta \mathcal{F}^{-1} \Delta_{\theta}\mathcal{L}
+$$
+Where $\mathcal{F}$ is the Fisher Information Matrix (FIM) defined as:
+$$ \mathcal{F}_{ij}=\mathbb{E}_{p}(\mathbf{x})\left[ \frac{\partial \log p(x)}{\partial \theta_{i} }\frac{\partial \log p(X)}{\partial \theta_{j}} \right] $$
+
+[[Natural Gradient Descent]] 
+### Kronecker Factored Approximate Curvature
+
+[[Kroenecker factored Approximate Curvature]]
+Find the [[Fisher Information Matrix]] analiticaly becomes very hard for that matter we have two approximations.
+
+1. $\mathcal{F_{ij}}$ are assumed to be zero when $\theta_{i}$ and $\theta_{j}$ are in different layers of the network.
+2. The other approximation is the follow:
+
+$$
+\mathbb{E}_{p(\mathbf{X})}\left[ \frac{\partial \log p(X)}{\partial \text{vec}(\mathbf{W}_{\ell})}\frac{\partial \log p(X)}{\partial \mathbf{W}_{\ell}}^{\mathsf{T}} \right]=\mathbb{E}_{p(\mathbf{X})}[(\mathbf{a}_{\ell}\otimes \mathbf{e}_{\ell})(\mathbf{a}_{\ell}\otimes \mathbf{e}_{\ell})^{\mathsf{T}}]
+$$
+
+Approx:
+$$
+\mathbb{E}_{p(\mathbf{X})}[(\mathbf{a}_{\ell}\otimes \mathbf{e}_{\ell})(\mathbf{a}_{\ell}\otimes \mathbf{e}_{\ell})^{\mathsf{\top}}]^{-1}\approx \mathbb{E}_{p(\mathbf{X})}[\mathbf{a}_{\ell}\mathbf{a_{\ell}}^{\mathsf{\top}}]\otimes \mathbb{E}_{p(\mathbf{X})}[\mathbf{e}_{\ell}\mathbf{e}_{\ell}^{\mathsf{\top}}]^{-1}
+$$
+We specifically we are going to use: 
+$$
+\mathbb{E}_{p}(\mathbf{X})\left[ \frac{\partial \log p(\mathbf{X})}{\partial \text{vec}(\mathbf{W}_{\ell})}\frac{\partial \log p(\mathbf{X})^{\mathsf{\top}}}{\partial \text{vec}(\mathbf{W}_{\ell})} \right]\approx \mathbb{E}_{p(\mathbf{X})}[\mathbf{\hat{a}}_{\ell}\mathbf{\hat{a}_{\ell}}^{\mathsf{\top}}]^{-1}\otimes \mathbb{E}_{p(\mathbf{X})}[\mathbf{\hat{e}_{\ell}}\mathbf{\hat{e}}_{\ell}^{\mathsf{\top}}]^{-1}
+$$
+
 ### Fermi Net
 A very important work for us is: Fermi Net @Pfau_2020  it uses different MLP to learn the forms of the orbitals. Their ansatz is: [[Fermi Net]]
 
 $$ \psi(\mathbf{x}_{i},\dots,\mathbf{x}_{n})=\sum_{k}\omega_{k}\det[\Phi ^{k}] $$
-
 With:
-
 $$
 \begin{vmatrix}
 \phi_{1}^{k}(\mathbf{x}_{1})  & \dots  &  \phi_{1}^{k}(\mathbf{x}_{n}) \\
@@ -233,6 +271,13 @@ $$
 ![[ferminet.png|280x315]]
 
 Until this point we have only use MLPs vanilla. 
+### Loss function
+
+We are going to take the [[Rayleigh Quotient like Expectation Value]] like loss function.
+
+### Optimizer 
+
+[[Kroenecker factored Approximate Curvature]] KFCA:
 
 ### Recurrent Neural Networks
 
@@ -308,13 +353,6 @@ Architecture
 
 ![[psiformer.png|271x339]]
 
-## Loss function
-
-We are going to take the [[Rayleigh Quotient like Expectation Value]] like loss function.
-
-## Optimizer 
-
-[[Kroenecker factored Approximate Curvature]]
 
 ### Flow of the architecture
 
