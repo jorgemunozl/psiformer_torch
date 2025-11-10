@@ -1,31 +1,9 @@
 ---
 date: 2025-10-23 19:32
-modified: 2025-11-09 11:40
+modified: 2025-11-10 07:30
 ---
 # Development of a Transformed based architecture to solve the Time Independent Many Electron Schrodinger Equation
 
-## Table of Contents
-1. [Abstract](#Abstract)
-2. [Introduction](#Introduction)
-3. [Objectives](#Objectives)
-4. [Theoretical Framework](#Theoretical%20Framework)
-	1. [The problem](#The%20problem)
-		1. [The Schrodinger Equation](#The%20Schrodinger%20Equation)
-		2. [The many electron Schrodinger Equation](#The%20many%20electron%20Schrodinger%20Equation)
-	2. [Approximating a solution](#Approximating%20a%20solution)
-		1. [RayLeight Quotient](#RayLeight%20Quotient)
-	3. [Using Deep Learning](#Using%20Deep%20Learning)
-		1. [Fermi Net](#Fermi%20Net)
-		2. [Transformers](#Transformers)
-		3. [Psi Former](#Psi%20Former)
-		4. [Loss function](#Loss%20function)
-		5. [Optimizer](#Optimizer)
-		6. [Flow of the architecture](#Flow%20of%20the%20architecture)
-5. [Methodology](#Methodology)
-	1. [Environment](#Environment)
-	2. [Training](#Training)
-
----
 # Abstract
 
 With accurate solutions to the many-electron Schrodinger equation all the chemistry could be derived from first principles, but analytical treatment is intractable due the intrinsic strong electron-electron correlations, anti symmetry and cusp behavior. Recently, due to its high flexibility deep learning approaches had been applied for this problem, neural wave function models such as FermiNet and PauliNet are two good examples, these have advanced accuracy, yet computational cost and error typically grows steeply with system size, limiting applicability to larger molecules. They also lack of strong architectures designed to capture long-range electronic correlations with scalable attention. In this work I develop the Psiformer a transformer-based ansatz that couples scalable attention with physics-aware structure. Training is formulated within Variational Monte Carlo (VMC), evaluation will be do it by comparing against another traditional methods, I also outline design questions for further improvement, including sparsified/global attention and optimizer choices inspired by recent transformer advances.
@@ -49,6 +27,8 @@ I develop **Psiformer**, a transformer-based variational ansatz for many-electro
 
 @vonglehn2023selfattentionansatzabinitioquantum  
 @Luo_2019 @Qiao_2020.
+
+The objectives are the follow:
 # Objectives
 
 - Obtain a model which is able to approximate the ground state state energy of the carbon atom.
@@ -56,24 +36,23 @@ I develop **Psiformer**, a transformer-based variational ansatz for many-electro
 - Look for future improvements when try to tackle larger molecules. 
 # Overview
 
-Section 2 reviews background on neural wavefunctions and attention. Section 3 details Psiformer’s architecture and training. Section 4 presents the experimental protocol and comparisons. Section 5 discusses limitations and avenues for scaling to larger systems.
+This work is structured as follow: The theoretical framework introduces the foundations of quantum many-body theory, the structure of the Schrodinger equation for many-bodies like also foundational concepts of Deep Learning.
 
-This work is structured as follow: The theoretical framework introduces the foundations of quantum many-body theory, the structure of the Schrodinger equation for many electrons like also foundational concepts of Deep Learning that are going to be used in this specific work, we are going to talk also about the Transformer architecture and Fermi Net a architecture that use Neural Networks to solve the problem and this work is built up on.
-The concepts presented in this section provide the physical and mathematical context for the proposed model.
+Section [Number] introduce **Fermi Net** a neural wave function, which is very useful to us and the place where we are going to apply the mechanism of attention.
 
-The part where the model itself is introduced.
 
-The methodology section details a brief construction of the **Psiformer** and the environment which is going to be use.
 # Theoretical Framework
 
+The concepts presented in this section provide the physical and mathematical intuion necessary for the problem.
 ## The physics law behind the solution
 ### The Schrodinger Equation
 
 The Schrodinger equation was presented in a series of publications made it by Erwin Schrodinger in the year 1916. 
-We search the complex function $\psi$ called **wave function**, the function $\lvert \psi \rvert^{2}$ is a probability distribution telling us the probability of find an electron is a specific position. He first derived the time dependent equation:
+We search the complex function $\psi$ called **wave function** for a single particle this function depends on the position of the particle $\mathbf{\vec{r}}$ and time $t$ $(\psi(\mathbf{\vec{r}},t))$, the function $\lvert \psi \rvert^{2}$ is a probability distribution telling us the probability of find an electron in a specific position.
+
+Schrodinger from the DeBroglie equation and ... derived the time dependent equation:
 $$ i\hbar \frac{\partial \psi}{\partial t}=\hat{H}\psi $$
-Where $i$ is the complex unit, $\hbar$ is the [[Reduced Planck Constant]] approximate to $1.054571817\dots \times 10^{-34} J\cdot s$.
-The $\hat{H}$ is a Hermitian linear operator called the Hamiltonian which represents the total energy of the system:
+Where $i$ is the complex unit, $\hbar$ is the [[Reduced Planck Constant]] approximate to $1.054571817\dots \times 10^{-34} J\cdot s$ and $\hat{H}$ is a Hermitian linear operator called the **Hamiltonian** which represents the total energy of the system:
 $$
 \hat{H}=\vec{P}+V(x)
 $$
@@ -84,38 +63,65 @@ $$
 $$
 
 And $V$ depends on the specific system.
-The time independent form could be derived from the time dependent form.
+The time independent form could be derived from the time dependent form when the function $\psi$ could be written like the product of two functions, where one function depends uniquely on the spatial term and the other on the time term. This is:
+$$
+\psi(\mathbf{\vec{r}},t)=R(\mathbf{\vec{r}})T(t)
+$$
+Pluggin this form on the first equation and from first principles you obtain that:
+
+$$
+T(t)=e^{ -it }
+$$
+Where bla bla and the eigen value problem and where we are interested in:
 $$
 \hat{H}\psi=E\psi
 $$
 Where $E$ is the total energy of the system.
 ### The many electron Schrodinger Equation
 
-In quantum chemistry is regular used atomic units, the unit of distance is the Bohr Radious and the unit of energy is Hartree (Ha).
+When we are considering more than one single electron we need to consider also a properties of electron called spin.
+
+In quantum chemistry is regular used atomic units, the unit of distance is the Bohr Radious and the unit of energy is Hartree (Ha). [[Quantum Chemistry units]]
 
 In its time-independent form the Schrodinger equation can be written as a eigenfunction equation.
 $$ \hat{H}\psi(\mathbf{x}_{0},\dots ,\mathbf{x}_{n})=E\psi(\mathbf{x}_{1},\dots ,\mathbf{x}_{n}) $$
 Where $\mathbf{x}_{i}=\{ \mathbf{r}_{i},\sigma \}$,  $\mathbf{r}_{i}$ is the position of each electron and protons and $\sigma \in \{ \uparrow.\downarrow \}$ is the spin.
+
+We can modelate the potential energy of the system like follow:
+
 In this case the potential energy of the system we have to consider the repulsion between the electrons
 $$
 U=\frac{1}{4\pi\varepsilon_{0}}\frac{e^{2}}{\lvert r_{i}-r_{j} \rvert }
 $$
-The attraction between protons and electrons.
+The attraction between protons and electrons, where $e$ is the charge of an electron equals to $r_{i}$ the position of an electron (from an classical view) and $\varepsilon_{0}$ the [[Electrical Permittivity on the Vaccum]]. approximate to 
 $$
 U=-\frac{1}{4\pi\varepsilon_{0}}\frac{eZ_{i}}{\lvert r_{i}-R_{i} \rvert }
 $$
-Where $Z_{i}$ is the atomic number.
-And the repulsion between protons.
+Where $Z_{i}$ is the atomic number of the proton, for instance in a Helio atom $Z=2$, units $R_{i}$ the position of a proton from a reference frame, the reference frame is usually taken ..
+
+And the repulsion between protons and 
 $$
-U=\frac{1}{4\pi\varepsilon_{0}}\frac{Z_{i}Z_{j}}{\lvert Z_{i}-Z_{j} \rvert }
+U=\frac{1}{4\pi\varepsilon_{0}}\frac{Z_{i}Z_{j}}{\lvert R_{i}-R_{j} \rvert }
 $$
 Thus the potential energy is the sum of those three terms.
-To avoid write those constants each time we use atomic [[Quantum Chemistry units|Atomic Units]].
 
-The distances are.
+$$
+V=U+U+U
+$$
 
-The Hamiltonian using the [[Quantum Chemistry units]] becomes:
+To avoid write those constants each time we use atomic [[Quantum Chemistry units|Atomic Units]]. This is:
+
+$$
+
+$$
+
+Thus the The Hamiltonian using the [[Quantum Chemistry units]] can be easily written as:
 $$ \hat{H}=-\frac{1}{2}\sum \nabla^{2}+\sum \frac{1}{\lvert r_{i}-r_{j} \rvert }-\sum \frac{Z_{I}}{\lvert r_{i}-R_{I} \rvert }+\sum \frac{Z_{I}Z_{J}}{\lvert R_{i}-R_{j} \rvert } $$
+
+This is the raw problem.
+
+### Conditions of the solution
+
 Now the [[Fermi Dirac Statistics]] tell us that this solution of this equation should be **anti symmetric** this is:
 $$
 \psi(\dots,\mathbf{x}_{i},\dots,\mathbf{x}_{j},\dots)=-\psi(\dots ,\mathbf{x}_{j},\dots ,\mathbf{x}_{i},\dots)
