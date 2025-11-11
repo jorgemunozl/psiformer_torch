@@ -1,6 +1,6 @@
 ---
 date: 2025-10-23 19:32
-modified: 2025-11-10 07:30
+modified: 2025-11-11 08:30
 ---
 # Development of a Transformed based architecture to solve the Time Independent Many Electron Schrodinger Equation
 
@@ -36,96 +36,116 @@ The objectives are the follow:
 - Look for future improvements when try to tackle larger molecules. 
 # Overview
 
-This work is structured as follow: The theoretical framework introduces the foundations of quantum many-body theory, the structure of the Schrodinger equation for many-bodies like also foundational concepts of Deep Learning.
+This work is structured as follow: The theoretical framework introduces the foundations of quantum many-body theory, the structure of the Schrodinger equation for many-bodies like also foundational concepts of Deep Learning that are going to be used in the development of this specific problem.
 
-Section [Number] introduce **Fermi Net** a neural wave function, which is very useful to us and the place where we are going to apply the mechanism of attention.
-
-
+Section [Number] introduce **Psi Former** a transformer based architecture built upon **Fermi Net**. Section [Number] talk about the Methodology which is going to be used to implement this work.
 # Theoretical Framework
 
-The concepts presented in this section provide the physical and mathematical intuion necessary for the problem.
+The concepts presented in this section provide the physical and mathematical background for our specific problem.
 ## The physics law behind the solution
+
 ### The Schrodinger Equation
 
-The Schrodinger equation was presented in a series of publications made it by Erwin Schrodinger in the year 1916. 
-We search the complex function $\psi$ called **wave function** for a single particle this function depends on the position of the particle $\mathbf{\vec{r}}$ and time $t$ $(\psi(\mathbf{\vec{r}},t))$, the function $\lvert \psi \rvert^{2}$ is a probability distribution telling us the probability of find an electron in a specific position.
+The Schrodinger equation was presented in a series of publications made it by Erwin Schrodinger in the year 1926. There we search the complex function $\psi$ called **wave function**, for a non relativistic spinless single particle this function depends on the position of the particle $\mathbf{\vec{r}}$ and time $t$ $(\psi(\mathbf{\vec{r}},t))$, the quantity $\lvert \psi (\mathbf{r},t)\rvert^{2}$ is the **probability density** to find the particle near $\mathbf{r}$ at time $t$.
 
-Schrodinger from the DeBroglie equation and ... derived the time dependent equation:
+Guided by de Broglie's discover of the wave particle duality and a very smart intuition Schrodinger proposed the time dependent equation (TDSE):
 $$ i\hbar \frac{\partial \psi}{\partial t}=\hat{H}\psi $$
-Where $i$ is the complex unit, $\hbar$ is the [[Reduced Planck Constant]] approximate to $1.054571817\dots \times 10^{-34} J\cdot s$ and $\hat{H}$ is a Hermitian linear operator called the **Hamiltonian** which represents the total energy of the system:
+Where $i$ is the complex unit, $\hbar$ is the [[Reduced Planck Constant]] approximate to $1.054571817\dots \times 10^{-34} J\cdot s$ and $\hat{H}$ is a Hermitian linear operator called the **Hamiltonian** which represents the total energy of the system, for a single non relativistic (low energy) particle of mass $m$ in a scalar potential $V(\mathbf{r},t)$.
 $$
-\hat{H}=\vec{P}+V(x)
+\hat{H}=\frac{\hat{\mathbf{p}}^{2}}{2m}+V(\mathbf{r},t)
 $$
-Where $\vec{P}$ is the Linear Momentum Operator $V$ the potential energy of the system.
-$\vec{P}$ takes the form of: @Zettili2009
+Where $\mathbf{\hat{p}}$ is the Momentum Operator and in the **Position representation** it takes the form of:
 $$
-\vec{P}=-\frac{1}{2}\sum \nabla^{2}=
+\mathbf{\hat{p}}=-i\hbar \nabla
 $$
-
-And $V$ depends on the specific system.
-The time independent form could be derived from the time dependent form when the function $\psi$ could be written like the product of two functions, where one function depends uniquely on the spatial term and the other on the time term. This is:
+Where $\nabla$ is the Laplacian operator, Thus the TDSE is explicitly:
+$$
+i\hbar\,\frac{\partial \psi}{\partial t}
+=
+\left[-\frac{\hbar^{2}}{2m}\nabla^{2}+V(\mathbf r,t)\right]\psi.
+$$
+The **time independent form** (TISE) could be derived from equation ,when the wave function $\psi$ could be written like the product of two functions $R$ and $T$, where $R$ depends uniquely on the spatial term $(\mathbf{\vec{r}})$ and $T$ uniquely on the temporal $(t)$, this is:
 $$
 \psi(\mathbf{\vec{r}},t)=R(\mathbf{\vec{r}})T(t)
 $$
-Pluggin this form on the first equation and from first principles you obtain that:
-
+Plugin this form on equation **number**, you can derive that:
 $$
-T(t)=e^{ -it }
+T(t)=e^{ -iEt/\hbar }
 $$
-Where bla bla and the eigen value problem and where we are interested in:
+Where $E$,the energy of the system, is constant. You also obtain that the spatial part is conditioned by:
 $$
-\hat{H}\psi=E\psi
+\hat{H}R(\mathbf{\vec{r}})=ER(\mathbf{\vec{r}})
 $$
-Where $E$ is the total energy of the system.
+We usually represent $R$ as $\psi$.
 ### The many electron Schrodinger Equation
-
-When we are considering more than one single electron we need to consider also a properties of electron called spin.
-
-In quantum chemistry is regular used atomic units, the unit of distance is the Bohr Radious and the unit of energy is Hartree (Ha). [[Quantum Chemistry units]]
-
-In its time-independent form the Schrodinger equation can be written as a eigenfunction equation.
+When we are considering more than one single particle we consider the spin $(\sigma)$ and the interaction between particles. Thus in its time-independent form the Schrodinger equation can be written as an eigen value problem:
 $$ \hat{H}\psi(\mathbf{x}_{0},\dots ,\mathbf{x}_{n})=E\psi(\mathbf{x}_{1},\dots ,\mathbf{x}_{n}) $$
-Where $\mathbf{x}_{i}=\{ \mathbf{r}_{i},\sigma \}$,  $\mathbf{r}_{i}$ is the position of each electron and protons and $\sigma \in \{ \uparrow.\downarrow \}$ is the spin.
-
-We can modelate the potential energy of the system like follow:
-
-In this case the potential energy of the system we have to consider the repulsion between the electrons
+Where $\mathbf{x}_{i}=\{ \mathbf{r}_{i},\sigma \}$,  $\mathbf{r}_{i}$ is the position of each particle and $\sigma \in \{ \uparrow.\downarrow \}$ is the so called spin. It's possible model the potential energy of a many body system (e.g atoms, molecules), we first have to consider the repulsion between each electrons:
 $$
-U=\frac{1}{4\pi\varepsilon_{0}}\frac{e^{2}}{\lvert r_{i}-r_{j} \rvert }
+V_{ij}
+= \frac{e^{2}}{4\pi\varepsilon_{0}}
+  \frac{1}{\lvert \mathbf{r}_{i}-\mathbf{r}_{j} \rvert}
 $$
-The attraction between protons and electrons, where $e$ is the charge of an electron equals to $r_{i}$ the position of an electron (from an classical view) and $\varepsilon_{0}$ the [[Electrical Permittivity on the Vaccum]]. approximate to 
+Here:
+- $e = 1.602\,176\,634\times 10^{-19}\ \mathrm{C}$ is the elementary charge,
+- $\varepsilon_{0} = 8.854\,187\,8128\times 10^{-12}\ \mathrm{F\,m^{-1}}$ is the **electrical permittivity of vacuum**,
+- $\mathbf{r}_i$ is the position vector of electron $i$ in the chosen reference frame.
+The attraction between protons and electrons is given by:
 $$
-U=-\frac{1}{4\pi\varepsilon_{0}}\frac{eZ_{i}}{\lvert r_{i}-R_{i} \rvert }
+V_{iI} = -\frac{1}{4\pi\varepsilon_{0}} \frac{eZ_{I}}{\lvert \mathbf{r}_{i} - \mathbf{R}_{I} \rvert}
 $$
-Where $Z_{i}$ is the atomic number of the proton, for instance in a Helio atom $Z=2$, units $R_{i}$ the position of a proton from a reference frame, the reference frame is usually taken ..
+Where $Z_I$ is the atomic number of nucleus $I$ (for instance, in a Helium atom $Z = 2$) and $\mathbf{R}_I$ is the position of that nucleus from a chosen reference frame.  
+The reference frame is usually taken at the **center of mass** or at the **center of the molecule**. The repulsion between nuclei (protons) is:
+$$
+V_{IJ} = \frac{1}{4\pi\varepsilon_{0}} \frac{Z_{I}Z_{J}}{\lvert \mathbf{R}_{I} - \mathbf{R}_{J} \rvert}
+$$
+To avoid writing these constants every time, quantum chemistry commonly uses **atomic units (a.u.)**.  In this system, the unit of length is the **Bohr radius** $a_{0}$,  
+and the unit of energy is the **Hartree** $E_{h}$:
+$$
+E_{h} = \frac{e^{2}}{4\pi\varepsilon_{0} a_{0}}
+$$
+Under atomic units, $e = 1$, $4\pi\varepsilon_{0} = 1$,$\hbar = 1$, and $m_{e} = 1$.  
+Thus, the potential energy of a multi-electron, multi-nucleus system can be written compactly as:
+$$
+V = -\sum_{i,I} \frac{Z_I}{\lvert \mathbf{r}_i - \mathbf{R}_I \rvert}
++ \sum_{i>j} \frac{1}{\lvert \mathbf{r}_i - \mathbf{r}_j \rvert}
++ \sum_{I>J} \frac{Z_I Z_J}{\lvert \mathbf{R}_I - \mathbf{R}_J \rvert}
+$$
 
-And the repulsion between protons and 
+where:
+- $i, j$ index electrons,
+- $I, J$ index nuclei,
+- the first term represents **electron–nucleus attraction**,  
+- the second term is **electron–electron repulsion**,  
+- the third term is **nucleus–nucleus repulsion**.
+
+For the kinetic term we need to consider two expressions: $\nabla_i^2$ acts on the **electron** coordinates $\mathbf r_i$ (fast, light particles) and $\nabla_I^2$ acts on the **nuclear** coordinates $\mathbf R_I$ (slow, heavy particles). 
+
+Let $N$ electrons at $\mathbf r_i$ and $M$ nuclei at $\mathbf R_I$ with charges $Z_I$ and masses $M_I$ (in units of $m_e$). Thus the Hamiltonian can be written as:
 $$
-U=\frac{1}{4\pi\varepsilon_{0}}\frac{Z_{i}Z_{j}}{\lvert R_{i}-R_{j} \rvert }
+\boxed{
+\hat H =
+-\sum_{i=1}^{N}\frac{1}{2}\nabla_i^{2}
+-\sum_{I=1}^{M}\frac{1}{2M_I}\nabla_{I}^{2}
+-\sum_{i=1}^{N}\sum_{I=1}^{M}\frac{Z_I}{|\mathbf r_i-\mathbf R_I|}
++\sum_{1\le i<j\le N}\frac{1}{|\mathbf r_i-\mathbf r_j|}
++\sum_{1\le I<J\le M}\frac{Z_I Z_J}{|\mathbf R_I-\mathbf R_J|}
+}
 $$
-Thus the potential energy is the sum of those three terms.
-
-$$
-V=U+U+U
-$$
-
-To avoid write those constants each time we use atomic [[Quantum Chemistry units|Atomic Units]]. This is:
-
-$$
-
-$$
-
-Thus the The Hamiltonian using the [[Quantum Chemistry units]] can be easily written as:
-$$ \hat{H}=-\frac{1}{2}\sum \nabla^{2}+\sum \frac{1}{\lvert r_{i}-r_{j} \rvert }-\sum \frac{Z_{I}}{\lvert r_{i}-R_{I} \rvert }+\sum \frac{Z_{I}Z_{J}}{\lvert R_{i}-R_{j} \rvert } $$
-
-This is the raw problem.
-
 ### Conditions of the solution
 
-Now the [[Fermi Dirac Statistics]] tell us that this solution of this equation should be **anti symmetric** this is:
+Like another Differential equation, there we have Initial Conditions (IC) and boundary conditions (BC). Here we have also certain restricments.
+#### Fermi Dirac Statistics
+
+Bosons (e.g photons) follow the Bose-Einstein Statistics in the other hand All the fermions (e.g electrons protons )follow the fermi Dirac Statistics this means that particles are hard to recognize between them thus can be expressed saying that the wave tell us that this solution of this equation should be **anti symmetric** this is:
 $$
 \psi(\dots,\mathbf{x}_{i},\dots,\mathbf{x}_{j},\dots)=-\psi(\dots ,\mathbf{x}_{j},\dots ,\mathbf{x}_{i},\dots)
 $$
+We can enforce applying **Slater Determinants**.
+
+#### Kato Cusp Conditions
+
+Another important , due the probabilistic nature of electrons is that 
 The potential energy becomes infinite when two electrons overlap , this could be formalized via the [[Kato Cusp Conditions]], a Jastrow factor $\exp(\mathcal{J})$. The explicit form of $\mathcal{J}$ depends on the.
 $$
 \lim_{ l \to 0 } \left( \frac{\partial \psi}{\partial r_{iI}} \right)=-Z\psi(r_{iI}=0)
@@ -134,13 +154,23 @@ $$
 \lim_{ l \to 0 } \left( \frac{\partial \psi}{\partial r_{ij}} \right)=\frac{1}{2}\psi(r_{ij}=0)
 $$
 Where $r_{iI}(r_{ij})$ is an electron-nuclear (electron-electron) distance, $Z_{I}$ is the nuclear charge of the $I\text{-th}$ nucleous and ave implies a spherical averaging over all directions.
-### Approximating a solution
+### Approximations
 
 Find possible solution in the traditional way is prohibitively hard. So what people have doing and it seem that it becomes a success is guess that solution and using another techniques to improve the solution, to this guess solution we called **Ansatz**.
-
+**Borhn Oppehenimer**
 Once that you have your Ansatz, which normally depends on depends on certain parameters.
-
-### Variational Monte Carlo
+**Born–Oppenheimer (clamped nuclei) electronic Hamiltonian:**
+$$
+\boxed{
+\hat H_{\mathrm{el}} =
+-\sum_{i=1}^{N}\frac{1}{2}\nabla_i^{2}
+-\sum_{i=1}^{N}\sum_{I=1}^{M}\frac{Z_I}{|\mathbf r_i-\mathbf R_I|}
++\sum_{1\le i<j\le N}\frac{1}{|\mathbf r_i-\mathbf r_j|}
+}
+\qquad\text{with}\qquad
+E_{\mathrm{nn}}=\sum_{I<J}\frac{Z_I Z_J}{|\mathbf R_I-\mathbf R_J|}.
+$$
+### Variational Principle
 Once that you guess an **Ansatz** you optimize using the **rayleight quotient**.
 
 $$
@@ -159,10 +189,15 @@ $$
 
 And here we use [[Metropolis algorithm]] to work in real life.
 
-## Using Deep Learning
+### Quantum Monte Carlo
+
+okil
+
+## Deep Learning Fundamentals
 
 They are a quite example of it.
 examples @shangSolvingManyelectronSchrodinger2025 Related work
+
 ### Multi Layer Perceptron
 A MLP is a nonlinear function $\mathcal{F}:\mathbb{R}^{\text{in}}\to \mathbb{R}^{\text{out}}$.  @nielsenNeuralNetworksDeep2015
 
@@ -172,7 +207,6 @@ Let $\mathbf{z}^{(l)}$ be a affine map of the follow form. $l\in \{ L,L-1,\dots,
 $$
 \mathbf{z}^{(l)}=\mathbf{W}^{(l)}\mathbf{a}^{(l-1)}+\mathbf{b}^{(l)}
 $$
-
 Where $\mathbf{W}^{(l)}$ is the weight matrix and $\mathbf{b}^{(l)}$ the bias vector of the $l$ layer.  
 
 Let $\sigma ^{(l)}$ be a nonlinear function of the $l$ layers (typically Softmax,  Relu, Tanh.)
@@ -220,7 +254,61 @@ $$
 \mathbb{E}_{p}(\mathbf{X})\left[ \frac{\partial \log p(\mathbf{X})}{\partial \text{vec}(\mathbf{W}_{\ell})}\frac{\partial \log p(\mathbf{X})^{\mathsf{\top}}}{\partial \text{vec}(\mathbf{W}_{\ell})} \right]\approx \mathbb{E}_{p(\mathbf{X})}[\mathbf{\hat{a}}_{\ell}\mathbf{\hat{a}_{\ell}}^{\mathsf{\top}}]^{-1}\otimes \mathbb{E}_{p(\mathbf{X})}[\mathbf{\hat{e}_{\ell}}\mathbf{\hat{e}}_{\ell}^{\mathsf{\top}}]^{-1}
 $$
 
-### Fermi Net
+[[Kroenecker factored Approximate Curvature]]
+
+### Recurrent Neural Networks
+
+To introduce the Transformer architecture, first let's introduce the problem they solve.
+
+MLP doesn't work to well processing sequentially data (e.g text) they tend to forget, thus we need another approach to increase the memory of the Neural Network, for this we can tweak life follow:
+
+$$
+\mathbf{a}^{(t)}=\mathbf{b}+\mathbf{W}\mathbf{h}^{(t-1)}+\mathbf{U}x^{(t)}
+$$
+But do it this ways introduce the well known problem of vanishing gradients.
+Another approach to increase the memory of neural networks are LSTMs
+
+### Long Short Term Memory
+
+LSTMs introduce a memory cell $c_{t}$ and gates that regulate information flow.
+
+LSTMs substantially improve sequence modeling across modalities.
+
+This increase the memory of neural networks but still sequencial, we have a better approach, which are another architecture based on a mechanism called attention.  
+
+
+### Attention Mechanism
+
+The first attention mechanism were introduced by using the follow:
+
+### Self Attention and Multi Head Attention
+
+Here we use the dot product and heads. 
+$$
+\mathbf{o}_{t,i}=\sum_{j=1}^{t}\text{Softmax}\left( \frac{\mathbf{q}^{T}_{t,i}\mathbf{k}_{j,i}}{\sqrt{ d_{h} }} \right) \mathbf{v}_{j,i}
+$$
+$$
+\mathbf{u}_{t}=W^{O}[\mathbf{o}_{t,1};\mathbf{o}_{t,2};\dots ;\mathbf{o}_{t,n_{h}}]
+$$
+### Transformers architecture
+
+@Vaswani2017 
+There exist several architectures that I can use Recurrent Neural Network, Long Short Term Memory. 
+
+Recurrent Neural Network are: [[Recurrent Neural Network]]
+And long short term memory are: [[Long Short Memory]]
+
+Why on earth I would use [[Transformer]]? They are extremely good finding relations between its elements. And the best is that scale well due its [[Transform Architecture]]
+
+Attention mechanism appear with @bahdanau2014neural but it didn't work so:
+
+- [[Attention mechanism]]
+- [[Self attention mechanism on one head]]
+- [[Multi-head attention]]
+
+# Psi Former
+
+## Fermi Net
 A very important work for us is: Fermi Net @Pfau_2020  it uses different MLP to learn the forms of the orbitals. Their ansatz is: [[Fermi Net]]
 
 $$ \psi(\mathbf{x}_{i},\dots,\mathbf{x}_{n})=\sum_{k}\omega_{k}\det[\Phi ^{k}] $$
@@ -286,70 +374,6 @@ $$
 ![[ferminet.png|280x315]]
 
 Until this point we have only use MLPs vanilla. 
-### Loss function
-
-We are going to take the [[Rayleigh Quotient like Expectation Value]] like loss function.
-
-### Optimizer 
-
-[[Kroenecker factored Approximate Curvature]] KFCA:
-
-### Recurrent Neural Networks
-
-To introduce the Transformer architecture, first let's introduce the problem they solve.
-
-MLP doesn't work to well processing sequentially data (e.g text) they tend to forget, thus we need another approach to increase the memory of the Neural Network, for this we can tweak life follow:
-
-$$
-\mathbf{a}^{(t)}=\mathbf{b}+\mathbf{W}\mathbf{h}^{(t-1)}+\mathbf{U}x^{(t)}
-$$
-But do it this ways introduce the well known problem of vanishing gradients.
-Another approach to increase the memory of neural networks are LSTMs
-
-### Long Short Term Memory
-
-LSTMs introduce a memory cell $c_{t}$ and gates that regulate information flow.
-
-LSTMs substantially improve sequence modeling across modalities.
-
-This increase the memory of neural networks but still sequencial, we have a better approach, which are another architecture based on a mechanism called attention.  
-
-
-### Attention 
-
-The first attention mechanism were introduced by using the follow:
-
-
-### Self Attention
-
-Here we use the dot product and heads. 
-$$
-\mathbf{o}_{t,i}=\sum_{j=1}^{t}\text{Softmax}\left( \frac{\mathbf{q}^{T}_{t,i}\mathbf{k}_{j,i}}{\sqrt{ d_{h} }} \right) \mathbf{v}_{j,i}
-$$
-$$
-\mathbf{u}_{t}=W^{O}[\mathbf{o}_{t,1};\mathbf{o}_{t,2};\dots ;\mathbf{o}_{t,n_{h}}]
-$$
-
-
-### Transformers
-
-
-@Vaswani2017 
-There exist several architectures that I can use Recurrent Neural Network, Long Short Term Memory. 
-
-Recurrent Neural Network are: [[Recurrent Neural Network]]
-And long short term memory are: [[Long Short Memory]]
-
-Why on earth I would use [[Transformer]]? They are extremely good finding relations between its elements. And the best is that scale well due its [[Transform Architecture]]
-
-Attention mechanism appear with @bahdanau2014neural but it didn't work so:
-
-- [[Attention mechanism]]
-- [[Self attention mechanism on one head]]
-- [[Multi-head attention]]
-
-# Psi Former
-
 [[Psi Former Ansatz]]. @vonglehn2023selfattentionansatzabinitioquantum
 $$ \Psi_{\theta}(\mathbf{x})=\exp(\mathcal{J}_{\theta}(\mathbf{x}))\sum_{k=1}^{N_{\det}}\det[\boldsymbol{\Phi}_{\theta}^{k}(x)] $$
 
@@ -368,8 +392,7 @@ Architecture
 
 ![[psiformer.png|271x339]]
 
-
-### Flow of the architecture
+## Applying Attention to Fermi Net
 
 First compute:
 $$ v_{h}=[\text{SelfAttn}(\mathbf{h}^{l}_{1},\dots,\mathbf{h}^{\ell}_{N};\mathbf{W}^{\ell h}_{q},\mathbf{W}^{\ell h}_{k},\mathbf{W}^{\ell h}_{v})] $$
@@ -430,6 +453,6 @@ von Glehn, I., Spencer, J. S., & Pfau, D. (2023). _A self-attention ansatz for a
 
 --- 
 
-## Excerpt
+# Excerpt
 
 Transformers are monsters finding relations between what you give them. Is tempting use them for emulate the relations between electrons and protons. How you can first encode the information of the electron's positions and second the attraction and repulsion between the particles? 
