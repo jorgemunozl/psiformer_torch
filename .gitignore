@@ -1,0 +1,15 @@
+.env/
+*.aux
+*.fls
+*.log
+*.nav
+*.out
+*.snm
+*.gz
+*.toc
+*.bbl
+*.bcf
+*.blg
+*.fdb_latexmk
+*.ilg
+*.ind

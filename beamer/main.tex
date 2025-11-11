@@ -1,0 +1,208 @@
+\documentclass{beamer}
+\usetheme{Madrid}
+\usecolortheme{dolphin}
+\usefonttheme{professionalfonts}
+\usepackage{amsmath,amssymb,bm,mathtools,physics,siunitx,tikz,xcolor,graphicx,hyperref}
+\title{Solving the Many-Electron Schr\"odinger Equation}
+\subtitle{With a Transformer Architecture}
+\author{Jorge Munoz}
+\date{\today}
+\begin{document}
+
+\begin{frame}
+    \titlepage
+\end{frame}
+
+\begin{frame}
+    \frametitle{Outline}
+    \tableofcontents
+\end{frame}
+
+\section{The Schrodinger }
+
+\begin{frame}
+    \frametitle{Setup: distances, spins, coordinates}
+    \begin{itemize}
+        \item System: $N$ electrons, nuclei with charge $Z_I$ at fixed $\mathbf R_I$.
+        \item Electron coordinates $\mathbf r_i \in \mathbb{R}^3$, spin $\sigma_i \in \{\uparrow,\downarrow\}$.
+        \item Atomic units (distances in Bohr, energies in Hartree).
+        \item Distances: $r_{ij} = |\mathbf r_i - \mathbf r_j|$, $r_{iI} = |\mathbf r_i - \mathbf R_I|$.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}
+    \frametitle{The equation (TISE Hamiltonian)}
+    \begin{itemize}
+        \item Kinetic energy: $T = -\frac{1}{2}\sum_{i=1}^{N} \nabla_i^2$.
+        \item Electron-nuclear attraction: $V_{en} = -\sum_{i,I} \frac{Z_I}{r_{iI}}$.
+        \item Electron-electron repulsion: $V_{ee} = \sum_{i<j} \frac{1}{r_{ij}}$.
+        \item Hamiltonian: $H = T + V_{en} + V_{ee}$.
+        \item Solve the time-independent Schr\"odinger equation: $H\,\Psi = E\,\Psi$.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Fermi--Dirac statistics \& antisymmetry}
+    \begin{itemize}
+        \item Electrons are indistinguishable fermions.
+        \item Exchanging two electrons flips the wavefunction's sign: $\Psi(\dots i,j \dots) = -\,\Psi(\dots j,i \dots)$.
+        \item Pauli exclusion: no two electrons can occupy the same state.
+        \item Use a Slater determinant to enforce an antisymmetric $\Psi$.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Exponential decay of wavefunction}
+    \begin{itemize}
+        \item Bound-state wavefunctions decay exponentially as $r \to \infty$.
+        \item Example: hydrogen ground state $\psi(r) \sim e^{-r}$ (in a.u.).
+        \item Ans\"atze include an exponential envelope so that $\Psi \to 0$ as $r \to \infty$.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Kato cusp conditions}
+    \begin{itemize}
+        \item Coulomb potentials cause a sharp cusp in $\Psi$ when particles coalesce.
+        \item Electron--nucleus cusp: $\displaystyle \frac{\partial \Psi}{\partial r_{iI}}\Big|_{r_{iI}=0} = -\,Z_I\,\Psi(0)$.
+        \item Electron--electron cusp: $\displaystyle \frac{\partial \Psi}{\partial r_{ij}}\Big|_{r_{ij}=0} = \frac{1}{2}\,\Psi(0)$.
+    \end{itemize}
+\end{frame}
+
+\section{Finding the solution}
+
+\begin{frame}
+    \frametitle{The Psiformer Ansatz (overview)}
+    \begin{itemize}
+        \item Neural network trial wavefunction (``Wavefunction Transformer'').
+        \item Uses self-attention layers to model electron correlations.
+        \item Permutation equivariant (independent of electron ordering).
+        \item Greatly improves accuracy, especially for larger systems.
+        \item Solves Schr\"odinger equation from first principles (no external data).
+    \end{itemize}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Dissecting the Ansatz}
+    \begin{itemize}
+        \item Slater--Jastrow form: $\Psi = \Big(\sum\limits_d c_d\,\det[\phi^d_k(\mathbf r_i)]\Big)\,\exp(J)$.
+        \item Slater determinant part ensures the correct antisymmetric exchange.
+        \item One-electron orbitals $\phi^d_k$ are learned functions of all electron coordinates.
+        \item Jastrow factor $J$ enforces electron-electron cusp conditions.
+        \item Additional envelope functions ensure exponential decay at long range.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Jastrow factor form (parallel/antiparallel spins)}
+    \begin{itemize}
+        \item Jastrow factor: $J = \sum_{i<j} u_{\sigma_i,\sigma_j}(r_{ij})$.
+        \item Use separate $u(r)$ for same-spin vs opposite-spin pairs.
+        \item Example choice: $u_{\uparrow\downarrow}(r) = \frac{\alpha\,r}{1 + \beta\,r}$ (two parameters).
+        \item Satisfies cusp: $u(r) \approx \frac{1}{2}r$ as $r \to 0$.
+        \item Jastrow adds correlation beyond antisymmetry (lowers the energy).
+    \end{itemize}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Loss: Rayleigh quotient}
+    \begin{itemize}
+        \item Variational principle uses the energy expectation as loss.
+        \item $E[\Psi] = \displaystyle \frac{\langle \Psi \mid H \mid \Psi \rangle}{\langle \Psi \mid \Psi \rangle} \ge E_0$ (Rayleigh quotient).
+        \item Minimizing $E[\Psi]$ drives the ansatz toward the ground state.
+        \item $E_0$ is the true ground energy (minimum possible).
+    \end{itemize}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Metropolis--Hastings sampling}
+    \begin{itemize}
+        \item Markov Chain Monte Carlo algorithm to sample $|\Psi(\mathbf r)|^2$.
+        \item Propose random moves for electron coordinates.
+        \item Accept move with probability $A = \min\!\Big(1,\; \frac{|\Psi_{\text{new}}|^2}{|\Psi_{\text{old}}|^2}\Big)$.
+        \item After thermalization, obtained samples follow the target distribution $|\Psi|^2$.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Variational Monte Carlo loop}
+    \begin{itemize}
+        \item Initialize neural network parameters (trial $\Psi$).
+        \item Sample electron configurations via Metropolis--Hastings.
+        \item Evaluate energy and gradient from the sampled configurations.
+        \item Update parameters to lower the energy (gradient descent).
+        \item Iterate until convergence to the minimum energy (ground state).
+    \end{itemize}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Optimizer: KFAC (natural gradient)}
+    \begin{itemize}
+        \item Kronecker-Factored Approximate Curvature (KFAC) optimizer.
+        \item Approximates the natural gradient using a factored curvature matrix.
+        \item Speeds up training and improves stability for large networks.
+        \item Used to efficiently optimize FermiNet and Psiformer wavefunctions.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}
+    \frametitle{FermiNet baseline}
+    \begin{itemize}
+        \item FermiNet: first deep-neural-network wavefunction ansatz (Pfau et al., 2020).
+        \item Architecture: multiple dense layers with electron-wise feature streams.
+        \item Outputs single-electron orbitals feeding into a Slater determinant.
+        \item Achieved high accuracy on small molecules (near chemical accuracy).
+        \item Faced scaling limits: accuracy and efficiency drop for larger systems.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Psiformer vs FermiNet: Architecture \& Attention}
+    \begin{itemize}
+        \item FermiNet layers mix electron features via fixed functions; Psiformer uses self-attention.
+        \item Self-attention: each electron attends to all others (learns interactions).
+        \item Both ansatzes enforce antisymmetry via Slater determinants.
+        \item Psiformer captures correlations more effectively with fewer parameters.
+        \item Attention mechanism is permutation-invariant and scales to complex interactions.
+    \end{itemize}
+\end{frame}
+
+\section{Challenges and opportunities}
+
+\begin{frame}
+    \frametitle{Computational power \& scaling}
+    \begin{itemize}
+        \item Solving many-electron systems is computationally intensive.
+        \item Computational cost grows steeply with electron number $N$.
+        \item Wavefunction evaluation involves expensive operations (e.g. determinants, $O(N^3)$).
+        \item Requires significant computing resources (GPUs/TPUs, parallelization).
+    \end{itemize}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Numerical stability}
+    \begin{itemize}
+        \item Exponential and cusp factors can cause numerical overflow/underflow if not handled carefully.
+        \item Ensuring stable Monte Carlo estimates (variance reduction techniques).
+        \item Feature scaling and proper initialization improve training stability.
+        \item Jastrow factor helps manage large energy fluctuations (by satisfying cusps).
+    \end{itemize}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Scaling with electron count}
+    \begin{itemize}
+        \item Wavefunction resides in a $3N$-dimensional configuration space.
+        \item Monte Carlo integration becomes harder as $N$ increases (high dimensionality).
+        \item More electrons often require deeper or wider neural networks.
+        \item Ongoing research into architectures that scale better or transfer to larger $N$.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Thanks}
+    \centering
+    Thank you for your attention!
+\end{frame}
+
+\end{document}
+

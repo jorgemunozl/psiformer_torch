@@ -1,6 +1,6 @@
 ---
 date: 2025-10-23 19:32
-modified: 2025-11-11 08:30
+modified: 2025-11-11 10:50
 ---
 # Development of a Transformed based architecture to solve the Time Independent Many Electron Schrodinger Equation
 
