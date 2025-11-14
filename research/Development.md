@@ -63,7 +63,7 @@ Where $\nabla$ is the Laplacian operator, Thus the TDSE is explicitly:
 $$
 i\hbar\,\frac{\partial \psi}{\partial t}
 =
-\left[-\frac{\hbar^{2}}{2m}\nabla^{2}+V(\mathbf r,t)\right]\psi.
+\left[-\frac{\hbar^{2}}{2m}\nabla^{2}+V(\mathbf r,t)\right]\psi
 $$
 The **time independent form** (TISE) could be derived from equation ,when the wave function $\psi$ could be written like the product of two functions $R$ and $T$, where $R$ depends uniquely on the spatial term $(\mathbf{\vec{r}})$ and $T$ uniquely on the temporal $(t)$, this is:
 $$
@@ -81,7 +81,7 @@ We usually represent $R$ as $\psi$.
 ### The many electron Schrodinger Equation
 When we are considering more than one single particle we consider the spin $(\sigma)$ and the interaction between particles. Thus in its time-independent form the Schrodinger equation can be written as an eigen value problem:
 $$ \hat{H}\psi(\mathbf{x}_{0},\dots ,\mathbf{x}_{n})=E\psi(\mathbf{x}_{1},\dots ,\mathbf{x}_{n}) $$
-Where $\mathbf{x}_{i}=\{ \mathbf{r}_{i},\sigma \}$,  $\mathbf{r}_{i}$ is the position of each particle and $\sigma \in \{ \uparrow.\downarrow \}$ is the so called spin. It's possible model the potential energy of a many body system (e.g atoms, molecules), we first have to consider the repulsion between each electrons:
+Where $\mathbf{x}_{i}=\{ \mathbf{r}_{i},\sigma \}$,  $\mathbf{r}_{i}\in \mathbb{R}^{3}$ is the position of each particle and $\sigma \in \{ \uparrow.\downarrow \}$ is the so called spin. It's possible model the potential energy of a many body system (e.g atoms, molecules), we first have to consider the repulsion between each electrons:
 $$
 V_{ij}
 = \frac{e^{2}}{4\pi\varepsilon_{0}}
@@ -194,23 +194,21 @@ We are going to use a **Ansatz**:
 [[Rayleigh Quotient like Expectation Value]]
 How we know that our Ansatz is good? Equivanlently to use a loss function in quantum mechanics we use **rayleight quotient**.
 $$
-\mathcal{L}_{\theta}(\psi)=\frac{\bra{\psi} \hat{H}\ket{\psi} }{\braket{ \psi | \psi } }=\frac{\int d\mathbf{r}\psi ^{*}(\mathbf{r})\hat{H}\psi(\mathbf{r})}{\int d\mathbf{r}\psi ^{*}(\mathbf{r})\psi(\mathbf{r})}
+\mathcal{L}(\Psi_{\theta})=\frac{\bra{\Psi_{\theta}} \hat{H}\ket{\Psi_{\theta}} }{\braket{ \Psi_{\theta} | \Psi _{\theta}} }=\frac{\int d\mathbf{r}\Psi ^{*}(\mathbf{r})\hat{H}\Psi(\mathbf{r})}{\int d\mathbf{r}\Psi ^{*}(\mathbf{r})\Psi(\mathbf{r})}
 $$
 Evaluate that integral is hard, for that first we define:
 $$
-\begin{align}
 p_{\theta}(x)=\frac{\Psi^{2}_{\theta}(x)}{\int dx'\Psi^{2}_{\theta}(x')}
-\end{align}
 $$
 Defining the Local Energy:
 $$
 E_{L}(x)=\Psi ^{-1}_{\theta}(x)\hat{H}\Psi_{\theta}(x)
 $$
 $$
-\mathcal{L}_{\theta}=\int \frac{ \hat{H}\Psi_{\theta}(x)}{\Psi_{\theta}(x)}p_{\theta}(x)dx
+\mathcal{L}(\Psi_{\theta})=\int \frac{ \hat{H}\Psi_{\theta}(x)}{\Psi_{\theta}(x)}p_{\theta}(x)dx
 $$
 $$
-\mathcal{L}_{\theta}=\mathbb{E}_{x\sim p_{\theta}}[E_{L}(x)]
+\mathcal{L}(\Psi_{\theta})=\mathbb{E}_{x\sim p_{\theta}}[E_{L}(x)]
 $$
 To optimize our wave function we need evaluate that expectation and obtain the derivative.
 
@@ -222,9 +220,9 @@ Whith many samples we can estimate:
 $$
 \mathbf{R}_{1},\dots,\mathbf{R}_{M}\sim p_{\theta}(\mathbf{R})
 $$
-Using the Monte Carlo estimates
+Using the Monte Carlo estimates:
 $$
-\mathcal{L}_{\theta}=\mathbb{E}_{x\sim p_{\theta}}[E_{L}(x)]\approx \frac{1}{M}\sum_{i=1}^{m} E_{L}(\mathbf{R}_{k})
+\mathcal{L}_{\theta}=\mathbb{E}_{x\sim p_{\theta}}[E_{L}(x)]\approx \frac{1}{M}\sum_{i=1}^{M} E_{L}(\mathbf{R}_{k})
 $$
 Where we can write:
 $$
@@ -248,37 +246,27 @@ $$
 $$
 ### Metropolis Hastings (MH) Algorithm
 
-Goal: obtain many samples from  
+Goal: obtain many samples from  [[Metropolis Hasting algorithm]]
 
 MH is a [[Markov Chain Monte Carlo]] (MCMC) method used to obtain a sequence of random samples from a probability distribution. Sota method to sample from high dimensional distributions.
 
 ## Deep Learning Fundamentals
 
-This subsection introduces:
+This subsection introduces the core concepts of  Deep Learning that are going to be applied in this work.
 ### Multi Layer Perceptron
-A MLP is a nonlinear function $\mathcal{F}:\mathbb{R}^{\text{in}}\to \mathbb{R}^{\text{out}}$.  @nielsenNeuralNetworksDeep2015
-
-A MLP could be see it like the composition of $L$ layers, the first layer is called the input layers, the last  output layer and the intermediates hidden layers.
-
-Let $\mathbf{z}^{(l)}$ be a affine map of the follow form. $l\in \{ L,L-1,\dots,2 \}$
+A multi layer perceptron (MLP) is a nonlinear function $\mathcal{F}:\mathbb{R}^{\text{in}}\to \mathbb{R}^{\text{out}}$.  @nielsenNeuralNetworksDeep2015 , it actually is the composition of $L$ layers, the first layer is called the input layer, the last output layer and the intermediates hidden layers. In each layer we find an affine map $\mathbf{z}^{(l)},l\in \{ L,L-1,\dots,2 \}$ of the follow form. 
 $$
 \mathbf{z}^{(l)}=\mathbf{W}^{(l)}\mathbf{a}^{(l-1)}+\mathbf{b}^{(l)}
 $$
-Where $\mathbf{W}^{(l)}$ is the weight matrix and $\mathbf{b}^{(l)}$ the bias vector of the $l$ layer.  
-
-Let $\sigma ^{(l)}$ be a nonlinear function of the $l$ layers (typically Softmax,  Relu, Tanh.)
-
+Where $\mathbf{W}^{(l)}$ called weight matrix and $\mathbf{b}^{(l)}$ the bias vector of the $l$ layer.  We use a non-linear function $\sigma ^{(l)}$ in the $l$ layer (typically Softmax,  ReLu, Tanh), thus the output of each layer is:
 $$ f^{(l)}=\sigma ^{(l)}\circ \mathbf{z}^{(l)} $$
+Where $\circ$ means composition. A MLP is the composition of all the layers.
 $$
 \mathcal{F}=f^{(L)}\circ f^{(L-1)}\circ\dots \circ f^{(1)}
 $$
-
-For our paremeters:
-
+We call parameters to the set of all the weights and bias of each layer. And represented it with the symbol $\theta$.
 $$\{ \mathbf{W}^{(l)},\mathbf{b}^{(l)}\}_{l=2}^{L}=\theta$$
-
-You train the MLP with a training data set using backpropatation a loss function anda optimizer. Additionally you can use regularization techniques to improve the performance of the MLP.
-
+You typically train a MLP, using a training data set, a loss function and an optimizer. Additionally you can use regularization techniques to improve the performance of the MLP.
 ### Natural gradient Descent
 
 We need this topic because our optimizer use it. There exist different methods to update our parameters. Like Gradient Descent, Stochastic, [[Adaptive Moment Estimation]] ADAM, but in this work we are going to use gone completely different. 
@@ -432,7 +420,7 @@ Until this point we have only use MLPs vanilla.
 [[Psi Former Ansatz]]. @vonglehn2023selfattentionansatzabinitioquantum
 $$ \Psi_{\theta}(\mathbf{x})=\exp(\mathcal{J}_{\theta}(\mathbf{x}))\sum_{k=1}^{N_{\det}}\det[\boldsymbol{\Phi}_{\theta}^{k}(x)] $$
 
-Where $\mathcal{J}_{\theta}$ is the [[Jastrow Factor for si Former]] and $\Phi$ are [[orbital for neural network fermi net|orbitals]]. 
+Where $\mathcal{J}_{\theta}$ is the [[Jastrow Factor for si Former]] and $\Phi$ are [[Orbital for neural network fermi net|orbitals]]. 
 
 
 Where $\mathcal{J}_{\theta}:(\mathbb{R}^{3}\times \{ \uparrow,\downarrow \})^{n}\to \mathbb{R}$
@@ -460,7 +448,7 @@ With it you can obtain you hidden states, and then how you use it
 
 
 
-With them you create the [[orbital for neural network fermi net]]
+With them you create the [[Orbital for neural network fermi net]]
 
 And you have it.
 
