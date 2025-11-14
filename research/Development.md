@@ -1,6 +1,6 @@
 ---
 date: 2025-10-23 19:32
-modified: 2025-11-14 07:36
+modified: 2025-11-14 16:09
 ---
 # Development of a Transformed based architecture to solve the Time Independent Many Electron Schrodinger Equation
 
@@ -160,10 +160,12 @@ $$
 #### Kato Cusp Conditions
 
 The potential energy becomes infinite, when particles overlap, which places strict constraints on the form of the wave function at these points, knows as the **Kato Cusp Conditions** [cite]. The cusp conditions states that the wave function must be non-differentiable at these points, and give exact values for the average derivatives at the cusps. This can be obtained if we multiply to the ansatz by multiplying by a Jastrow factor  $\mathcal{J}$which satisfies these conditions analytically. [cite].
-$$\lim_{ l \to 0 } \left( \frac{\partial \psi}{\partial r_{iI}} \right)=-Z\psi(r_{iI}=0)
+- Electron-nucleus cusp (electron with charge $-1$, nucleus charge $+Z$, reduced mass $\mu \approx 1$)
+$$\lim_{ riI \to 0 } \left( \frac{\partial \psi}{\partial r_{iI}} \right)=-Z\psi(r_{iI}=0)
 $$
+- Electron-electron cusp, opposite spins (charges $-1$, reduced mass $\mu=\frac{1}{2}$)
 $$
-\lim_{ l \to 0 } \left( \frac{\partial \psi}{\partial r_{ij}} \right)=\frac{1}{2}\psi(r_{ij}=0)
+\lim_{ r_{ij}\to 0 } \left( \frac{\partial \psi}{\partial r_{ij}} \right)=\frac{1}{2}\psi(r_{ij}=0)
 $$
 Where $r_{iI}(r_{ij})$ is an electron-nuclear (electron-electron) distance, $Z_{I}$ is the nuclear charge of the $I\text{-th}$ nucleous and ave implies a spherical averaging over all directions.
 
@@ -269,15 +271,16 @@ $$\{ \mathbf{W}^{(l)},\mathbf{b}^{(l)}\}_{l=2}^{L}=\theta$$
 You typically train a MLP, using a training data set, a loss function and an optimizer. Additionally you can use regularization techniques to improve the performance of the MLP.
 ### Natural gradient Descent
 
-We need this topic because our optimizer use it. There exist different methods to update our parameters. Like Gradient Descent, Stochastic, [[Adaptive Moment Estimation]] ADAM, but in this work we are going to use gone completely different. 
+There exist different methods to update our parameters. Like Gradient Descent, Stochastic Gradient Descent, [[Adaptive Moment Estimation]] ADAM, but in this work we are going to the 
 
 $$
 \Delta \theta _{\text{nat}}=-\eta \mathcal{F}^{-1} \Delta_{\theta}\mathcal{L}
 $$
 Where $\mathcal{F}$ is the Fisher Information Matrix (FIM) defined as:
 $$ \mathcal{F}_{ij}=\mathbb{E}_{p}(\mathbf{x})\left[ \frac{\partial \log p(x)}{\partial \theta_{i} }\frac{\partial \log p(X)}{\partial \theta_{j}} \right] $$
-
-[[Natural Gradient Descent]] 
+Optimizing Neural Networks with Kronecker-factored Approximate Curvature
+[[Natural Gradient Descent]]
+A quick introduction to Markov chains and Markov chain Monte Carlo (revised version)
 ### Kronecker Factored Approximate Curvature
 
 [[Kroenecker factored Approximate Curvature]]
@@ -326,10 +329,12 @@ The first attention mechanism were introduced by using the follow:
 
 ### Self Attention and Multi Head Attention
 
-Here we use the dot product and heads. 
+From the embedding space $d$ we can generate sub spaces where the heads are going to live and its dimension is $d_{h}$.
+We compute the queries, keys and values using learnable matrices $\mathbf{W}$.
 $$
 \mathbf{o}_{t,i}=\sum_{j=1}^{t}\text{Softmax}\left( \frac{\mathbf{q}^{T}_{t,i}\mathbf{k}_{j,i}}{\sqrt{ d_{h} }} \right) \mathbf{v}_{j,i}
 $$
+Finally concatenate to create a 
 $$
 \mathbf{u}_{t}=W^{O}[\mathbf{o}_{t,1};\mathbf{o}_{t,2};\dots ;\mathbf{o}_{t,n_{h}}]
 $$
@@ -351,9 +356,11 @@ Attention mechanism appear with @bahdanau2014neural but it didn't work so:
 
 # Psi Former
 
+This sections describes the architectures of the model that we are going to use.
+First introduce Fermine which generates the hidden states using merely MLP whereas PsiFormer Generate the Hidden states using the Multi Head Attention (MHA) and a MLP.
 ## Fermi Net
-A very important work for us is: Fermi Net @Pfau_2020  it uses different MLP to learn the forms of the orbitals. Their ansatz is: [[Fermi Net]]
 
+A very important work for us is: Fermi Net @Pfau_2020  it uses different MLP to learn the forms of the orbitals. Their ansatz is: [[Fermi Net]]
 $$ \psi(\mathbf{x}_{i},\dots,\mathbf{x}_{n})=\sum_{k}\omega_{k}\det[\Phi ^{k}] $$
 With:
 $$
@@ -364,18 +371,17 @@ $$
 
 \end{vmatrix}=\det[\phi_{i}^{k}(\mathbf{x}_{j})]=\det[\Phi ^{k}]
 $$
-
 The elements of the determinant are obtained via [[Obtaining the orbital fermi net flow]]
 
-$\alpha \in \{ \uparrow,\downarrow \}$
-
+For each pair electron-nuclei $(\alpha,\beta \in \{ \uparrow,\downarrow \})$
 $$
 \mathbf{h}_{i}^{\ell \alpha} \gets \text{concatenate}(\mathbf{r}^\alpha_i - \mathbf{R}_I, |\mathbf{r}^\alpha_i - \mathbf{R}_I|\ \forall\ I)
 $$
+Pair electron electron.
 $$
 \mathbf{h}_{ij}^{\ell \alpha\beta} \gets \text{concatenate}(\mathbf{r}^\alpha_i - \mathbf{r}^\beta_j, |\mathbf{r}^\alpha_i - \mathbf{r}^\beta_j|\ \forall\ j,\beta)
 $$
-
+For each layer:
 $$
  \begin{align}
     &\left(
@@ -387,15 +393,14 @@ $$
     \left(\mathbf{h}^{\ell\alpha}_i, \mathbf{g}^{\ell\uparrow}, \mathbf{g}^{\ell\downarrow}, \mathbf{g}^{\ell\alpha\uparrow}_i, \mathbf{g}^{\ell\alpha\downarrow}_i\right) = \mathbf{f}^{\ell \alpha}_i,
 \end{align}
 $$
-
-
+Each 
 $$
 \begin{align}
     \mathbf{h}^{\ell+1 \alpha}_i &= \mathrm{tanh}\left(\mathbf{V}^\ell \mathbf{f}^{\ell \alpha}_i + \mathbf{b}^\ell\right) + \mathbf{h}^{\ell\alpha}_i \nonumber \\
     \mathbf{h}^{\ell+1 \alpha\beta}_{ij} &= \mathrm{tanh}\left(\mathbf{W}^\ell\mathbf{h}^{\ell \alpha\beta}_{ij} + \mathbf{c}^\ell\right) + \mathbf{h}^{\ell \alpha\beta}_{ij}
 \end{align}
 $$
-
+Like this until obtain $\mathbf{h}_{j}^{L\alpha}$. And from it you obtain your orbitals. Which are a affine map scaled by a exponential factor 
 $$
 \begin{align}
     \phi^{k\alpha}_i(\mathbf{r}^\alpha_j; \{\mathbf{r}^\alpha_{/j}\}; \{\mathbf{r}^{\bar{\alpha}}\}) =
@@ -403,9 +408,7 @@ $$
 	\sum_{m} \pi^{k\alpha}_{im}\mathrm{exp}\left(-|\mathbf{\Sigma}_{im}^{k \alpha}(\mathbf{r}^{\alpha}_j-\mathbf{R}_m)|\right),
 \end{align}
 $$
-
-$$ \phi ^{k\alpha}_{i}(\mathbf{r}^{\alpha}_{j};\{ \mathbf{r}^{\alpha}_{/j} \};\{ \mathbf{r}^{\bar{\alpha}} \})=(\mathbf{w}^{k\alpha}_{i}\cdot \mathbf{h}^{L\alpha}_{j}+g^{k\alpha}_{i})\sum_{m}\pi_{im}^{k\alpha}\exp\left( -\left\lvert \Sigma _{im}^{k\alpha}(\mathbf{r}^{\alpha}_{j}-\mathbf{R}_{m})\right\rvert  \right)$$.
-
+With the orbitals you finally obtain the determinants.
 $$
 ​￼\begin{align}
 	\psi(\mathbf{r}^\uparrow_1,\ldots,\mathbf{r}^\downarrow_{n^\downarrow}) = \sum_{k}\omega_k &\left(\det\left[\phi^{k \uparrow}_i(\mathbf{r}^\uparrow_j; \{\mathbf{r}^\uparrow_{/j}\}; \{\mathbf{r}^\downarrow\})\right]\right.\\&\left.\hphantom{\left(\right.}\det\left[\phi^{k\downarrow}_i(\mathbf{r}^\downarrow_j; \{\mathbf{r}^\downarrow_{/j}\});
@@ -413,45 +416,44 @@ $$
 \end{align}
 $$
 
-
+Why there are two determinants?
 ![[ferminet.png|280x315]]
 
 Until this point we have only use MLPs vanilla. 
+## Jastrow Factor
+
 [[Psi Former Ansatz]]. @vonglehn2023selfattentionansatzabinitioquantum
 $$ \Psi_{\theta}(\mathbf{x})=\exp(\mathcal{J}_{\theta}(\mathbf{x}))\sum_{k=1}^{N_{\det}}\det[\boldsymbol{\Phi}_{\theta}^{k}(x)] $$
-
-Where $\mathcal{J}_{\theta}$ is the [[Jastrow Factor for si Former]] and $\Phi$ are [[Orbital for neural network fermi net|orbitals]]. 
-
-
-Where $\mathcal{J}_{\theta}:(\mathbb{R}^{3}\times \{ \uparrow,\downarrow \})^{n}\to \mathbb{R}$
-
-- So the question is how you define the outputs of that functions:
-- [[Jastrow Factor]]
+Where  $\mathcal{J}_{\theta}:(\mathbb{R}^{3}\times \{ \uparrow,\downarrow \})^{n}\to \mathbb{R}$ is the [[Jastrow Factor for Psi Former]] and $\Phi$ are [[Orbital for neural network fermi net|spin orbitals]]. It has two learnable parameters
 $$
 \mathcal{J}_{\theta}(x)=\sum_{i<j;\sigma_{i}=\sigma_{j}}-\frac{1}{4}\frac{\alpha^{2}_{par}}{\alpha_{par}+\lvert \mathbf{r}_{i}-\mathbf{r}_{j} \rvert }+\sum_{i,j;\sigma_{i}\neq \sigma_{j}}-\frac{1}{2}\frac{\alpha^{2}_{anti}}{\alpha_{anti}+\lvert \mathbf{r}_{i}-\mathbf{r}_{j} \rvert }
 $$
-
-Architecture
+The architecture of **Psiformer** is:
 
 ![[psiformer.png|271x339]]
 
+(Source: Pfau et all)
 ## Applying Attention to Fermi Net
-
+$$ \mathbf{h}_{i}^{0}=\mathbf{W}^{0}\mathbf{f}_{i}^{0} $$
 First compute:
-$$ v_{h}=[\text{SelfAttn}(\mathbf{h}^{l}_{1},\dots,\mathbf{h}^{\ell}_{N};\mathbf{W}^{\ell h}_{q},\mathbf{W}^{\ell h}_{k},\mathbf{W}^{\ell h}_{v})] $$
-
-Start with:
-
-$$\mathbf{W}_{o}^{\ell}\text{concat}_{h}[\text{SelfAttn}(\mathbf{h}^{l}_{1},\dots,\mathbf{h}^{\ell}_{N};\mathbf{W}^{\ell h}_{q},\mathbf{W}^{\ell h}_{k},\mathbf{W}^{\ell h}_{v})]$$
-
-With it you can obtain you hidden states, and then how you use it
-
-
-
+$$ A^{l}_{h}=[\text{SelfAttn}(\mathbf{h}^{l}_{1},\dots,\mathbf{h}^{\ell}_{N};\mathbf{W}^{\ell h}_{q},\mathbf{W}^{\ell h}_{k},\mathbf{W}^{\ell h}_{v})] $$
+Compute the query, the key and value using the hidden states and learnable matrices $\mathbf{W}$.
+$$ \mathbf{k}_{i}=\mathbf{W}_{k}\mathbf{h}_{i},\mathbf{q}_{i}=\mathbf{W}_{q}\mathbf{h}_{i},\mathbf{v}_{i}=\mathbf{W}_{v}\mathbf{h}_{i} $$
+Concatenate:
+$$A^{\ell}=\text{concat}_{h}[A_{h}]$$
+And then used it apply:
+$$
+\mathbf{f}_{i}^{\ell+1}=\mathbf{h}_{i}^{\ell}+W_{o}^{\ell}A^{\ell}
+$$
+And generate a new hidden state:
+$$ \mathbf{h}_{i}^{\ell+1}=\mathbf{f}_{i}^{\ell+1}+\tanh(\mathbf{W}^{\ell+1}\mathbf{f}_{i}^{\ell+1}+\mathbf{b}^{\ell+1}) $$
+And repeat the same process
+[[Attention mechanism Psiformer]]
+With it you can obtain you hidden states, and then how you use it?
 With them you create the [[Orbital for neural network fermi net]]
-
 And you have it.
 
+--- 
 # Methodology
 
 To implement the code, the choose of the library is important.
@@ -467,9 +469,7 @@ For this project we are going to be using Pytorch due his user-friendly and supp
 Due the high computational power needed we are going to using GPUS and of course CUDA.
 
 Is clear that we are going to use virtual GPUS, for that matter we have two option or well use a GPU via SSH or directly using services like Azure , Colab, or anothers matters.
-
 The election of the GPU is not trivial. use TPUS are not a bad idea.
-
 ## References
 
 Bahdanau, D., Cho, K., & Bengio, Y. (2014). Neural machine translation by jointly learning to align and translate. _arXiv Preprint arXiv:1409.0473_.
