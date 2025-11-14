@@ -18,10 +18,42 @@
     \tableofcontents
 \end{frame}
 
-\section{The Schrodinger }
+%-----------------------
 
-\begin{frame}
-    \frametitle{Setup: distances, spins, coordinates}
+\section{The Schr\"odinger Wave Function and the physical laws that rule}
+
+\subsection{Schr\"odinger Equation}
+
+\begin{frame}{Many-electron Schr\"odinger equation}
+    \begin{itemize}
+        \item Wavefunction $\Psi(\mathbf r_1,\sigma_1,\dots,\mathbf r_N,\sigma_N;t)$ encodes all information about the system; $|\Psi|^2$ gives a probability density that integrates to 1.
+        \item Time-dependent Schr\"odinger equation (TDSE):
+        \[
+            i\,\hbar\,\partial_t \Psi = H\,\Psi,
+        \]
+        where $H$ is the molecular Hamiltonian.
+        \item In atomic units ($\hbar = m_e = e = 1$) with fixed nuclei at $\mathbf R_I$:
+        \[
+            H = -\tfrac{1}{2}\sum_{i=1}^N \nabla_i^2 - \sum_{i,I} \frac{Z_I}{r_{iI}} + \sum_{i<j} \frac{1}{r_{ij}}.
+        \]
+        \item Separating time $\Psi(\mathbf r, t) = e^{-iEt}\,\psi(\mathbf r)$ yields the time-independent equation (TISE):
+        \[
+            H\,\psi = E\,\psi,
+        \]
+        an eigenvalue problem whose lowest solution gives the ground-state energy.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Setup: distances, spins, coordinates for many body systems}
+    
+    \begin{itemize}
+        \item Kinetic energy: $T = -\frac{1}{2}\sum_{i=1}^{N} \nabla_i^2$.
+        \item Electron-nuclear attraction: $V_{en} = -\sum_{i,I} \frac{Z_I}{r_{iI}}$.
+        \item Electron-electron repulsion: $V_{ee} = \sum_{i<j} \frac{1}{r_{ij}}$.
+        \item Hamiltonian: $H = T + V_{en} + V_{ee}$.
+        \item Solve the time-independent Schr\"odinger equation: $H\,\Psi = E\,\Psi$.
+    \end{itemize}
+    
     \begin{itemize}
         \item System: $N$ electrons, nuclei with charge $Z_I$ at fixed $\mathbf R_I$.
         \item Electron coordinates $\mathbf r_i \in \mathbb{R}^3$, spin $\sigma_i \in \{\uparrow,\downarrow\}$.
@@ -30,19 +62,11 @@
     \end{itemize}
 \end{frame}
 
-\begin{frame}
-    \frametitle{The equation (TISE Hamiltonian)}
-    \begin{itemize}
-        \item Kinetic energy: $T = -\frac{1}{2}\sum_{i=1}^{N} \nabla_i^2$.
-        \item Electron-nuclear attraction: $V_{en} = -\sum_{i,I} \frac{Z_I}{r_{iI}}$.
-        \item Electron-electron repulsion: $V_{ee} = \sum_{i<j} \frac{1}{r_{ij}}$.
-        \item Hamiltonian: $H = T + V_{en} + V_{ee}$.
-        \item Solve the time-independent Schr\"odinger equation: $H\,\Psi = E\,\Psi$.
-    \end{itemize}
-\end{frame}
+\subsection{Conditions}
 
-\begin{frame}
-    \frametitle{Fermi--Dirac statistics \& antisymmetry}
+Physical Laws
+
+\begin{frame}{Fermi--Dirac statistics \& antisymmetry}
     \begin{itemize}
         \item Electrons are indistinguishable fermions.
         \item Exchanging two electrons flips the wavefunction's sign: $\Psi(\dots i,j \dots) = -\,\Psi(\dots j,i \dots)$.
@@ -51,16 +75,16 @@
     \end{itemize}
 \end{frame}
 
-\begin{frame}
-    \frametitle{Exponential decay of wavefunction}
+\begin{frame}{Exponential decay of wavefunction}
     \begin{itemize}
         \item Bound-state wavefunctions decay exponentially as $r \to \infty$.
         \item Example: hydrogen ground state $\psi(r) \sim e^{-r}$ (in a.u.).
         \item Ans\"atze include an exponential envelope so that $\Psi \to 0$ as $r \to \infty$.
     \end{itemize}
+
 \end{frame}
 
-\begin{frame}{Kato cusp conditions}
+\begin{frame}{Kato cusp conditions, Jastrow Factor}
     \begin{itemize}
         \item Coulomb potentials cause a sharp cusp in $\Psi$ when particles coalesce.
         \item Electron--nucleus cusp: $\displaystyle \frac{\partial \Psi}{\partial r_{iI}}\Big|_{r_{iI}=0} = -\,Z_I\,\Psi(0)$.
@@ -68,10 +92,13 @@
     \end{itemize}
 \end{frame}
 
-\section{Finding the solution}
 
-\begin{frame}
-    \frametitle{The Psiformer Ansatz (overview)}
+% ------------------
+\section{Deep Learning Tool Box}
+
+% Natural Gradient Descent
+
+\begin{frame}{The Psiformer Ansatz (overview)}
     \begin{itemize}
         \item Neural network trial wavefunction (``Wavefunction Transformer'').
         \item Uses self-attention layers to model electron correlations.
@@ -79,10 +106,10 @@
         \item Greatly improves accuracy, especially for larger systems.
         \item Solves Schr\"odinger equation from first principles (no external data).
     \end{itemize}
+
 \end{frame}
 
-\begin{frame}
-    \frametitle{Dissecting the Ansatz}
+\begin{frame}{Dissecting the Ansatz}
     \begin{itemize}
         \item Slater--Jastrow form: $\Psi = \Big(\sum\limits_d c_d\,\det[\phi^d_k(\mathbf r_i)]\Big)\,\exp(J)$.
         \item Slater determinant part ensures the correct antisymmetric exchange.
@@ -92,8 +119,7 @@
     \end{itemize}
 \end{frame}
 
-\begin{frame}
-    \frametitle{Jastrow factor form (parallel/antiparallel spins)}
+\begin{frame}{Jastrow factor form (parallel/antiparallel spins)}
     \begin{itemize}
         \item Jastrow factor: $J = \sum_{i<j} u_{\sigma_i,\sigma_j}(r_{ij})$.
         \item Use separate $u(r)$ for same-spin vs opposite-spin pairs.
@@ -113,8 +139,7 @@
     \end{itemize}
 \end{frame}
 
-\begin{frame}
-    \frametitle{Metropolis--Hastings sampling}
+\begin{frame}{Metropolis--Hastings sampling}
     \begin{itemize}
         \item Markov Chain Monte Carlo algorithm to sample $|\Psi(\mathbf r)|^2$.
         \item Propose random moves for electron coordinates.
@@ -166,7 +191,7 @@
     \end{itemize}
 \end{frame}
 
-\section{Challenges and opportunities}
+\section{Fermi Net and Psiformer}
 
 \begin{frame}
     \frametitle{Computational power \& scaling}
@@ -205,4 +230,3 @@
 \end{frame}
 
 \end{document}
-
