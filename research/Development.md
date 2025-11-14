@@ -1,6 +1,6 @@
 ---
 date: 2025-10-23 19:32
-modified: 2025-11-11 10:50
+modified: 2025-11-14 06:28
 ---
 # Development of a Transformed based architecture to solve the Time Independent Many Electron Schrodinger Equation
 
@@ -120,7 +120,6 @@ where:
 - the third term is **nucleus–nucleus repulsion**.
 
 For the kinetic term we need to consider two expressions: $\nabla_i^2$ acts on the **electron** coordinates $\mathbf r_i$ (fast, light particles) and $\nabla_I^2$ acts on the **nuclear** coordinates $\mathbf R_I$ (slow, heavy particles). 
-
 Let $N$ electrons at $\mathbf r_i$ and $M$ nuclei at $\mathbf R_I$ with charges $Z_I$ and masses $M_I$ (in units of $m_e$). Thus the Hamiltonian can be written as:
 $$
 \boxed{
@@ -134,32 +133,45 @@ $$
 $$
 ### Conditions of the solution
 
-Like another Differential equation, there we have Initial Conditions (IC) and boundary conditions (BC). Here we have also certain restricments.
-#### Fermi Dirac Statistics
-
-Bosons (e.g photons) follow the Bose-Einstein Statistics in the other hand All the fermions (e.g electrons protons )follow the fermi Dirac Statistics this means that particles are hard to recognize between them thus can be expressed saying that the wave tell us that this solution of this equation should be **anti symmetric** this is:
+As with any differential equation, where one is searching one solution is important to consider initial conditions (IC) and boundary conditions (BC), here we have to fulfill certain conditions that comes from physical laws.
+#### Fermi–Dirac statistics and Pauli Exclusion
+Bosons (e.g., photons) follow **Bose–Einstein** statistics, whereas fermions (e.g., electrons, protons) follow **Fermi–Dirac** statistics, because at the microscopic level identical particles are indistinguishable then the wave function should be equal but Pauli Exclusion don't like that , the many-particle wave function must be **anti symmetric** under the exchange of any two fermions. This implies:
 $$
 \psi(\dots,\mathbf{x}_{i},\dots,\mathbf{x}_{j},\dots)=-\psi(\dots ,\mathbf{x}_{j},\dots ,\mathbf{x}_{i},\dots)
 $$
-We can enforce applying **Slater Determinants**.
+We can enforce **antisymmetry** using a $N\times N$ determinant, which involves one-particle states only (a wave function with a single input) . An interchange of any pair of particles corresponds to an interchange of two columns of the determinant; this interchange introduces a change in the sign of the determinant. For even permutations we have $(-1)^{P}=1$, and for odd permutations we have $(-1)^{P}=-1$. [[Fermi Dirac Statistics]]
 
+$$
+\Psi(\mathbf x_1,\ldots,\mathbf x_N)
+\propto
+\begin{vmatrix}
+\phi_1(\mathbf x_1) & \phi_2(\mathbf x_1) & \cdots & \phi_N(\mathbf x_1)\\
+\phi_1(\mathbf x_2) & \phi_2(\mathbf x_2) & \cdots & \phi_N(\mathbf x_2)\\
+\vdots & \vdots & \ddots & \vdots\\
+\phi_1(\mathbf x_N) & \phi_2(\mathbf x_N) & \cdots & \phi_N(\mathbf x_N)
+\end{vmatrix},
+$$
+Where $\phi_k$ are orthonormal (by construction) [[spin-orbital|spin orbitals]]. This is, for instance $(N=2)$:
+$$
+\Psi(\mathbf x_1,\mathbf x_2)
+\propto\Big[\phi_a(\mathbf x_1)\phi_b(\mathbf x_2)-\phi_a(\mathbf x_2)\phi_b(\mathbf x_1)\Big].
+$$
 #### Kato Cusp Conditions
 
-Another important , due the probabilistic nature of electrons is that 
-The potential energy becomes infinite when two electrons overlap , this could be formalized via the [[Kato Cusp Conditions]], a Jastrow factor $\exp(\mathcal{J})$. The explicit form of $\mathcal{J}$ depends on the.
-$$
-\lim_{ l \to 0 } \left( \frac{\partial \psi}{\partial r_{iI}} \right)=-Z\psi(r_{iI}=0)
+The potential energy becomes infinite, when particles overlap, which places strict constraints on the form of the wave function at these points, knows as the **Kato Cusp Conditions** [cite]. The cusp conditions states that the wave function must be non-differentiable at these points, and give exact values for the average derivatives at the cusps. This can be obtained if we multiply to the ansatz by multiplying by a Jastrow factor  $\mathcal{J}$which satisfies these conditions analytically. [cite].
+$$\lim_{ l \to 0 } \left( \frac{\partial \psi}{\partial r_{iI}} \right)=-Z\psi(r_{iI}=0)
 $$
 $$
 \lim_{ l \to 0 } \left( \frac{\partial \psi}{\partial r_{ij}} \right)=\frac{1}{2}\psi(r_{ij}=0)
 $$
 Where $r_{iI}(r_{ij})$ is an electron-nuclear (electron-electron) distance, $Z_{I}$ is the nuclear charge of the $I\text{-th}$ nucleous and ave implies a spherical averaging over all directions.
-### Approximations
 
-Find possible solution in the traditional way is prohibitively hard. So what people have doing and it seem that it becomes a success is guess that solution and using another techniques to improve the solution, to this guess solution we called **Ansatz**.
-**Borhn Oppehenimer**
-Once that you have your Ansatz, which normally depends on depends on certain parameters.
-**Born–Oppenheimer (clamped nuclei) electronic Hamiltonian:**
+[[Kato Cusp Conditions]].
+### Approximations to the problem
+
+Is clear that find analytical solutions is practically impossible, so what people have been doing is first apply good approximations.
+[[The Born Oppenheimer Approximation]]
+Born Oppenheimer approximation makes it possible to separate the motion of the nuclei and the motion of the electrons, neglects the motion of the atomic nuclei when describing the electrons in a molecule. The physical basis for the Born-Oppenheimer approximation is the fact that the mass of an atomic nucleus in a molecule is much larger than the mass of an electron (more than 1000 times). Because of this difference, the nuclei move much more slowly than the electrons. In addition, due to their opposite charges, there is a mutual attractive force of: acting on an atomic nucleus and an electron. This force causes both particles to be accelerated. Since the magnitude of the acceleration is inversely proportional to the mass, $a = f/m$, the acceleration of the electrons is large and the acceleration of the atomic nuclei is small; the difference is a factor of more than 1000. Consequently, the electrons are moving and responding to forces very quickly, and the nuclei are not:
 $$
 \boxed{
 \hat H_{\mathrm{el}} =
@@ -170,28 +182,79 @@ $$
 \qquad\text{with}\qquad
 E_{\mathrm{nn}}=\sum_{I<J}\frac{Z_I Z_J}{|\mathbf R_I-\mathbf R_J|}.
 $$
-### Variational Principle
-Once that you guess an **Ansatz** you optimize using the **rayleight quotient**.
+
+A second useful approach to the problem is use an **Ansatz**:
+
+guess that solution and using another techniques to improve the solution, to this guess solution we called , guided by intuition. 
+Once that you have your Ansatz, which normally depends on depends on certain parameters.
+
+We are going to use a **Ansatz**:
+### Optimizing the Ansatz
+[[Rayleigh Quotient like Expectation Value]]
+How we know that our Ansatz is good? Equivanlently to use a loss function in quantum mechanics we use **rayleight quotient**.
+$$
+\mathcal{L}_{\theta}(\psi)=\frac{\bra{\psi} \hat{H}\ket{\psi} }{\braket{ \psi | \psi } }=\frac{\int d\mathbf{r}\psi ^{*}(\mathbf{r})\hat{H}\psi(\mathbf{r})}{\int d\mathbf{r}\psi ^{*}(\mathbf{r})\psi(\mathbf{r})}
+$$
+Evaluate that integral is hard, for that first we define:
+$$
+\begin{align}
+p_{\theta}(x)=\frac{\Psi^{2}_{\theta}(x)}{\int dx'\Psi^{2}_{\theta}(x')}
+\end{align}
+$$
+Defining the Local Energy:
+$$
+E_{L}(x)=\Psi ^{-1}_{\theta}(x)\hat{H}\Psi_{\theta}(x)
+$$
+$$
+\mathcal{L}_{\theta}=\int \frac{ \hat{H}\Psi_{\theta}(x)}{\Psi_{\theta}(x)}p_{\theta}(x)dx
+$$
+$$
+\mathcal{L}_{\theta}=\mathbb{E}_{x\sim p_{\theta}}[E_{L}(x)]
+$$
+To optimize our wave function we need evaluate that expectation and obtain the derivative.
+
+To that set of techniques for obtain that we call **Quantum Monte Carlo**, there are differents approaches like Diffusion Monte Carlo, Path Integral Monte Carlo but in this case we are going to use Variational Montecarlo.
+
+Samples from that distribution and $E_{L}(x)$. We already have $E_{L}(x)$ 
+
+Whith many samples we can estimate:
+$$
+\mathbf{R}_{1},\dots,\mathbf{R}_{M}\sim p_{\theta}(\mathbf{R})
+$$
+Using the Monte Carlo estimates
+$$
+\mathcal{L}_{\theta}=\mathbb{E}_{x\sim p_{\theta}}[E_{L}(x)]\approx \frac{1}{M}\sum_{i=1}^{m} E_{L}(\mathbf{R}_{k})
+$$
+Where we can write:
+$$
+E_{L}(\mathbf{R}_{k})=\frac{\hat{H}\psi(\mathbf{R}_{k})}{\psi(\mathbf{R}_{k})}=-\frac{1}{2}\frac{\nabla^{2}\psi(\mathbf{R_{k}})}{\psi(\mathbf{R}_{k})}+V(\mathbf{R}_{k})
+$$
+Calculus tell us:
 
 $$
-\mathcal{L}=\frac{\bra{\psi} \hat{H}\ket{\psi} }{\braket{ \psi | \psi } }=\frac{\int d\mathbf{r}\psi ^{*}(\mathbf{r})\hat{H}\psi(\mathbf{r})}{\int d\mathbf{r}\psi ^{*}(\mathbf{r})\psi(\mathbf{r})}
-$$
-So how we optimized this. Here appears [[Variational Quantum Monte Carlo]].
-Which can be re-written as:
-$$ E_{L}(x)=\Psi ^{-1}_{\theta}(x)\hat{H}\Psi_{\theta}(x) $$
-$$ \mathcal{L}_{\theta}=\mathbb{E}_{x\sim \Psi^{2}_{\theta}}[E_{L}(x)] $$
-We are going to try to minimize this expression, how? We know (for the back propagation algorithm) that for make that first we to evaluate. We need a specific $x$.
-
-The gradient of the energy is:
-$$
-\nabla \mathbb{E}_{x\sim \Psi}^{2}[E_{L}(x)]=2\mathbb{E}_{x\sim \Psi^{2}}[(E_{L}(x)-\mathbb{E}_{x'\sim\Psi^{2}}[E_{L}(x')])\nabla \log \lvert \Psi(x) \rvert ]
+\frac{\nabla^{2}f}{f}=[\nabla^{2}\log f+(\nabla f)^{2}]
 $$
 
-And here we use [[Metropolis algorithm]] to work in real life.
+Which is more numerically stable, thus
 
-### Quantum Monte Carlo
+$$
+E_{L}(\mathbf{R}_{k})=-\frac{1}{2}\sum_{i=1}^{N} \sum_{j=1}^{3} []
+$$
 
-okil
+
+The gradient of the energy respect to the parameters by a parameterized wave functions is:
+$$
+\nabla _{\theta}\mathbb{E}_{x\sim \Psi}^{2}[E_{L}(x)]=2\mathbb{E}_{x\sim \Psi^{2}}[(E_{L}(x)-\mathbb{E}_{x'\sim\Psi^{2}}[E_{L}(x')])\nabla \log \lvert \Psi(x) \rvert ]
+$$
+[[Metropolis Hasting algorithm]]
+
+[[Numerical stable Psi Former]]
+
+### Metropolis Hastings (MH) Algorithm
+
+Goal: obtain many samples from  
+
+MH is a [[Markov Chain Monte Carlo]] (MCMC) method used to obtain a sequence of random samples from a probability distribution. Sota method to sample from high dimensional distributions.
 
 ## Deep Learning Fundamentals
 
