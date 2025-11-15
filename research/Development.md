@@ -244,7 +244,7 @@ $$
 
 The gradient of the energy respect to the parameters by a parameterized wave functions is:
 $$
-\nabla _{\theta}\mathbb{E}_{x\sim \Psi}^{2}[E_{L}(x)]=2\mathbb{E}_{x\sim \Psi^{2}}[(E_{L}(x)-\mathbb{E}_{x'\sim\Psi^{2}}[E_{L}(x')])\nabla \log \lvert \Psi(x) \rvert ]
+\nabla _{\theta}\mathcal{L}=2\mathbb{E}_{x\sim \Psi^{2}}[(E_{L}(x)-\mathbb{E}_{x'\sim\Psi^{2}}[E_{L}(x')])\nabla \log \lvert \Psi(x) \rvert ]
 $$
 ### Metropolis Hastings (MH) Algorithm
 
@@ -271,8 +271,7 @@ $$\{ \mathbf{W}^{(l)},\mathbf{b}^{(l)}\}_{l=2}^{L}=\theta$$
 You typically train a MLP, using a training data set, a loss function and an optimizer. Additionally you can use regularization techniques to improve the performance of the MLP.
 ### Natural gradient Descent
 
-There exist different methods to update our parameters. Like Gradient Descent, Stochastic Gradient Descent, [[Adaptive Moment Estimation]] ADAM, but in this work we are going to the 
-
+There exist different methods to update our parameters. Like Gradient Descent, Stochastic Gradient Descent, [[Adaptive Moment Estimation]] ADAM, but in this work we are going to use 
 $$
 \Delta \theta _{\text{nat}}=-\eta \mathcal{F}^{-1} \Delta_{\theta}\mathcal{L}
 $$
@@ -283,14 +282,14 @@ Optimizing Neural Networks with Kronecker-factored Approximate Curvature
 A quick introduction to Markov chains and Markov chain Monte Carlo (revised version)
 ### Kronecker Factored Approximate Curvature
 
-[[Kroenecker factored Approximate Curvature]]
+[[Kroenecker Factored Approximate Curvature]]
 Find the [[Fisher Information Matrix]] analiticaly becomes very hard for that matter we have two approximations.
 1. $\mathcal{F_{ij}}$ are assumed to be zero when $\theta_{i}$ and $\theta_{j}$ are in different layers of the network.
 2. The other approximation is the follow:
 $$
 \mathbb{E}_{p(\mathbf{X})}\left[ \frac{\partial \log p(X)}{\partial \text{vec}(\mathbf{W}_{\ell})}\frac{\partial \log p(X)}{\partial \mathbf{W}_{\ell}}^{\mathsf{T}} \right]=\mathbb{E}_{p(\mathbf{X})}[(\mathbf{a}_{\ell}\otimes \mathbf{e}_{\ell})(\mathbf{a}_{\ell}\otimes \mathbf{e}_{\ell})^{\mathsf{T}}]
 $$
-Where $\mathbf{a}_{\ell}$ are the forward activation and $\mathbf{e}_{\ell}$ are the backward sensitivities for that layer
+Where $\mathbf{a}_{\ell}$ are the forward activation and $\mathbf{e}_{\ell}$ are the backward sensitivities for that layer.
 Approx:
 $$
 \mathbb{E}_{p(\mathbf{X})}[(\mathbf{a}_{\ell}\otimes \mathbf{e}_{\ell})(\mathbf{a}_{\ell}\otimes \mathbf{e}_{\ell})^{\mathsf{\top}}]^{-1}\approx \mathbb{E}_{p(\mathbf{X})}[\mathbf{a}_{\ell}\mathbf{a_{\ell}}^{\mathsf{\top}}]^{-1}\otimes \mathbb{E}_{p(\mathbf{X})}[\mathbf{e}_{\ell}\mathbf{e}_{\ell}^{\mathsf{\top}}]^{-1}
@@ -300,7 +299,7 @@ $$
 \mathbb{E}_{p}(\mathbf{X})\left[ \frac{\partial \log p(\mathbf{X})}{\partial \text{vec}(\mathbf{W}_{\ell})}\frac{\partial \log p(\mathbf{X})^{\mathsf{\top}}}{\partial \text{vec}(\mathbf{W}_{\ell})} \right]\approx \mathbb{E}_{p(\mathbf{X})}[\mathbf{\hat{a}}_{\ell}\mathbf{\hat{a}_{\ell}}^{\mathsf{\top}}]^{-1}\otimes \mathbb{E}_{p(\mathbf{X})}[\mathbf{\hat{e}_{\ell}}\mathbf{\hat{e}}_{\ell}^{\mathsf{\top}}]^{-1}
 $$
 
-[[Kroenecker factored Approximate Curvature]]
+[[Kroenecker Factored Approximate Curvature]]
 
 ### Recurrent Neural Networks
 
