@@ -1,22 +1,49 @@
 \documentclass{beamer}
+
+\mode<presentation>
+{
 \usetheme{Madrid}
-\usecolortheme{dolphin}
-\usefonttheme{professionalfonts}
+\usecolortheme{default}
+\usefonttheme{serif}
+\setbeamertemplate{navigationsymbols}{}
+\setbeamertemplate{caption}[numbered]
+}
+\AtBeginSection[]{
+  \begin{frame}
+    \frametitle{Outline}
+    \tableofcontents[currentsection]
+  \end{frame}
+}
+
+
+\setbeamertemplate{footline}{%
+  \leavevmode%
+  \hbox{%
+    \begin{beamercolorbox}[wd=.33\paperwidth,ht=2.5ex,dp=1ex,left]{author in head/foot}%
+      \hspace*{1ex}\insertshortauthor
+    \end{beamercolorbox}%
+    \begin{beamercolorbox}[wd=.55\paperwidth,ht=2.5ex,dp=1ex,center]{title in head/foot}%
+      Schrodinger Equation with Transformers
+    \end{beamercolorbox}%
+    \begin{beamercolorbox}[wd=.13\paperwidth,ht=2.5ex,dp=1ex,right]{date in head/foot}%
+      \insertframenumber{} / \inserttotalframenumber\hspace*{1ex}
+    \end{beamercolorbox}%
+  }%
+}
+\setbeamertemplate{navigation symbols}{} % usually nicer without icons
+
+
+
 \usepackage{amsmath,amssymb,bm,mathtools,physics,siunitx,tikz,xcolor,graphicx,hyperref}
 \title{Solving the Many-Electron Schr\"odinger Equation}
 \subtitle{With a Transformer Architecture}
-\author{Jorge Munoz}
+\author{Jorge Munoz Laredo}
 \date{\today}
 \begin{document}
-
 \begin{frame}
     \titlepage
 \end{frame}
 
-\begin{frame}
-    \frametitle{Outline}
-    \tableofcontents
-\end{frame}
 
 %-----------------------
 
@@ -24,80 +51,297 @@
 
 \subsection{Schr\"odinger Equation}
 
-\begin{frame}{Many-electron Schr\"odinger equation}
-    \begin{itemize}
-        \item Wavefunction $\Psi(\mathbf r_1,\sigma_1,\dots,\mathbf r_N,\sigma_N;t)$ encodes all information about the system; $|\Psi|^2$ gives a probability density that integrates to 1.
-        \item Time-dependent Schr\"odinger equation (TDSE):
+\begin{frame}{The Schr\"odinger equation}
+  On 1926 Schrodinger derived the Time Dependent Form.(TDSE)
         \[
-            i\,\hbar\,\partial_t \Psi = H\,\Psi,
+            i\,\hbar\,\partial_t \Psi = \hat{H}\,\Psi,
         \]
-        where $H$ is the molecular Hamiltonian.
-        \item In atomic units ($\hbar = m_e = e = 1$) with fixed nuclei at $\mathbf R_I$:
-        \[
-            H = -\tfrac{1}{2}\sum_{i=1}^N \nabla_i^2 - \sum_{i,I} \frac{Z_I}{r_{iI}} + \sum_{i<j} \frac{1}{r_{ij}}.
-        \]
-        \item Separating time $\Psi(\mathbf r, t) = e^{-iEt}\,\psi(\mathbf r)$ yields the time-independent equation (TISE):
-        \[
-            H\,\psi = E\,\psi,
-        \]
-        an eigenvalue problem whose lowest solution gives the ground-state energy.
-    \end{itemize}
+
+\begin{itemize}
+\item $\Psi \in \mathcal{H}$ is a complex value function called \textbf{wave function}.
+\item $\hat{H}$ is called the \textbf{Hamiltonian Operator} , encodes all the information of the energy of the system.
+\item Depends on the position $\vec{\mathbf{r}}$ of a particle and the temporal evolution $(t)$.
+\item $\Psi$ encodes all information about the system; $|\Psi|^2$ gives a probability density that integrates to 1.
+\end{itemize}
+
+\begin{block}{Hamiltonian}
+In the position basis:
+$$\hat{H}=\frac{\hat{\vec{{P}}}^{2}}{2m}+\hat{V} =-\frac{\hbar^{2}}{2m}\nabla^{2}+\hat{V} $$
+\end{block}
 \end{frame}
 
-\begin{frame}{Setup: distances, spins, coordinates for many body systems}
-    
-    \begin{itemize}
+\begin{frame}{Time Dependent Form}
+When the wave function could be written as:
+$$
+\psi(\vec{\mathbf{r}},t)=R(\vec{\mathbf{r}})T(t)
+$$
+TDSE returns you that:
+$$
+T(t)=e^{ -iEt/\hbar } \land \hat{H}R(\vec{\mathbf{r}})=ER(\vec{\mathbf{r}})
+$$
+Where $E$ is the total energy of the system.
+The eigen-problem becomes obtain $R$ solving:
+\begin{block}{Find a $\Psi$, such that:}
+$$
+\left[-\frac{\hbar^{2}}{2m}\nabla^{2}+V(\mathbf r,t)\right]\psi(\vec{\mathbf{r}})= E \psi(\vec{\mathbf{r}})
+$$
+\end{block}
+Find the potential $V$ of the system.
+\end{frame}
+
+\begin{frame}{Many-Body System}
+When considering a many-body system, we need to consider the position of each electron like also the spin of it. When considering $n$ bodies, we have:
+$$
+\hat{H}\psi(\mathbf{x}_{0},\dots ,\mathbf{x}_{n})=E\psi(\mathbf{x}_{1},\dots ,\mathbf{x}_{n})
+$$
+With $\mathbf{x}_{i}=\{ \mathbf{r}_{i},\sigma \}$, where $\mathbf{r}_{i}\in \mathbb{R}^{3}$ is the position of each particle and $\sigma \in \{ \uparrow.\downarrow \}$ is the so called spin.
+
+\begin{alertblock}{Considerations}
+ \begin{itemize}
+  \item Each particle interact with all the another particles in specific ways.
+  \item For atoms, consider all the protons, electrons and neutrons.
+  \item Solution obey physical laws.
+\end{itemize}
+\end{alertblock}
+\end{frame}
+
+\begin{frame}{Setting up the Hamiltonian}
+  The first step is obtain a practical form of the \textbf{Hamiltonian}.
+
+\begin{itemize}
         \item Kinetic energy: $T = -\frac{1}{2}\sum_{i=1}^{N} \nabla_i^2$.
         \item Electron-nuclear attraction: $V_{en} = -\sum_{i,I} \frac{Z_I}{r_{iI}}$.
         \item Electron-electron repulsion: $V_{ee} = \sum_{i<j} \frac{1}{r_{ij}}$.
-        \item Hamiltonian: $H = T + V_{en} + V_{ee}$.
-        \item Solve the time-independent Schr\"odinger equation: $H\,\Psi = E\,\Psi$.
     \end{itemize}
-    
-    \begin{itemize}
-        \item System: $N$ electrons, nuclei with charge $Z_I$ at fixed $\mathbf R_I$.
-        \item Electron coordinates $\mathbf r_i \in \mathbb{R}^3$, spin $\sigma_i \in \{\uparrow,\downarrow\}$.
-        \item Atomic units (distances in Bohr, energies in Hartree).
-        \item Distances: $r_{ij} = |\mathbf r_i - \mathbf r_j|$, $r_{iI} = |\mathbf r_i - \mathbf R_I|$.
-    \end{itemize}
+\begin{align}
+   \hat H & =
+-\sum_{i=1}^{N}\frac{1}{2}\nabla_i^{2}
+-\sum_{I=1}^{M}\frac{1}{2M_I}\nabla_{I}^{2}
+-\sum_{i=1}^{N}\sum_{I=1}^{M}\frac{Z_I}{|\mathbf r_i-\mathbf R_I|} \\
+& +\sum_{1\le i<j\le N}\frac{1}{|\mathbf r_i-\mathbf r_j|}
++\sum_{1\le I<J\le M}\frac{Z_I Z_J}{|\mathbf R_I-\mathbf R_J|}
+\end{align}
+
+\textbf{Borh Oppenheimer} approximation helps with.
+
 \end{frame}
 
-\subsection{Conditions}
+\subsection{Physical laws and conditions}
 
-Physical Laws
 
-\begin{frame}{Fermi--Dirac statistics \& antisymmetry}
-    \begin{itemize}
+\begin{frame}{Fermi-Dirac statistics}
+
+All the fermions follow the Fermi-Dirac Statistics, this is.
+
+  \begin{itemize}
         \item Electrons are indistinguishable fermions.
         \item Exchanging two electrons flips the wavefunction's sign: $\Psi(\dots i,j \dots) = -\,\Psi(\dots j,i \dots)$.
-        \item Pauli exclusion: no two electrons can occupy the same state.
-        \item Use a Slater determinant to enforce an antisymmetric $\Psi$.
-    \end{itemize}
-\end{frame}
-
-\begin{frame}{Exponential decay of wavefunction}
-    \begin{itemize}
-        \item Bound-state wavefunctions decay exponentially as $r \to \infty$.
-        \item Example: hydrogen ground state $\psi(r) \sim e^{-r}$ (in a.u.).
-        \item Ans\"atze include an exponential envelope so that $\Psi \to 0$ as $r \to \infty$.
+        \item Pauli exclusion: no two electrons can occupy the same
     \end{itemize}
 
+    \begin{block}{Slater Determinant}
+We can enforce this using a determinant to enforce an antisymmetric $\Psi$.
+
+$$
+\begin{vmatrix}
+\phi_{1}^{k}(\mathbf{x}_{1})  & \dots  &  \phi_{1}^{k}(\mathbf{x}_{n}) \\
+\vdots   &  & \vdots  \\
+\phi_{n}^{k}(\mathbf{x}_{1}) & \dots & \phi_{n}^{k}(\mathbf{x}_{n})
+\end{vmatrix}
+$$
+Where $\phi$ are called spin orbitals
+\end{block}
 \end{frame}
 
 \begin{frame}{Kato cusp conditions, Jastrow Factor}
-    \begin{itemize}
+
+When two electrons
+
+\begin{itemize}
         \item Coulomb potentials cause a sharp cusp in $\Psi$ when particles coalesce.
         \item Electron--nucleus cusp: $\displaystyle \frac{\partial \Psi}{\partial r_{iI}}\Big|_{r_{iI}=0} = -\,Z_I\,\Psi(0)$.
         \item Electron--electron cusp: $\displaystyle \frac{\partial \Psi}{\partial r_{ij}}\Big|_{r_{ij}=0} = \frac{1}{2}\,\Psi(0)$.
     \end{itemize}
+
+\begin{block}{Jastrow Factor}
+In this work we are going to use this specific form
+\end{block}
 \end{frame}
 
 
-% ------------------
+
+\subsection{Optimizing an Ansatz}
+\begin{frame}
+
+Try an ansatz and optimize it.
+\frametitle{Loss: Variational Principle}
+
+Variational principle states that the energy of any ansatz is greather the truth energy.
+
+$$E[\Psi] = \displaystyle \frac{\langle \Psi \mid H \mid \Psi \rangle}{\langle \Psi \mid \Psi \rangle} \ge E_0$$
+
+Minimizing $E[\Psi]$ drives the ansatz toward the ground state.
+$E_0$ is the true ground energy (minimum possible).
+
+$$
+\mathcal{L}(\Psi_\theta)=\frac{\bra{\Psi_{\theta}} \hat{H}\ket{\Psi_{\theta}} }{\braket{ \Psi_{\theta} | \Psi _{\theta}} }=\frac{\int d\mathbf{r}\Psi ^{*}(\mathbf{r})\hat{H}\Psi(\mathbf{r})}{\int d\mathbf{r}\Psi ^{*}(\mathbf{r})\Psi(\mathbf{r})}
+$$
+Define:
+$$p_{\theta}(x)=\frac{\Psi^{2}_{\theta}(x)}{\int dx'\Psi^{2}_{\theta}(x')}\land E_{L}(x)=\Psi ^{-1}_{\theta}(x)\hat{H}\Psi_{\theta}(x)
+$$
+Then:
+$$
+\mathcal{L}_{\theta}=\mathbb{E}_{x\sim p_{\theta}}[E_{L}(x)]
+$$
+\end{frame}
+\begin{frame}{Variational Monte Carlo}
+  To evaluate that expectation we use Monte Carlo estimator.
+  \begin{block}{Quantum Monte Carlo}
+With the samples $\mathbf{R}_{1},\dots,\mathbf{R}_{M}\sim p_{\theta}(\mathbf{R})$ we can make:
+$$
+\mathcal{L}_{\theta}=\mathbb{E}_{x\sim p_{\theta}}[E_{L}(x)]\approx \frac{1}{M}\sum_{i=1}^{m} E_{L}(\mathbf{R}_{k})
+$$
+\end{block}
+
+With:
+
+$$E_{L}(\mathbf{R}_{k})=\frac{\hat{H}\psi(\mathbf{R}_{k})}{\psi(\mathbf{R}_{k})}=-\frac{1}{2}\frac{\nabla^{2}\psi(\mathbf{R_{k}})}{\psi(\mathbf{R}_{k})}+V(\mathbf{R}_{k})
+$$
+
+To obtain those samples we use the \textbf{Metropolis-Hastings Algorithm} which handles well high dimensions.
+
+\end{frame}
+
+\begin{frame}
+  \frametitle{Metropolis-Hastings Algorithm}
+
+1. Take a initial configuration $\mathbf{X}_{0}\in E$ arbitrary:
+
+2. Propose $\mathbf{X}'=\mathbf{X}_{0}+\eta$ ,where $\eta \sim q(\eta)$, $q$ is a probability density on $E$ called **proposal kernel**. symmetric Gaussian
+
+3. Compute the quantity:
+$$
+A(\mathbf{X_{0}}, \mathbf{X}')=\text{min}\left( 1,\frac{\rho(\mathbf{X}')}{\rho(\mathbf{X}_{0})} \frac{q(\mathbf{X}'-\mathbf{X}_{0})}{q(\mathbf{X}_{0}-\mathbf{X}')}\right)
+$$
+Where $\rho$ is the target distribution where we want sample, In the case where $q$ is symmetric, this simplifies to:
+$$
+A(\mathbf{X}_{0},\mathbf{X}')=\text{min}\left( 1,\frac{\rho(\mathbf{X}_{l})}{\rho(\mathbf{X}_{0})} \right)
+$$
+4. Generate a uniform number $U\in[0,1]$
+
+5. If: $U<A(\mathbf{X}_{0}\to \mathbf{X'}_{l})$ then $\mathbf{X_{1}}=\mathbf{X}'$, otherwise try another $\mathbf{X}'$. Accept or decline.
+
+\end{frame}
+
+\begin{frame}{Metropolis-Hastings}
+
+  6. Repeat until obtain $N_{eq}$ accepted, the change stabilizes (stationary distribution) this phase is called \textbf{burn in}.
+
+  7. From $\mathbf{X}_{N_{\text{eq}}}$ generate $M$ samples until reach the sample $\mathbf{X}_{N_{\text{eq}}+M+1}$.
+In each sample generates $E_{L}(\mathbf{R}_{k})$ then average to obtain $\mathbb{E}(E_{L})$ and begin the back propagation step.
+
+\begin{block}{Gradients of the Loss}
+Using calculus you obtain:
+$$
+\nabla _{\theta}\mathcal{L}=2\mathbb{E}_{x\sim \Psi^{2}}[(E_{L}(x)-\mathbb{E}_{x'\sim\Psi^{2}}[E_{L}(x')])\nabla \log \lvert \Psi(x) \rvert ]
+$$
+\end{block}
+
+This expectation is calculated in the same way.
+\end{frame}
+
+
+% ------------------------------
+
 \section{Deep Learning Tool Box}
 
-% Natural Gradient Descent
+\subsection{Natural Gradient Descent}
 
+\begin{frame}{Fisher Information Matrix}
+
+  Gradient descent assumes that parameters lives on the Euclidian Space $\mathbb{R}^{n}$. $(\mathcal{L}(\theta_1,\dots,\mathbf{x})$
+
+But in the case where parameters lives on a probability distribution $p(x,\theta)$ that assumption don't work to well.
+A natural \textbf{metric} when looking for compare the distributions $p(x,\theta)$ and $p(x,\theta+\delta \theta)$ is the \textbf{Fisher information Matrix}.
+
+\begin{block}{Fisher Matrix $F(\theta)$}
+ Let $x\sim p(x|\theta)$. Define the score:
+$$
+s_{\theta}(x)=\nabla_{\theta}\log p(x|\theta)
+$$
+$$
+F(\theta)=\mathbb{E}_{x\sim p(\cdot|\theta)}[s_{\theta}(x)s_{\theta}(x)^{\mathsf{\top}}]
+$$
+\end{block}
+$s\in \mathbb{R}^{d}$ a column vector. $d$ number of parameters.
+\end{frame}
+
+\begin{frame}{Natural Gradient}
+
+\begin{block}{Natural Gradient}
+Using the Fisher Metric, the steepest descent direction of the loss is:
+
+$$
+-F(\theta)^{-1} \nabla_{\theta}\mathcal{L}
+$$
+\end{block}
+The updates becomes:
+$$
+\theta_{k+1}=\theta_k-\eta F(\theta_k)^{-1}\delta_{\theta}\mathcal{L}
+$$
+\begin{itemize}
+\item Compute $F$, expensive.
+\item KFAC ameliorate this with two approximations.
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Optimizer: KFAC (natural gradient)}
+
+    The first approximation is: $F_{ij}$ is assumed zero when $\theta_i$ and $\theta_j$ are on different layers (neural network). So we just care about the same layer $\ell$.
+Calculus say.
+$$
+\mathbb{E}_{p(\mathbf{X})}\left[ \frac{\partial \log p(X)}{\partial \text{vec}(\mathbf{W}_{\ell})}\frac{\partial \log p(X)}{\partial \text{vec}(\mathbf{W}_{\ell})}^{\mathsf{T}} \right]=\mathbb{E}_{p(\mathbf{X})}[(\mathbf{a}_{\ell}\otimes \mathbf{e}_{\ell})(\mathbf{a}_{\ell}\otimes \mathbf{e}_{\ell})^{\mathsf{T}}]
+$$
+Where $\mathbf{a}_{\ell}$ are the forward activation and $\mathbf{e}_{\ell}$ are the backward sensitivities for that layer.
+$$
+\mathbb{E}_{p(\mathbf{X})}[(\mathbf{a}_{\ell}\otimes \mathbf{e}_{\ell})(\mathbf{a}_{\ell}\otimes \mathbf{e}_{\ell})^{\mathsf{\top}}]^{-1}\approx \mathbb{E}_{p(\mathbf{X})}[\mathbf{a}_{\ell}\mathbf{a_{\ell}}^{\mathsf{\top}}]\otimes \mathbb{E}_{p(\mathbf{X})}[\mathbf{e}_{\ell}\mathbf{e}_{\ell}^{\mathsf{\top}}]^{-1}
+$$
+\end{frame}
+
+
+\subsection{Attention Mechanism}
+\begin{frame}
+  \frametitle{Attention on the room}
+
+Multi Head Attention
+$$
+\mathbf{o}_{t,i}=\sum_{j=1}^{t}\text{Softmax}\left( \frac{\mathbf{q}^{T}_{t,i}\mathbf{k}_{j,i}}{\sqrt{ d_{h} }} \right) \mathbf{v}_{j,i}
+$$
+
+
+$$ \mathbf{k}_{i}=\mathbf{W}_{k}\mathbf{h}_{i},\mathbf{q}_{i}=\mathbf{W}_{q}\mathbf{h}_{i},\mathbf{v}_{i}=\mathbf{W}_{v}\mathbf{h}_{i} $$
+
+
+$$\mathbf{u}_{t}=W^{O}[\mathbf{o}_{t,1};\mathbf{o}_{t,2};\dots ;\mathbf{o}_{t,n_{h}}]$$
+\end{frame}
+
+
+
+\section{Fermi Net and Psiformer}
+
+\subsection{Fermi Net}
+\begin{frame}
+    \frametitle{FermiNet baseline}
+    \begin{itemize}
+        \item FermiNet: first deep-neural-network wavefunction ansatz (Pfau et al., 2020).
+        \item Architecture: multiple dense layers with electron-wise feature streams.
+        \item Outputs single-electron orbitals feeding into a Slater determinant.
+        \item Achieved high accuracy on small molecules (near chemical accuracy).
+        \item Faced scaling limits: accuracy and efficiency drop for larger systems.
+    \end{itemize}
+\end{frame}
+\subsection{Psi Former}
 \begin{frame}{The Psiformer Ansatz (overview)}
     \begin{itemize}
         \item Neural network trial wavefunction (``Wavefunction Transformer'').
@@ -108,7 +352,16 @@ Physical Laws
     \end{itemize}
 
 \end{frame}
-
+\begin{frame}
+    \frametitle{Psiformer vs FermiNet: Architecture \& Attention}
+    \begin{itemize}
+        \item FermiNet layers mix electron features via fixed functions; Psiformer uses self-attention.
+        \item Self-attention: each electron attends to all others (learns interactions).
+        \item Both ansatzes enforce antisymmetry via Slater determinants.
+        \item Psiformer captures correlations more effectively with fewer parameters.
+        \item Attention mechanism is permutation-invariant and scales to complex interactions.
+    \end{itemize}
+\end{frame}
 \begin{frame}{Dissecting the Ansatz}
     \begin{itemize}
         \item Slater--Jastrow form: $\Psi = \Big(\sum\limits_d c_d\,\det[\phi^d_k(\mathbf r_i)]\Big)\,\exp(J)$.
@@ -129,104 +382,8 @@ Physical Laws
     \end{itemize}
 \end{frame}
 
-\begin{frame}
-    \frametitle{Loss: Rayleigh quotient}
-    \begin{itemize}
-        \item Variational principle uses the energy expectation as loss.
-        \item $E[\Psi] = \displaystyle \frac{\langle \Psi \mid H \mid \Psi \rangle}{\langle \Psi \mid \Psi \rangle} \ge E_0$ (Rayleigh quotient).
-        \item Minimizing $E[\Psi]$ drives the ansatz toward the ground state.
-        \item $E_0$ is the true ground energy (minimum possible).
-    \end{itemize}
-\end{frame}
-
-\begin{frame}{Metropolis--Hastings sampling}
-    \begin{itemize}
-        \item Markov Chain Monte Carlo algorithm to sample $|\Psi(\mathbf r)|^2$.
-        \item Propose random moves for electron coordinates.
-        \item Accept move with probability $A = \min\!\Big(1,\; \frac{|\Psi_{\text{new}}|^2}{|\Psi_{\text{old}}|^2}\Big)$.
-        \item After thermalization, obtained samples follow the target distribution $|\Psi|^2$.
-    \end{itemize}
-\end{frame}
-
-\begin{frame}
-    \frametitle{Variational Monte Carlo loop}
-    \begin{itemize}
-        \item Initialize neural network parameters (trial $\Psi$).
-        \item Sample electron configurations via Metropolis--Hastings.
-        \item Evaluate energy and gradient from the sampled configurations.
-        \item Update parameters to lower the energy (gradient descent).
-        \item Iterate until convergence to the minimum energy (ground state).
-    \end{itemize}
-\end{frame}
-
-\begin{frame}
-    \frametitle{Optimizer: KFAC (natural gradient)}
-    \begin{itemize}
-        \item Kronecker-Factored Approximate Curvature (KFAC) optimizer.
-        \item Approximates the natural gradient using a factored curvature matrix.
-        \item Speeds up training and improves stability for large networks.
-        \item Used to efficiently optimize FermiNet and Psiformer wavefunctions.
-    \end{itemize}
-\end{frame}
-
-\begin{frame}
-    \frametitle{FermiNet baseline}
-    \begin{itemize}
-        \item FermiNet: first deep-neural-network wavefunction ansatz (Pfau et al., 2020).
-        \item Architecture: multiple dense layers with electron-wise feature streams.
-        \item Outputs single-electron orbitals feeding into a Slater determinant.
-        \item Achieved high accuracy on small molecules (near chemical accuracy).
-        \item Faced scaling limits: accuracy and efficiency drop for larger systems.
-    \end{itemize}
-\end{frame}
-
-\begin{frame}
-    \frametitle{Psiformer vs FermiNet: Architecture \& Attention}
-    \begin{itemize}
-        \item FermiNet layers mix electron features via fixed functions; Psiformer uses self-attention.
-        \item Self-attention: each electron attends to all others (learns interactions).
-        \item Both ansatzes enforce antisymmetry via Slater determinants.
-        \item Psiformer captures correlations more effectively with fewer parameters.
-        \item Attention mechanism is permutation-invariant and scales to complex interactions.
-    \end{itemize}
-\end{frame}
-
-\section{Fermi Net and Psiformer}
-
-\begin{frame}
-    \frametitle{Computational power \& scaling}
-    \begin{itemize}
-        \item Solving many-electron systems is computationally intensive.
-        \item Computational cost grows steeply with electron number $N$.
-        \item Wavefunction evaluation involves expensive operations (e.g. determinants, $O(N^3)$).
-        \item Requires significant computing resources (GPUs/TPUs, parallelization).
-    \end{itemize}
-\end{frame}
-
-\begin{frame}
-    \frametitle{Numerical stability}
-    \begin{itemize}
-        \item Exponential and cusp factors can cause numerical overflow/underflow if not handled carefully.
-        \item Ensuring stable Monte Carlo estimates (variance reduction techniques).
-        \item Feature scaling and proper initialization improve training stability.
-        \item Jastrow factor helps manage large energy fluctuations (by satisfying cusps).
-    \end{itemize}
-\end{frame}
-
-\begin{frame}
-    \frametitle{Scaling with electron count}
-    \begin{itemize}
-        \item Wavefunction resides in a $3N$-dimensional configuration space.
-        \item Monte Carlo integration becomes harder as $N$ increases (high dimensionality).
-        \item More electrons often require deeper or wider neural networks.
-        \item Ongoing research into architectures that scale better or transfer to larger $N$.
-    \end{itemize}
-\end{frame}
-
-\begin{frame}
-    \frametitle{Thanks}
+\begin{frame}{Thanks}
     \centering
     Thank you for your attention!
 \end{frame}
-
 \end{document}
