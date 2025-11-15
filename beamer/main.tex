@@ -163,10 +163,14 @@ When two electrons
         \item Electron--electron cusp: $\displaystyle \frac{\partial \Psi}{\partial r_{ij}}\Big|_{r_{ij}=0} = \frac{1}{2}\,\Psi(0)$.
     \end{itemize}
 
-\begin{block}{Jastrow Factor}
-In this work we are going to use this specific form
+\begin{block}{Jastrow Factor $\exp(\mathcal{J})$}
+In this work we are going to use this specific form:
+$$
+\mathcal{J}_{\theta}(x)=\sum_{i<j;\sigma_{i}=\sigma_{j}}-\frac{1}{4}\frac{\alpha^{2}_{par}}{\alpha_{par}+\lvert \mathbf{r}_{i}-\mathbf{r}_{j} \rvert }+\sum_{i,j;\sigma_{i}\neq \sigma_{j}}-\frac{1}{2}\frac{\alpha^{2}_{anti}}{\alpha_{anti}+\lvert \mathbf{r}_{i}-\mathbf{r}_{j} \rvert }
+$$
 \end{block}
 \end{frame}
+
 
 
 
@@ -314,18 +318,30 @@ $$
 \begin{frame}
   \frametitle{Attention on the room}
 
-Multi Head Attention
+\begin{columns}[c] % [c] means vertically centered
+        \begin{column}{0.5\textwidth}
+        \textbf{Multi Head Attention}
 $$
 \mathbf{o}_{t,i}=\sum_{j=1}^{t}\text{Softmax}\left( \frac{\mathbf{q}^{T}_{t,i}\mathbf{k}_{j,i}}{\sqrt{ d_{h} }} \right) \mathbf{v}_{j,i}
 $$
 
-
 $$ \mathbf{k}_{i}=\mathbf{W}_{k}\mathbf{h}_{i},\mathbf{q}_{i}=\mathbf{W}_{q}\mathbf{h}_{i},\mathbf{v}_{i}=\mathbf{W}_{v}\mathbf{h}_{i} $$
+        \end{column}
+        \begin{column}{0.5\textwidth}
+            \begin{figure}
+    \centering
+    \includegraphics[width=1.0\linewidth]{}
+    \caption{Original Transformer}
+\end{figure}
+        \end{column}
+    \end{columns}
+
 
 
 $$\mathbf{u}_{t}=W^{O}[\mathbf{o}_{t,1};\mathbf{o}_{t,2};\dots ;\mathbf{o}_{t,n_{h}}]$$
-\end{frame}
 
+
+\end{frame}
 
 
 \section{Fermi Net and Psiformer}
@@ -333,12 +349,19 @@ $$\mathbf{u}_{t}=W^{O}[\mathbf{o}_{t,1};\mathbf{o}_{t,2};\dots ;\mathbf{o}_{t,n_
 \subsection{Fermi Net}
 \begin{frame}
     \frametitle{FermiNet baseline}
-    \begin{itemize}
-        \item FermiNet: first deep-neural-network wavefunction ansatz (Pfau et al., 2020).
-        \item Architecture: multiple dense layers with electron-wise feature streams.
-        \item Outputs single-electron orbitals feeding into a Slater determinant.
-    \end{itemize}
+    First deep-neural-network wavefunction ansatz (Pfau et al., 2020).Architecture: multiple dense layers with electron-wise feature streams.Outputs single-electron orbitals feeding into a Slater determinant.
+
 \end{frame}
+
+\begin{frame}{Fermi Net Architecture}
+  \begin{figure}
+  \centering
+  \includegraphics[width=0.50\linewidth]{img/ferminet.png}
+  \caption{Fermi Net Architecture}
+  \end{figure}
+
+\end{frame}
+
 \subsection{Psi Former}
 \begin{frame}{The Psiformer Ansatz (overview)}
     \begin{itemize}
@@ -348,8 +371,19 @@ $$\mathbf{u}_{t}=W^{O}[\mathbf{o}_{t,1};\mathbf{o}_{t,2};\dots ;\mathbf{o}_{t,n_
         \item Greatly improves accuracy, especially for larger systems.
         \item Solves Schr\"odinger equation from first principles (no external data).
     \end{itemize}
-
 \end{frame}
+
+\begin{frame}{Psi Former Architecture}
+  \begin{figure}
+    \centering
+    \includegraphics[width=0.45\linewidth]{img/psiformer.png}
+    \caption{Psi Former Architecture}
+    \label{fig:placeholder}
+\end{figure}
+\end{frame}
+
+
+
 \begin{frame}
     \frametitle{Psiformer vs FermiNet: Architecture \& Attention}
     \begin{itemize}
@@ -357,31 +391,11 @@ $$\mathbf{u}_{t}=W^{O}[\mathbf{o}_{t,1};\mathbf{o}_{t,2};\dots ;\mathbf{o}_{t,n_
         \item Self-attention: each electron attends to all others (learns interactions).
         \item Both ansatzes enforce antisymmetry via Slater determinants.
         \item Psiformer captures correlations more effectively with fewer parameters.
-        \item Attention mechanism is permutation-invariant and scales to complex interactions.
-    \end{itemize}
-\end{frame}
-\begin{frame}{Dissecting the Ansatz}
-    \begin{itemize}
-        \item Slater--Jastrow form: $\Psi = \Big(\sum\limits_d c_d\,\det[\phi^d_k(\mathbf r_i)]\Big)\,\exp(J)$.
-        \item Slater determinant part ensures the correct antisymmetric exchange.
-        \item One-electron orbitals $\phi^d_k$ are learned functions of all electron coordinates.
-        \item Jastrow factor $J$ enforces electron-electron cusp conditions.
-        \item Additional envelope functions ensure exponential decay at long range.
-    \end{itemize}
-\end{frame}
-
-\begin{frame}{Jastrow factor form (parallel/antiparallel spins)}
-    \begin{itemize}
-        \item Jastrow factor: $J = \sum_{i<j} u_{\sigma_i,\sigma_j}(r_{ij})$.
-        \item Use separate $u(r)$ for same-spin vs opposite-spin pairs.
-        \item Example choice: $u_{\uparrow\downarrow}(r) = \frac{\alpha\,r}{1 + \beta\,r}$ (two parameters).
-        \item Satisfies cusp: $u(r) \approx \frac{1}{2}r$ as $r \to 0$.
-        \item Jastrow adds correlation beyond antisymmetry (lowers the energy).
     \end{itemize}
 \end{frame}
 
 \begin{frame}{Thanks}
     \centering
-    Thank you for your attention!
+    Thanks.
 \end{frame}
 \end{document}
