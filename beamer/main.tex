@@ -316,29 +316,39 @@ $$
 
 \subsection{Attention Mechanism}
 \begin{frame}
-  \frametitle{Attention on the room}
+\frametitle{Attention on the room}
 
-\begin{columns}[c] % [c] means vertically centered
-        \begin{column}{0.5\textwidth}
-        \textbf{Multi Head Attention}
+\textbf{Multi Head Attention}
+Let $d$ be the embedding dimension, $n_h$ be the number of attention heads, $d_h$ be the dimension per head, and $\mathbf{h}_t \in \mathbb{R}^{d}$ be hidden dimension.
+The learn matrices are:
+$$ W ^{Q}, W ^{K}, W ^{V} \in \mathbb{R}^{d_h n_h \times d}$$
+We obtain the key, queries, and values vectors with:
+$$ \mathbf{k}_{i}=\mathbf{W}^{k}\mathbf{h}_{i},\mathbf{q}_{i}=\mathbf{W}^{q}\mathbf{h}_{i},\mathbf{v}_{i}=\mathbf{W}^{v}\mathbf{h}_{i} $$
+We slice this vectors:
+$$
+\begin{align}
+[\mathbf{q_{1},q_{2},\dots ,q_{n_{h}}}]=\mathbf{q} \\
+[\mathbf{k_{1},k_{2},\dots ,k_{n_{h}}}]=\mathbf{k} \\
+[\mathbf{v_{1},v_{2},\dots ,v_{n_{h}}}]=\mathbf{v}
+\end{align}
+$$
+In the $i-th$ head:
 $$
 \mathbf{o}_{t,i}=\sum_{j=1}^{t}\text{Softmax}\left( \frac{\mathbf{q}^{T}_{t,i}\mathbf{k}_{j,i}}{\sqrt{ d_{h} }} \right) \mathbf{v}_{j,i}
 $$
+\end{frame}
 
-$$ \mathbf{k}_{i}=\mathbf{W}_{k}\mathbf{h}_{i},\mathbf{q}_{i}=\mathbf{W}_{q}\mathbf{h}_{i},\mathbf{v}_{i}=\mathbf{W}_{v}\mathbf{h}_{i} $$
 
+\begin{frame}{Attention!}
+
+Let $W^{O}\in \mathbb{R}^{d \times d_h n_h}$ be the output projection matrix.
 $$\mathbf{u}_{t}=W^{O}[\mathbf{o}_{t,1};\mathbf{o}_{t,2};\dots ;\mathbf{o}_{t,n_{h}}]$$
-        \end{column}
-        \begin{column}{0.5\textwidth}
-            \begin{figure}
-    \centering
-    \includegraphics[width=0.8\linewidth]{img/transf.png}
-    \caption{Original Transformer}
+
+\begin{figure}
+  \centering
+  \includegraphics[width=0.3\linewidth]{img/transf.png}
+  \caption{Original Transformer}
 \end{figure}
-        \end{column}
-    \end{columns}
-
-
 
 \end{frame}
 
