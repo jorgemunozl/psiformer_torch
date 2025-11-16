@@ -1,6 +1,6 @@
 ---
 date: 2025-10-23 19:32
-modified: 2025-11-14 16:09
+modified: 2025-11-16 10:33
 ---
 # Development of a Transformed based architecture to solve the Time Independent Many Electron Schrodinger Equation
 
@@ -59,7 +59,7 @@ Where $\mathbf{\hat{p}}$ is the Momentum Operator and in the **Position represen
 $$
 \mathbf{\hat{p}}=-i\hbar \nabla
 $$
-Where $\nabla$ is the Laplacian operator, Thus the TDSE is explicitly:
+Where $\nabla$ is the Laplacian operator, thus the TDSE is explicitly:
 $$
 i\hbar\,\frac{\partial \psi}{\partial t}
 =
@@ -91,12 +91,12 @@ Here:
 - $e = 1.602\,176\,634\times 10^{-19}\ \mathrm{C}$ is the elementary charge,
 - $\varepsilon_{0} = 8.854\,187\,8128\times 10^{-12}\ \mathrm{F\,m^{-1}}$ is the **electrical permittivity of vacuum**,
 - $\mathbf{r}_i$ is the position vector of electron $i$ in the chosen reference frame.
-The attraction between protons and electrons is given by:
+The attraction between the proton $I$ and the electron $i$ is given by:
 $$
 V_{iI} = -\frac{1}{4\pi\varepsilon_{0}} \frac{eZ_{I}}{\lvert \mathbf{r}_{i} - \mathbf{R}_{I} \rvert}
 $$
 Where $Z_I$ is the atomic number of nucleus $I$ (for instance, in a Helium atom $Z = 2$) and $\mathbf{R}_I$ is the position of that nucleus from a chosen reference frame.  
-The reference frame is usually taken at the **center of mass** or at the **center of the molecule**. The repulsion between nuclei (protons) is:
+The reference frame is usually taken at the **center of mass** or at the **center of the molecule**. The repulsion between the nuclei $I$ and $J$ (protons) is:
 $$
 V_{IJ} = \frac{1}{4\pi\varepsilon_{0}} \frac{Z_{I}Z_{J}}{\lvert \mathbf{R}_{I} - \mathbf{R}_{J} \rvert}
 $$
@@ -106,22 +106,20 @@ $$
 E_{h} = \frac{e^{2}}{4\pi\varepsilon_{0} a_{0}}
 $$
 Under atomic units, $e = 1$, $4\pi\varepsilon_{0} = 1$,$\hbar = 1$, and $m_{e} = 1$.  
-Thus, the potential energy of a multi-electron, multi-nucleus system can be written compactly as:
+Thus, the potential energy of a system with $N_{e}$ electron and $N_{n}$ nucleus can be written compactly as:
 $$
-V = -\sum_{i,I} \frac{Z_I}{\lvert \mathbf{r}_i - \mathbf{R}_I \rvert}
+V = -\sum_{i=1}^{N_{e}}\sum_{I=1}^{N_{n}}  \frac{Z_I}{\lvert \mathbf{r}_i - \mathbf{R}_I \rvert}
 + \sum_{i>j} \frac{1}{\lvert \mathbf{r}_i - \mathbf{r}_j \rvert}
 + \sum_{I>J} \frac{Z_I Z_J}{\lvert \mathbf{R}_I - \mathbf{R}_J \rvert}
 $$
 
 where:
-- $i, j$ index electrons,
-- $I, J$ index nuclei,
-- the first term represents **electron–nucleus attraction**,  
-- the second term is **electron–electron repulsion**,  
-- the third term is **nucleus–nucleus repulsion**.
-
-For the kinetic term we need to consider two expressions: $\nabla_i^2$ acts on the **electron** coordinates $\mathbf r_i$ (fast, light particles) and $\nabla_I^2$ acts on the **nuclear** coordinates $\mathbf R_I$ (slow, heavy particles). 
-Let $N$ electrons at $\mathbf r_i$ and $M$ nuclei at $\mathbf R_I$ with charges $Z_I$ and masses $M_I$ (in units of $m_e$). Thus the Hamiltonian can be written as:
+- $i, j$ index electrons.
+- $I, J$ index nuclei.
+- The first term represents **electron–nucleus attraction**.
+- The second term is **electron–electron repulsion**.
+- The third term is **nucleus–nucleus repulsion**.
+For the kinetic term we need to consider two expressions: $\nabla_i^2$ acts on the **electron** coordinates $\mathbf r_i$ (fast, light particles) and $\nabla_I^2$ acts on the **nuclear** coordinates $\mathbf R_I$ (slow, heavy particles). Let $N$ electrons at $\mathbf r_i$ and $M$ nuclei at $\mathbf R_I$ with charges $Z_I$ and masses $M_I$ (in units of $m_e$) then the **Hamiltonian** can be written as:
 $$
 \boxed{
 \hat H =
@@ -168,33 +166,40 @@ $$
 \lim_{ r_{ij}\to 0 } \left( \frac{\partial \psi}{\partial r_{ij}} \right)=\frac{1}{2}\psi(r_{ij}=0)
 $$
 Where $r_{iI}(r_{ij})$ is an electron-nuclear (electron-electron) distance, $Z_{I}$ is the nuclear charge of the $I\text{-th}$ nucleous and ave implies a spherical averaging over all directions.
-
 [[Kato Cusp Conditions]].
+
+
+So that is the problem we need to find a $\psi$ such that it satisfies all those 
 ### Approximations to the problem
 
 Is clear that find analytical solutions is practically impossible, so what people have been doing is first apply good approximations.
-[[The Born Oppenheimer Approximation]]
-Born Oppenheimer approximation makes it possible to separate the motion of the nuclei and the motion of the electrons, neglects the motion of the atomic nuclei when describing the electrons in a molecule. The physical basis for the Born-Oppenheimer approximation is the fact that the mass of an atomic nucleus in a molecule is much larger than the mass of an electron (more than 1000 times). Because of this difference, the nuclei move much more slowly than the electrons. In addition, due to their opposite charges, there is a mutual attractive force of: acting on an atomic nucleus and an electron. This force causes both particles to be accelerated. Since the magnitude of the acceleration is inversely proportional to the mass, $a = f/m$, the acceleration of the electrons is large and the acceleration of the atomic nuclei is small; the difference is a factor of more than 1000. Consequently, the electrons are moving and responding to forces very quickly, and the nuclei are not:
+
+**Born Oppenheimer** approximation makes it possible to separate the motion of the nuclei and the motion of the electrons, neglects the motion of the atomic nuclei when describing the electrons in a molecule. The physical basis for the Born-Oppenheimer approximation is the fact that the mass of an atomic nucleus in a molecule is much larger than the mass of an electron (more than 1000 times). Because of this difference, the nuclei move much more slowly than the electrons. In addition, due to their opposite charges, there is a mutual attractive force of: acting on an atomic nucleus and an electron. This force causes both particles to be accelerated. Since the magnitude of the acceleration is inversely proportional to the mass, $a = f/m$, the acceleration of the electrons is large and the acceleration of the atomic nuclei is small; the difference is a factor of more than 1000. Consequently, the electrons are moving and responding to forces very quickly, and the nuclei are not, then we fix the nucleus, $\mathbf{R}_{I}$ becomes a constant, thus the kinetic term for nucleus becomes zero. And the potential energy for the repulsion between nucleus becomes a constant. 
 $$
 \boxed{
 \hat H_{\mathrm{el}} =
 -\sum_{i=1}^{N}\frac{1}{2}\nabla_i^{2}
 -\sum_{i=1}^{N}\sum_{I=1}^{M}\frac{Z_I}{|\mathbf r_i-\mathbf R_I|}
 +\sum_{1\le i<j\le N}\frac{1}{|\mathbf r_i-\mathbf r_j|}
++ \sum_{I<J}\frac{Z_I Z_J}{|\mathbf R_I-\mathbf R_J|}
 }
-\qquad\text{with}\qquad
-E_{\mathrm{nn}}=\sum_{I<J}\frac{Z_I Z_J}{|\mathbf R_I-\mathbf R_J|}.
 $$
 
-A second useful approach to the problem is use an **Ansatz**:
+This is the form that we are going to work with; a second useful approach to the problem is use an **Ansatz**, which is a guess solution guided by intuition, this normally depend on certain number of parameters, then the problem becomes on optimize this **Ansatz**.
+### Rayleigh Quotient
+We need a way to measure how well our Ansatz $\psi_{\theta}$. For that matter we use the **Rayleigh quotient**.
+If $A$ is an operator and $x$ is a state, the number:
+$$
+R_{A}(x)=\frac{\braket{ x |A|x  }}{\braket{ x | x } }
+$$
+is the **expectation value** of that operator in that state. For us, if $\psi$ is a wave function and $\hat{H}$ the **Hamiltonian**, then the Rayleigh quotient:
+$$
+R_{\hat{H}}(\psi)=\frac{\braket{ \psi | \hat{H}| \psi}}{\braket{ \psi | \psi } }
+$$
+is the average (expected) energy of the system when it is in the state $\psi$. 
 
-guess that solution and using another techniques to improve the solution, to this guess solution we called , guided by intuition. 
-Once that you have your Ansatz, which normally depends on depends on certain parameters.
+### Variational Principle 
 
-We are going to use a **Ansatz**:
-### Optimizing the Ansatz
-[[Rayleigh Quotient like Expectation Value]]
-How we know that our Ansatz is good? Equivanlently to use a loss function in quantum mechanics we use **rayleight quotient**.
 $$
 \mathcal{L}(\Psi_{\theta})=\frac{\bra{\Psi_{\theta}} \hat{H}\ket{\Psi_{\theta}} }{\braket{ \Psi_{\theta} | \Psi _{\theta}} }=\frac{\int d\mathbf{r}\Psi ^{*}(\mathbf{r})\hat{H}\Psi(\mathbf{r})}{\int d\mathbf{r}\Psi ^{*}(\mathbf{r})\Psi(\mathbf{r})}
 $$
@@ -222,7 +227,7 @@ Whith many samples we can estimate:
 $$
 \mathbf{R}_{1},\dots,\mathbf{R}_{M}\sim p_{\theta}(\mathbf{R})
 $$
-Using the Monte Carlo estimates:
+Using the Monte Carlo estimation:
 $$
 \mathcal{L}_{\theta}=\mathbb{E}_{x\sim p_{\theta}}[E_{L}(x)]\approx \frac{1}{M}\sum_{i=1}^{M} E_{L}(\mathbf{R}_{k})
 $$
@@ -230,18 +235,14 @@ Where we can write:
 $$
 E_{L}(\mathbf{R}_{k})=\frac{\hat{H}\psi(\mathbf{R}_{k})}{\psi(\mathbf{R}_{k})}=-\frac{1}{2}\frac{\nabla^{2}\psi(\mathbf{R_{k}})}{\psi(\mathbf{R}_{k})}+V(\mathbf{R}_{k})
 $$
-Calculus tell us:
-
+Calculus tell us that for a any derivable function $f$.
 $$
 \frac{\nabla^{2}f}{f}=[\nabla^{2}\log f+(\nabla f)^{2}]
 $$
-
-Which is more numerically stable, thus
-
+In practice is more numerically stable work using that form, thus:
 $$
 E_{L}(\mathbf{R}_{k})=-\frac{1}{2}\sum_{i=1}^{N} \sum_{j=1}^{3} \left[ \frac{\partial ^{2} \log \lvert \Psi(x) \rvert }{\partial r_{ij}^{2}}+\left( \frac{\partial \log \lvert \Psi(x) \rvert }{\partial r_{ij}} \right)^{2} \right]+V(\mathbf{R_{k}})
 $$
-
 The gradient of the energy respect to the parameters by a parameterized wave functions is:
 $$
 \nabla _{\theta}\mathcal{L}=2\mathbb{E}_{x\sim \Psi^{2}}[(E_{L}(x)-\mathbb{E}_{x'\sim\Psi^{2}}[E_{L}(x')])\nabla \log \lvert \Psi(x) \rvert ]
@@ -251,9 +252,7 @@ $$
 Goal: obtain many samples from  [[Metropolis Hasting algorithm]]
 
 MH is a [[Markov Chain Monte Carlo]] (MCMC) method used to obtain a sequence of random samples from a probability distribution. Sota method to sample from high dimensional distributions.
-
 ## Deep Learning Fundamentals
-
 This subsection introduces the core concepts of  Deep Learning that are going to be applied in this work.
 ### Multi Layer Perceptron
 A multi layer perceptron (MLP) is a nonlinear function $\mathcal{F}:\mathbb{R}^{\text{in}}\to \mathbb{R}^{\text{out}}$.  @nielsenNeuralNetworksDeep2015 , it actually is the composition of $L$ layers, the first layer is called the input layer, the last output layer and the intermediates hidden layers. In each layer we find an affine map $\mathbf{z}^{(l)},l\in \{ L,L-1,\dots,2 \}$ of the follow form. 
@@ -301,27 +300,6 @@ $$
 
 [[Kroenecker Factored Approximate Curvature]]
 
-### Recurrent Neural Networks
-
-To introduce the Transformer architecture, first let's introduce the problem they solve.
-
-MLP doesn't work to well processing sequentially data (e.g text) they tend to forget, thus we need another approach to increase the memory of the Neural Network, for this we can tweak life follow:
-
-$$
-\mathbf{a}^{(t)}=\mathbf{b}+\mathbf{W}\mathbf{h}^{(t-1)}+\mathbf{U}x^{(t)}
-$$
-But do it this ways introduce the well known problem of vanishing gradients.
-Another approach to increase the memory of neural networks are LSTMs
-
-### Long Short Term Memory
-
-LSTMs introduce a memory cell $c_{t}$ and gates that regulate information flow.
-
-LSTMs substantially improve sequence modeling across modalities.
-
-This increase the memory of neural networks but still sequencial, we have a better approach, which are another architecture based on a mechanism called attention.  
-
-
 ### Attention Mechanism
 
 The first attention mechanism were introduced by using the follow:
@@ -352,7 +330,6 @@ Attention mechanism appear with @bahdanau2014neural but it didn't work so:
 - [[Attention mechanism]]
 - [[Self attention mechanism on one head]]
 - [[Multi-head attention]]
-
 # Psi Former
 
 This sections describes the architectures of the model that we are going to use.
@@ -456,9 +433,7 @@ And you have it.
 # Methodology
 
 To implement the code, the choose of the library is important.
-
 The three options to implement this kind of matter are JAX, Tensor Flow and pytorch, each one with his advantages and disadvantages.
-
 ## Environment
 
 For this project we are going to be using Pytorch due his user-friendly and support. Python. with UV
