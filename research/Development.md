@@ -1,6 +1,6 @@
 ---
 date: 2025-10-23 19:32
-modified: 2025-11-16 10:33
+modified: 2025-11-17 19:47
 ---
 # Development of a Transformed based architecture to solve the Time Independent Many Electron Schrodinger Equation
 
@@ -47,7 +47,7 @@ The concepts presented in this section provideS the physical and mathematical ba
 All the physics and methods related necessary.
 ### The Schrodinger Equation
 
-The Schrodinger equation was presented in a series of publications made it by Erwin Schrodinger in the year 1926. There we search the complex function $\psi$ called **wave function**, for a non relativistic spinless single particle this function depends on the position of the particle $\mathbf{\vec{r}}$ and time $t$ $(\psi(\mathbf{\vec{r}},t))$, the quantity $\lvert \psi (\mathbf{r},t)\rvert^{2}$ is the **probability density** to find the particle near $\mathbf{r}$ at time $t$.
+The Schrodinger equation was presented in a series of publications made it by Erwin Schrodinger in the year 1926. There we search the complex function $\psi$ which lives on a Hilbert space $\mathcal{H}$ called **wave function**, for a non relativistic spinless single particle this function depends on the position of the particle $\mathbf{\vec{r}}$ and time $t$ $(\psi(\mathbf{\vec{r}},t))$, the quantity $\lvert \psi (\mathbf{r},t)\rvert^{2}$ is the **probability density** to find the particle near $\mathbf{r}$ at time $t$.
 
 Guided by de Broglie's discover of the wave particle duality and a very smart intuition Schrodinger proposed the time dependent equation (TDSE):
 $$ i\hbar \frac{\partial \psi}{\partial t}=\hat{H}\psi $$
@@ -77,7 +77,7 @@ Where $E$,the energy of the system, is constant. You also obtain that the spatia
 $$
 \hat{H}R(\mathbf{\vec{r}})=ER(\mathbf{\vec{r}})
 $$
-We usually represent $R$ as $\psi$.
+We usually represent $R$ as $\psi$. And in this work we are going to only focus in the TDSE, when we treat with constant energy, the electron are almost always found near the lowest energy state, known as the ground state. Solutions with higher energy known as excited states are relevant to photochemistry , but in this work we will restrict our attention to ground states.
 ### The many electron Schrodinger Equation
 When we are considering more than one single particle we consider the spin $(\sigma)$ and the interaction between particles. Thus in its time-independent form the Schrodinger equation can be written as an eigen value problem:
 $$ \hat{H}\psi(\mathbf{x}_{0},\dots ,\mathbf{x}_{n})=E\psi(\mathbf{x}_{1},\dots ,\mathbf{x}_{n}) $$
@@ -168,7 +168,6 @@ $$
 Where $r_{iI}(r_{ij})$ is an electron-nuclear (electron-electron) distance, $Z_{I}$ is the nuclear charge of the $I\text{-th}$ nucleous and ave implies a spherical averaging over all directions.
 [[Kato Cusp Conditions]].
 
-
 So that is the problem we need to find a $\psi$ such that it satisfies all those 
 ### Approximations to the problem
 
@@ -186,52 +185,62 @@ $$
 $$
 
 This is the form that we are going to work with; a second useful approach to the problem is use an **Ansatz**, which is a guess solution guided by intuition, this normally depend on certain number of parameters, then the problem becomes on optimize this **Ansatz**.
+
+Another important matter are the complex numbers, we should to work with them, no! Why is that?
 ### Rayleigh Quotient
-We need a way to measure how well our Ansatz $\psi_{\theta}$. For that matter we use the **Rayleigh quotient**.
-If $A$ is an operator and $x$ is a state, the number:
+We need a way to measure how well our Ansatz $\psi_{\theta}$ is doing, if our ansatz is bad then don't reflect the truly form of the system, Deep learning approachs use data sets to train their ansatz (model initialized on randoms parameters) in this case we don't need any external but physical principles.
+Lets first introduce the **Rayleigh quotient**. If $A$ is an operator and $x$ is a state, the number:
 $$
 R_{A}(x)=\frac{\braket{ x |A|x  }}{\braket{ x | x } }
 $$
-is the **expectation value** of that operator in that state. For us, if $\psi$ is a wave function and $\hat{H}$ the **Hamiltonian**, then the Rayleigh quotient:
+is the **expectation value** of that operator in that state. The important for us is that if $\psi$ is a wave function and $\hat{H}$ the **Hamiltonian**, then the Rayleigh quotient:
 $$
 R_{\hat{H}}(\psi)=\frac{\braket{ \psi | \hat{H}| \psi}}{\braket{ \psi | \psi } }
 $$
 is the average (expected) energy of the system when it is in the state $\psi$. 
-
 ### Variational Principle 
 
+The [[Variational Principle]]  states that the expectation value for the binding energy obtained using an approximate wave function and the exact Hamiltonian operator will be higher than or equal to the true energy for the system. This idea is really powerful. When implemented it permits us to find the best approximate wavefunction from a given wavefunction that contains one or more adjustable parameters, called a trial wavefunction. A mathematical statement of the variational principle is.
+$$
+R_{\hat{H}}(\psi_{\text{ansatz}})\geq R_{\hat{H}}(\psi_{\text{true}})
+$$
+The true ground-state wave function $\psi_{\text{true}}$ is the one that minimizes the rayleigh quotient. 
+$$
+\psi_{0}=\underset{\psi}{\text{argmin}}( R_{\hat{H}}(\psi))
+$$
+So if we minimize the rayleigh quotient of our ansatz we are going to be more near of the true wave function.
+### Variational Monte Carlo 
+
+To the process that we are going to use for optimize our ansatz is called Variational Monte Carlo (VMC). Now we can see to the rayleigh quotient as a loss function $\mathcal{L}$ with the form of.
 $$
 \mathcal{L}(\Psi_{\theta})=\frac{\bra{\Psi_{\theta}} \hat{H}\ket{\Psi_{\theta}} }{\braket{ \Psi_{\theta} | \Psi _{\theta}} }=\frac{\int d\mathbf{r}\Psi ^{*}(\mathbf{r})\hat{H}\Psi(\mathbf{r})}{\int d\mathbf{r}\Psi ^{*}(\mathbf{r})\Psi(\mathbf{r})}
 $$
-Evaluate that integral is hard, for that first we define:
+Evaluate that integral is hard, another smart approach is the follow, define a probability distribution $p_{\theta}$ with the follow form:
 $$
-p_{\theta}(x)=\frac{\Psi^{2}_{\theta}(x)}{\int dx'\Psi^{2}_{\theta}(x')}
+p_{\theta}(x)=\frac{\lvert \Psi_{\theta} (x)\rvert ^{2}}{\int dx'\Psi^{2}_{\theta}(x')}
 $$
-Defining the Local Energy:
+Realize that for compute $p_{\theta}(x)$ for a specific $x$ is complicated due the integral that appears, this is going to be important later. Defining the local energy $E_{L}$ with:
 $$
 E_{L}(x)=\Psi ^{-1}_{\theta}(x)\hat{H}\Psi_{\theta}(x)
 $$
+Then the loss becomes:
 $$
 \mathcal{L}(\Psi_{\theta})=\int \frac{ \hat{H}\Psi_{\theta}(x)}{\Psi_{\theta}(x)}p_{\theta}(x)dx
 $$
+Which is the expected value of the local energy:
 $$
 \mathcal{L}(\Psi_{\theta})=\mathbb{E}_{x\sim p_{\theta}}[E_{L}(x)]
 $$
-To optimize our wave function we need evaluate that expectation and obtain the derivative.
-
-To that set of techniques for obtain that we call **Quantum Monte Carlo**, there are differents approaches like Diffusion Monte Carlo, Path Integral Monte Carlo but in this case we are going to use Variational Montecarlo.
-
-Samples from that distribution and $E_{L}(x)$. We already have $E_{L}(x)$ 
-
-Whith many samples we can estimate:
-$$
-\mathbf{R}_{1},\dots,\mathbf{R}_{M}\sim p_{\theta}(\mathbf{R})
-$$
-Using the Monte Carlo estimation:
+To optimize our wave function we know by deep learning that we need evaluate that expectation and obtain the derivative for back propagation, how we make that?
+We are going to use the the Monte Carlo estimatior:
 $$
 \mathcal{L}_{\theta}=\mathbb{E}_{x\sim p_{\theta}}[E_{L}(x)]\approx \frac{1}{M}\sum_{i=1}^{M} E_{L}(\mathbf{R}_{k})
 $$
-Where we can write:
+Whit $\mathbf{R}_{k}$ are samples from the $p_{\theta}$ probability distribution. This is
+$$
+\mathbf{R}_{1},\dots,\mathbf{R}_{M}\sim p_{\theta}(\mathbf{R})
+$$
+We obtain $E_{L}$ using:
 $$
 E_{L}(\mathbf{R}_{k})=\frac{\hat{H}\psi(\mathbf{R}_{k})}{\psi(\mathbf{R}_{k})}=-\frac{1}{2}\frac{\nabla^{2}\psi(\mathbf{R_{k}})}{\psi(\mathbf{R}_{k})}+V(\mathbf{R}_{k})
 $$
@@ -248,10 +257,30 @@ $$
 \nabla _{\theta}\mathcal{L}=2\mathbb{E}_{x\sim \Psi^{2}}[(E_{L}(x)-\mathbb{E}_{x'\sim\Psi^{2}}[E_{L}(x')])\nabla \log \lvert \Psi(x) \rvert ]
 $$
 ### Metropolis Hastings (MH) Algorithm
+To obtain samples from the probability distribution $p_{\theta}$ we are going to use the [[Metropolis Hasting algorithm]]. (MH)
 
-Goal: obtain many samples from  [[Metropolis Hasting algorithm]]
+MH is a [[Markov Chain Monte Carlo]] (MCMC) method used to obtain a sequence of random samples from a probability distribution. The reason to use this method over another well knows methods (e.g. example) is that MH don't suffer of the [[Curse of Dimensionality]] 
+this is, it remains strong while increase the dimension of the problem, and since we are going to be working on dimension around ten is efficient use this method. The algorithm works like follow:
 
-MH is a [[Markov Chain Monte Carlo]] (MCMC) method used to obtain a sequence of random samples from a probability distribution. Sota method to sample from high dimensional distributions.
+1. Take a initial configuration $\mathbf{X}_{0}\in E$ arbitrary:
+2. Propose $\mathbf{X}'=\mathbf{X}_{0}+\eta$ ,where $\eta \sim q(\eta)$, $q$ is a probability density on $E$ called **proposal kernel**. In our case we are going to a [[symmetric Gaussian]].
+3. Compute the quantity:
+$$
+A(\mathbf{X_{0}}, \mathbf{X}')=\text{min}\left( 1,\frac{\rho(\mathbf{X}')}{\rho(\mathbf{X}_{0})} \frac{q(\mathbf{X}'-\mathbf{X}_{0})}{q(\mathbf{X}_{0}-\mathbf{X}')}\right)
+$$
+Where $\rho$ is the target distribution where we want sample, In the case where $q$ is symmetric, this simplifies to:
+$$
+A(\mathbf{X}_{0},\mathbf{X}')=\text{min}\left( 1,\frac{\rho(\mathbf{X})}{\rho(\mathbf{X}_{0})} \right)
+$$
+Note that in our case $\rho$ is equal to $p_{\theta}$, we said that compute the integral factor remains a challenge, but in this case we have it.
+$$
+\frac{p_{\theta}(\mathbf{X}')}{p_{\theta}(\mathbf{X}_{0})}=\frac{\lvert \psi_{\theta}(\mathbf{X}') \rvert ^{2}/\int \lvert \psi_{\theta} \rvert ^{2}dx}{\lvert \psi_{\theta}(\mathbf{X}_{0}) \rvert ^{2}/\int \lvert \psi_{\theta} \rvert ^{2}dx}=\frac{\lvert \psi_{\theta}(\mathbf{X'}) \rvert ^{2}}{\lvert \psi_{\theta}(\mathbf{X}_{0}) \rvert ^{2}}
+$$
+4. Generate a uniform number $U\in[0,1]$
+5. If: $U<A(\mathbf{X}_{0}\to \mathbf{X'}_{l})$ then $\mathbf{X_{1}}=\mathbf{X}'$, otherwise try another $\mathbf{X}'$. Accept or decline.
+6. Repeat until obtain $N_{eq}$ accepted sample, the changes stabilizes (we reach a stationary distribution) this phase is called **burn in**.
+7. From $\mathbf{X}_{N_{\text{eq}}}$ generate $M$ samples until reach the sample $\mathbf{X}_{N_{\text{eq}}+M+1}$.
+In each sample generates $E_{L}(\mathbf{R}_{k})$ then average to obtain $\mathbb{E}(E_{L})$ and with it and the derivative from equation number [number] we are able to begin the back propagation step.
 ## Deep Learning Fundamentals
 This subsection introduces the core concepts of  Deep Learning that are going to be applied in this work.
 ### Multi Layer Perceptron
@@ -303,7 +332,6 @@ $$
 ### Attention Mechanism
 
 The first attention mechanism were introduced by using the follow:
-
 ### Self Attention and Multi Head Attention
 
 From the embedding space $d$ we can generate sub spaces where the heads are going to live and its dimension is $d_{h}$.
@@ -330,7 +358,7 @@ Attention mechanism appear with @bahdanau2014neural but it didn't work so:
 - [[Attention mechanism]]
 - [[Self attention mechanism on one head]]
 - [[Multi-head attention]]
-# Psi Former
+# Psi Former Model
 
 This sections describes the architectures of the model that we are going to use.
 First introduce Fermine which generates the hidden states using merely MLP whereas PsiFormer Generate the Hidden states using the Multi Head Attention (MHA) and a MLP.
@@ -437,7 +465,6 @@ The three options to implement this kind of matter are JAX, Tensor Flow and pyto
 ## Environment
 
 For this project we are going to be using Pytorch due his user-friendly and support. Python. with UV
-
 ## Training
 
 Due the high computational power needed we are going to using GPUS and of course CUDA.
