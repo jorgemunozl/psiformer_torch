@@ -1,6 +1,6 @@
 ---
 date: 2025-10-23 19:32
-modified: 2025-11-17 19:47
+modified: 2025-11-18 07:55
 ---
 # Development of a Transformed based architecture to solve the Time Independent Many Electron Schrodinger Equation
 
@@ -284,7 +284,7 @@ In each sample generates $E_{L}(\mathbf{R}_{k})$ then average to obtain $\mathbb
 ## Deep Learning Fundamentals
 This subsection introduces the core concepts of  Deep Learning that are going to be applied in this work.
 ### Multi Layer Perceptron
-A multi layer perceptron (MLP) is a nonlinear function $\mathcal{F}:\mathbb{R}^{\text{in}}\to \mathbb{R}^{\text{out}}$.  @nielsenNeuralNetworksDeep2015 , it actually is the composition of $L$ layers, the first layer is called the input layer, the last output layer and the intermediates hidden layers. In each layer we find an affine map $\mathbf{z}^{(l)},l\in \{ L,L-1,\dots,2 \}$ of the follow form. 
+A multi layer perceptron (MLP) is a nonlinear function $\mathcal{F}:\mathbb{R}^{\text{in}}\to \mathbb{R}^{\text{out}}$.  @nielsenNeuralNetworksDeep2015 , it actually is the composition of $L$ layers, the first layer is called the input layer, the last output layer and the intermediates hidden layers. In each layer we find a arbitrary number of neurons although is a good practice always choose number which are powers of two and an affine map $\mathbf{z}^{(l)},l\in \{ L,L-1,\dots,2 \}$ ($l=1$ is the input layer) of the follow form.
 $$
 \mathbf{z}^{(l)}=\mathbf{W}^{(l)}\mathbf{a}^{(l-1)}+\mathbf{b}^{(l)}
 $$
@@ -296,15 +296,36 @@ $$
 $$
 We call parameters to the set of all the weights and bias of each layer. And represented it with the symbol $\theta$.
 $$\{ \mathbf{W}^{(l)},\mathbf{b}^{(l)}\}_{l=2}^{L}=\theta$$
-You typically train a MLP, using a training data set, a loss function and an optimizer. Additionally you can use regularization techniques to improve the performance of the MLP.
+You typically train a MLP, using a training data set, a loss function (e.g Mean Square Error, Mean Absolute Error, Cross entropy) and an optimizer (e.g GD, SGD, ADAM). Additionally you can use regularization techniques such as dropout to improve the generalization of the Net.
 ### Natural gradient Descent
 
-There exist different methods to update our parameters. Like Gradient Descent, Stochastic Gradient Descent, [[Adaptive Moment Estimation]] ADAM, but in this work we are going to use 
+As we mention there exist different methods to update our parameters. Like Gradient Descent, Stochastic Gradient Descent, [[Adaptive Moment Estimation]] ADAM, those are based on a Euclid Geometry, but in this case since our loss function $\mathcal{L}_{\theta}$ depends on a probability distribution $p_{\theta}$ measuring "distances" between distributions is something that the the KL (Kull Lidberg) can make. In fact the you can show that the FIM appears studying KL locally.
+
+
+
+, a metric on the space of probability distributions is the Fisher metric which uses the  is the Fisher Information Matrix (FIM) $\mathcal{F}$ defined as:
+Let $p$ be a probability distribution that is conditioned to the parameters $\theta$. Define the score $s_{\theta}\in  \mathbb{R}^{d}$, $d$ the number of parameters:
+$$
+s_{\theta}(x)=\nabla_{\theta}\log p(x|\theta)
+$$
+The FIM associated to $p$ is:
+$$ \mathcal{F}(\theta)=\mathbb{E}_{x\sim p(\cdot|\theta)}[s_{\theta}(x)s_{\theta}(x)^{\mathsf{\top}}]$$
+Define the parametric family:
+$$
+\mathcal{M}=\{ p_{\theta}(z)|\theta \in \Theta \subset \mathbb{R}^{d}\}
+$$
+We can think of like if each theta defines a point in that space.
+
+Using this metric, how is that pos [[Fisher Information Matrix]]
+
+
+
+
+but in this work we are going to use 
 $$
 \Delta \theta _{\text{nat}}=-\eta \mathcal{F}^{-1} \Delta_{\theta}\mathcal{L}
 $$
-Where $\mathcal{F}$ is the Fisher Information Matrix (FIM) defined as:
-$$ \mathcal{F}_{ij}=\mathbb{E}_{p}(\mathbf{x})\left[ \frac{\partial \log p(x)}{\partial \theta_{i} }\frac{\partial \log p(X)}{\partial \theta_{j}} \right] $$
+
 Optimizing Neural Networks with Kronecker-factored Approximate Curvature
 [[Natural Gradient Descent]]
 A quick introduction to Markov chains and Markov chain Monte Carlo (revised version)
