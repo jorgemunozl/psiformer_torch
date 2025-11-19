@@ -1,6 +1,6 @@
 ---
 date: 2025-10-23 19:32
-modified: 2025-11-19 09:58
+modified: 2025-11-19 17:04
 ---
 # Development of a Transformed based architecture to solve the Time Independent Many Electron Schrodinger Equation
 
@@ -689,114 +689,680 @@ Transformers address both issues:
 - Full parallelism over sequence length. Given $\mathbf{X}$, the matrices $\mathbf{Q}$, $\mathbf{K}$, $\mathbf{V}$ and the attention outputs for all time steps are computed via matrix multiplications. This is extremely efficient on modern accelerators (GPUs/TPUs).
 For a many-electron Schrödinger equation, the wave function depends on the joint configuration of all particles.  A Transformer-based ansatz naturally provides a way for each electron’s representation to **look at all other electrons** and the nuclei, capturing complex correlation patterns through attention, while remaining highly parallelizable.
 
-# Psi Former Model
-
-
-## Fermionic Neural Network
-
-This sections describes the architectures of the model that we are going to use.
-First introduce Fermine which generates the hidden states using merely MLP whereas PsiFormer Generate the Hidden states using the Multi Head Attention (MHA) and a MLP.
-s## Fermi Net
-A very important work for us is: Fermi Net @Pfau_2020  it uses different MLP to learn the forms of the orbitals. Their ansatz is nothing but the average sum of $k$ determinants.
-$$ \psi(\mathbf{x}_{i},\dots,\mathbf{x}_{n})=\sum_{k}\omega_{k}\det[\Phi ^{k}] $$
-Whit
+A very important work for us is FermiNet (Pfau et al. 2020). It uses deep neural networks to represent **orbitals** and then combines them into a sum of Slater determinants. At the top level, the ansatz is a linear combination of $K$ determinant products
 $$
+\psi(\mathbf{x}_1,\dots,\mathbf{x}_n)
+= \sum_{k=1}^K \omega_k \,\det[\Phi^{k}],
+$$
+where $\omega_k$ are learnable coefficients and $\Phi^k$ is a matrix of single-particle orbitals. For a system without explicit spin separation one can write
+$$
+\det[\Phi^k] =
 \begin{vmatrix}
 \phi_{1}^{k}(\mathbf{x}_{1})  & \dots  &  \phi_{1}^{k}(\mathbf{x}_{n}) \\
 \vdots   &  & \vdots  \\
 \phi_{n}^{k}(\mathbf{x}_{1}) & \dots & \phi_{n}^{k}(\mathbf{x}_{n})
+\end{vmatrix}
+= \det[\phi_i^k(\mathbf{x}_j)].
+$$
+Here $\phi_i^k$ is the $i$-th orbital in determinant $k$, and we evaluate it on the coordinates of electron $j$.
 
-\end{vmatrix}=\det[\phi_{i}^{k}(\mathbf{x}_{j})]=\det[\Phi ^{k}]
+However, in FermiNet we are dealing with electrons with spin, so things are slightly more structured, and the orbitals depend on **all** electron coordinates, not only on the one being “plugged in”. That is why we write the orbitals as
 $$
-Where $\omega_{k}$ are learnable paremeters. How we generate those determinants for fermi net?
-Each orbital $\phi_{i}^{k}\in \mathbb{R}$. Realize that this orbital only take a single input, which is restrictive.
+\phi^{k\alpha}_i\big(\mathbf{r}^\alpha_j;\{\mathbf{r}^\alpha_{/j}\};\{\mathbf{r}^{\bar{\alpha}}\}\big),
+$$
+where:
+- $\alpha \in \{\uparrow,\downarrow\}$ is the spin sector,
+- $\mathbf{r}^\alpha_j$ is the position of electron $j$ with spin $\alpha$,
+- $\{\mathbf{r}^\alpha_{/j}\}$ denotes the positions of all **other** electrons with spin $\alpha$,
+- $\{\mathbf{r}^{\bar{\alpha}}\}$ denotes the positions of electrons with the opposite spin.
 
-So we are doing:
+So the orbital evaluated on electron $j$ “knows” about all other electrons. The indices:
+- $i$ = orbital index (row of the determinant),
+- $j$ = electron index (column of the determinant),
+- $\alpha,\beta$ = spin labels ($\uparrow$ or $\downarrow$),
+- $k$ = determinant index in the sum.
 
+---
+
+### Input coordinates and features
+
+We denote by
+- $\mathbf{r}^\uparrow_1,\dots,\mathbf{r}^\uparrow_{n^\uparrow}$ the coordinates of spin-up electrons,
+- $\mathbf{r}^\downarrow_1,\dots,\mathbf{r}^\downarrow_{n^\downarrow}$ the coordinates of spin-down electrons,
+- $\mathbf{R}_I$ the positions of nuclei, $I=1,\dots,N_\text{nuc}$.
+
+The network builds two types of features:
+
+1. **Electron–nucleus features** for each electron $i$ with spin $\alpha$:
+   $$
+   \mathbf{h}^{0,\alpha}_i
+   = \text{concatenate}\Big(
+       \mathbf{r}^\alpha_i - \mathbf{R}_I,\;
+       \big|\mathbf{r}^\alpha_i - \mathbf{R}_I\big|
+       \ \forall\, I
+     \Big).
+   $$
+   This produces a feature vector that contains, for electron $(i,\alpha)$, all its relative position vectors to each nucleus, plus their distances.
+
+2. **Electron–electron features** for each pair of electrons $(i,\alpha)$ and $(j,\beta)$:
+   $$
+   \mathbf{h}^{0,\alpha\beta}_{ij}
+   = \text{concatenate}\Big(
+       \mathbf{r}^\alpha_i - \mathbf{r}^\beta_j,\;
+       \big|\mathbf{r}^\alpha_i - \mathbf{r}^\beta_j\big|
+       \ \forall\, j,\beta
+     \Big).
+   $$
+   For fixed $(i,\alpha)$, we build such features for all other electrons $(j,\beta)$, capturing their relative positions and distances.
+
+The superscript $0$ indicates that these are the features at layer $\ell=0$ (input to the deep network). At deeper layers we will keep updating
+- $\mathbf{h}^{\ell\alpha}_i$ (single-electron features),
+- $\mathbf{h}^{\ell\alpha\beta}_{ij}$ (pairwise features),
+for $\ell = 0,1,\dots,L-1$.
+
+---
+
+### Mixing and updating features across layers
+
+At each hidden layer $\ell$, we want each electron’s features to depend on *all* other electrons, in a permutation-symmetric way. To do this, we form **averages** over electrons of the same or opposite spin.
+
+First, define global spin-averaged single-electron features
 $$
-\phi^{k\alpha}_i(\mathbf{r}^\alpha_j; \{\mathbf{r}^\alpha_{/j}\}; \{\mathbf{r}^{\bar{\alpha}}\})
-$$
-What does this mean? 
-Now we are going to explain how for each pair electron-nuclei $(\alpha,\beta \in \{ \uparrow,\downarrow \})$
-$$
-\mathbf{h}_{i}^{\ell \alpha} \gets \text{concatenate}(\mathbf{r}^\alpha_i - \mathbf{R}_I, |\mathbf{r}^\alpha_i - \mathbf{R}_I|\ \forall\ I)
-$$
-Pair electron electron, $\alpha,\beta$ is the spin of the $i$ and $j$ electron respectively.
-$$
-\mathbf{h}_{ij}^{\ell \alpha\beta} \gets \text{concatenate}(\mathbf{r}^\alpha_i - \mathbf{r}^\beta_j, |\mathbf{r}^\alpha_i - \mathbf{r}^\beta_j|\ \forall\ j,\beta)
-$$
-For each layer:
-$$
- \begin{align}
-    &\left(
-    \mathbf{h}^{\ell\alpha}_i,
-    \frac{1}{n^\uparrow}\sum_{j=1}^{n^\uparrow} \mathbf{h}^{\ell\uparrow}_j, \frac{1}{n^\downarrow} \sum_{j=1}^{n^\downarrow} \mathbf{h}^{\ell\downarrow}_j,
-    \frac{1}{n^\uparrow} \sum_{j=1}^{n^\uparrow} \mathbf{h}^{\ell\alpha\uparrow}_{ij},
-    \frac{1}{n^\downarrow} \sum_{j=1}^{n^\downarrow} \mathbf{h}^{\ell\alpha\downarrow}_{ij}\right) \nonumber \\
-    &\qquad =
-    \left(\mathbf{h}^{\ell\alpha}_i, \mathbf{g}^{\ell\uparrow}, \mathbf{g}^{\ell\downarrow}, \mathbf{g}^{\ell\alpha\uparrow}_i, \mathbf{g}^{\ell\alpha\downarrow}_i\right) = \mathbf{f}^{\ell \alpha}_i,
-\end{align}
-$$
-Each 
-$$
-\mathbf{h}^{\ell+1 \alpha}_i= \mathrm{tanh}\left(\mathbf{V}^\ell \mathbf{f}^{\ell \alpha}_i + \mathbf{b}^\ell\right) + \mathbf{h}^{\ell\alpha}_i
-$$
-And for the 
-$$
-\mathbf{h}^{\ell+1 \alpha\beta}_{ij} = \mathrm{tanh}\left(\mathbf{W}^\ell\mathbf{h}^{\ell \alpha\beta}_{ij} +\mathbf{c}^\ell\right) + \mathbf{h}^{\ell \alpha\beta}_{ij}
-$$
-Like this until obtain $\mathbf{h}_{j}^{L\alpha}$. And from it you obtain your orbitals. Which are a affine map scaled by a exponential factor 
-$$
-\begin{align}
-    \phi^{k\alpha}_i(\mathbf{r}^\alpha_j; \{\mathbf{r}^\alpha_{/j}\}; \{\mathbf{r}^{\bar{\alpha}}\}) =
-    \left(\mathbf{w}^{k\alpha}_i \cdot \mathbf{h}^{L\alpha}_j + g^{k\alpha}_i\right)\\
-	\sum_{m} \pi^{k\alpha}_{im}\mathrm{exp}\left(-|\mathbf{\Sigma}_{im}^{k \alpha}(\mathbf{r}^{\alpha}_j-\mathbf{R}_m)|\right),
-\end{align}
-$$
-With the orbitals you finally obtain the determinants.
-$$
-​￼\begin{align}
-	\psi(\mathbf{r}^\uparrow_1,\ldots,\mathbf{r}^\downarrow_{n^\downarrow}) = \sum_{k}\omega_k &\left(\det\left[\phi^{k \uparrow}_i(\mathbf{r}^\uparrow_j; \{\mathbf{r}^\uparrow_{/j}\}; \{\mathbf{r}^\downarrow\})\right]\right.\\&\left.\hphantom{\left(\right.}\det\left[\phi^{k\downarrow}_i(\mathbf{r}^\downarrow_j; \{\mathbf{r}^\downarrow_{/j}\});
-	\{\mathbf{r}^\uparrow\};\right]\right).
-\end{align}
+\mathbf{g}^{\ell\uparrow} =
+\frac{1}{n^\uparrow}\sum_{j=1}^{n^\uparrow}\mathbf{h}^{\ell\uparrow}_j,
+\qquad
+\mathbf{g}^{\ell\downarrow} =
+\frac{1}{n^\downarrow}\sum_{j=1}^{n^\downarrow}\mathbf{h}^{\ell\downarrow}_j.
 $$
 
-Why there are two determinants?
+Next, for each electron $(i,\alpha)$, define averaged pairwise features:
+$$
+\mathbf{g}^{\ell\alpha\uparrow}_i
+= \frac{1}{n^\uparrow}\sum_{j=1}^{n^\uparrow}\mathbf{h}^{\ell\alpha\uparrow}_{ij},
+\qquad
+\mathbf{g}^{\ell\alpha\downarrow}_i
+= \frac{1}{n^\downarrow}\sum_{j=1}^{n^\downarrow}\mathbf{h}^{\ell\alpha\downarrow}_{ij}.
+$$
+
+Now we *concatenate* all this information into a single feature vector for electron $(i,\alpha)$:
+$$
+\begin{aligned}
+\big(
+\mathbf{h}^{\ell\alpha}_i,
+\frac{1}{n^\uparrow}\sum_{j=1}^{n^\uparrow}\mathbf{h}^{\ell\uparrow}_j,
+\frac{1}{n^\downarrow}\sum_{j=1}^{n^\downarrow}\mathbf{h}^{\ell\downarrow}_j,
+\frac{1}{n^\uparrow}\sum_{j=1}^{n^\uparrow}\mathbf{h}^{\ell\alpha\uparrow}_{ij},
+\frac{1}{n^\downarrow}\sum_{j=1}^{n^\downarrow}\mathbf{h}^{\ell\alpha\downarrow}_{ij}
+\big)
+&=
+\big(\mathbf{h}^{\ell\alpha}_i, \mathbf{g}^{\ell\uparrow}, \mathbf{g}^{\ell\downarrow},
+\mathbf{g}^{\ell\alpha\uparrow}_i, \mathbf{g}^{\ell\alpha\downarrow}_i \big) \\
+&= \mathbf{f}^{\ell\alpha}_i.
+\end{aligned}
+$$
+
+This $\mathbf{f}^{\ell\alpha}_i$ is what enters the **single-electron MLP** at layer $\ell$. The update is
+$$
+\mathbf{h}^{\ell+1,\alpha}_i
+= \tanh\big(\mathbf{V}^\ell \mathbf{f}^{\ell\alpha}_i + \mathbf{b}^\ell\big) + \mathbf{h}^{\ell\alpha}_i,
+$$
+where $\mathbf{V}^\ell$ and $\mathbf{b}^\ell$ are learnable weights and biases, shared between electrons (for the given spin sector). The residual connection $+\mathbf{h}^{\ell\alpha}_i$ stabilizes training.
+
+In parallel, the pairwise features are updated with a **pairwise MLP**:
+$$
+\mathbf{h}^{\ell+1,\alpha\beta}_{ij}
+= \tanh\big(\mathbf{W}^\ell \mathbf{h}^{\ell\alpha\beta}_{ij} + \mathbf{c}^\ell\big)
++ \mathbf{h}^{\ell\alpha\beta}_{ij},
+$$
+with weights $\mathbf{W}^\ell$ and biases $\mathbf{c}^\ell$, again shared over all pairs $(i,j,\alpha,\beta)$.
+
+By repeating these updates for $\ell = 0,\dots,L-1$, we eventually obtain **final single-electron features**
+$$
+\mathbf{h}^{L\alpha}_j \quad \text{for each electron } j \text{ of spin } \alpha.
+$$
+Notice how the indices work:
+- $\ell$ runs over layers and disappears at the end,
+- $i$ or $j$ always refer to a specific electron within a spin sector,
+- $\alpha,\beta$ tell you which spin sector that electron belongs to.
+
+---
+
+### From final features to orbitals
+
+The final orbitals are built as a function of the last-layer features $\mathbf{h}^{L\alpha}_j$, plus some additional “envelope” factors that handle the long-range decay and cusp conditions. For each determinant index $k$, spin $\alpha$, orbital index $i$, and electron $j$ we define
+$$
+\begin{aligned}
+\phi^{k\alpha}_i\big(\mathbf{r}^\alpha_j; \{\mathbf{r}^\alpha_{/j}\}; \{\mathbf{r}^{\bar{\alpha}}\}\big)
+&= \left(\mathbf{w}^{k\alpha}_i \cdot \mathbf{h}^{L\alpha}_j + g^{k\alpha}_i\right) \\
+&\quad\times \sum_{m} \pi^{k\alpha}_{im}
+\exp\Big(
+- \big|\mathbf{\Sigma}_{im}^{k\alpha} \big(\mathbf{r}^{\alpha}_j - \mathbf{R}_m\big)\big|
+\Big).
+\end{aligned}
+$$
+Here:
+- $\mathbf{w}^{k\alpha}_i$ and $g^{k\alpha}_i$ are learnable linear parameters for the “MLP part” of the orbital,
+- the sum over $m$ is an “envelope” over nuclei (or centers),
+- $\pi^{k\alpha}_{im}$ and $\mathbf{\Sigma}^{k\alpha}_{im}$ are learnable coefficients and matrices controlling the exponential decay around nucleus $m$.
+
+All these parameters depend on the indices:
+- $k$ selects which determinant in the sum,
+- $i$ selects which orbital (row in the determinant),
+- $\alpha$ selects the spin sector,
+- $m$ selects which nuclear center in the envelope.
+
+The dependence on all other electrons is hidden inside $\mathbf{h}^{L\alpha}_j$, which was built from the full set of positions $\{\mathbf{r}^\uparrow\},\{\mathbf{r}^\downarrow\}$ through the deep network.
+
+---
+
+### Assembling the spin-separated determinants
+
+For each determinant index $k$ and spin sector $\alpha\in\{\uparrow,\downarrow\}$, we build a matrix
+$$
+D^{k\alpha}_{ij}
+= \phi^{k\alpha}_i\big( \mathbf{r}^\alpha_j; \{\mathbf{r}^\alpha_{/j}\}; \{\mathbf{r}^{\bar{\alpha}}\}\big),
+$$
+with:
+- rows indexed by the orbital label $i = 1,\dots,n^\alpha$,
+- columns indexed by the electron label $j = 1,\dots,n^\alpha$ (with that spin).
+
+Taking the determinant gives a properly antisymmetric function of the positions of electrons **with that spin**:
+$$
+\det\big[D^{k\alpha}\big]
+= \det\left[\phi^{k\alpha}_i(\mathbf{r}^\alpha_j; \{\mathbf{r}^\alpha_{/j}\}; \{\mathbf{r}^{\bar{\alpha}}\})\right].
+$$
+
+For the full wavefunction, we combine spin-up and spin-down blocks:
+$$
+\begin{aligned}
+\psi(\mathbf{r}^\uparrow_1,\ldots,\mathbf{r}^\uparrow_{n^\uparrow},
+     \mathbf{r}^\downarrow_1,\ldots,\mathbf{r}^\downarrow_{n^\downarrow})
+= \sum_{k} \omega_k \;&
+\det\left[\phi^{k \uparrow}_i(\mathbf{r}^\uparrow_j; \{\mathbf{r}^\uparrow_{/j}\}; \{\mathbf{r}^\downarrow\})\right] \\
+&\times
+\det\left[\phi^{k \downarrow}_i(\mathbf{r}^\downarrow_j; \{\mathbf{r}^\downarrow_{/j}\}; \{\mathbf{r}^\uparrow\})\right].
+\end{aligned}
+$$
+
+**Why are there two determinants?**  
+
+In electronic structure, when we separate spin and spatial parts using spin-orbitals, the full Slater determinant over all electrons factorizes into the product of:
+- one determinant involving only spin-up electrons,
+- another determinant involving only spin-down electrons.
+
+Each of these determinants is antisymmetric under exchange of two electrons **with the same spin**. The overall wavefunction constructed as the product of a spin-up determinant and a spin-down determinant is antisymmetric under exchange of any two electrons (when you take into account the spin labels). FermiNet keeps this structure and lets each block be represented by a powerful neural network ansatz for the orbitals.
+
+Up to this point the building blocks are just MLP layers (with residual connections and special feature mixing), but the careful indexing
+- $(i,\alpha)$ for “which electron/spin”,
+- $j$ for summation over electrons,
+- $\ell$ for layers,
+- $k$ for determinant index,
+is what guarantees that the final object has the correct permutation symmetry and antisymmetry required for a fermionic wavefunction.
+
+
+# Psi Former Model
+
+## Fermi Net
+
+A very important work for us is FermiNet (Pfau et al. 2020). It uses deep neural networks to represent **orbitals** and then combines them into a sum of Slater determinants. At the top level, the ansatz is a linear combination of $K$ determinant products
+$$
+\psi(\mathbf{x}_1,\dots,\mathbf{x}_n)
+= \sum_{k=1}^K \omega_k \,\det[\Phi^{k}],
+$$
+where $\omega_k$ are learnable coefficients and $\Phi^k$ is a matrix of single-particle orbitals. For a system without explicit spin separation one can write
+$$
+\det[\Phi^k] =
+\begin{vmatrix}
+\phi_{1}^{k}(\mathbf{x}_{1})  & \dots  &  \phi_{1}^{k}(\mathbf{x}_{n}) \\
+\vdots   &  & \vdots  \\
+\phi_{n}^{k}(\mathbf{x}_{1}) & \dots & \phi_{n}^{k}(\mathbf{x}_{n})
+\end{vmatrix}
+= \det[\phi_i^k(\mathbf{x}_j)].
+$$
+Here $\phi_i^k$ is the $i$-th orbital in determinant $k$, and we evaluate it on the coordinates of electron $j$.
+
+However, in FermiNet we are dealing with electrons with spin, so things are slightly more structured, and the orbitals depend on **all** electron coordinates, not only on the one being “plugged in”. That is why we write the orbitals as
+$$
+\phi^{k\alpha}_i\big(\mathbf{r}^\alpha_j;\{\mathbf{r}^\alpha_{/j}\};\{\mathbf{r}^{\bar{\alpha}}\}\big),
+$$
+where:
+- $\alpha \in \{\uparrow,\downarrow\}$ is the spin sector,
+- $\mathbf{r}^\alpha_j$ is the position of electron $j$ with spin $\alpha$,
+- $\{\mathbf{r}^\alpha_{/j}\}$ denotes the positions of all **other** electrons with spin $\alpha$,
+- $\{\mathbf{r}^{\bar{\alpha}}\}$ denotes the positions of electrons with the opposite spin.
+
+So the orbital evaluated on electron $j$ “knows” about all other electrons. The indices:
+- $i$ = orbital index (row of the determinant),
+- $j$ = electron index (column of the determinant),
+- $\alpha,\beta$ = spin labels ($\uparrow$ or $\downarrow$),
+- $k$ = determinant index in the sum.
+
+---
+
+### Input coordinates and features
+
+We denote by
+- $\mathbf{r}^\uparrow_1,\dots,\mathbf{r}^\uparrow_{n^\uparrow}$ the coordinates of spin-up electrons,
+- $\mathbf{r}^\downarrow_1,\dots,\mathbf{r}^\downarrow_{n^\downarrow}$ the coordinates of spin-down electrons,
+- $\mathbf{R}_I$ the positions of nuclei, $I=1,\dots,N_\text{nuc}$.
+
+The network builds two types of features:
+
+1. **Electron–nucleus features** for each electron $i$ with spin $\alpha$:
+   $$
+   \mathbf{h}^{0,\alpha}_i
+   = \text{concatenate}\Big(
+       \mathbf{r}^\alpha_i - \mathbf{R}_I,\;
+       \big|\mathbf{r}^\alpha_i - \mathbf{R}_I\big|
+       \ \forall\, I
+     \Big).
+   $$
+   This produces a feature vector that contains, for electron $(i,\alpha)$, all its relative position vectors to each nucleus, plus their distances.
+
+2. **Electron–electron features** for each pair of electrons $(i,\alpha)$ and $(j,\beta)$:
+   $$
+   \mathbf{h}^{0,\alpha\beta}_{ij}
+   = \text{concatenate}\Big(
+       \mathbf{r}^\alpha_i - \mathbf{r}^\beta_j,\;
+       \big|\mathbf{r}^\alpha_i - \mathbf{r}^\beta_j\big|
+       \ \forall\, j,\beta
+     \Big).
+   $$
+   For fixed $(i,\alpha)$, we build such features for all other electrons $(j,\beta)$, capturing their relative positions and distances.
+
+The superscript $0$ indicates that these are the features at layer $\ell=0$ (input to the deep network). At deeper layers we will keep updating
+- $\mathbf{h}^{\ell\alpha}_i$ (single-electron features),
+- $\mathbf{h}^{\ell\alpha\beta}_{ij}$ (pairwise features),
+for $\ell = 0,1,\dots,L-1$.
+
+---
+
+### Mixing and updating features across layers
+
+At each hidden layer $\ell$, we want each electron’s features to depend on *all* other electrons, in a permutation-symmetric way. To do this, we form **averages** over electrons of the same or opposite spin.
+
+First, define global spin-averaged single-electron features
+$$
+\mathbf{g}^{\ell\uparrow} =
+\frac{1}{n^\uparrow}\sum_{j=1}^{n^\uparrow}\mathbf{h}^{\ell\uparrow}_j,
+\qquad
+\mathbf{g}^{\ell\downarrow} =
+\frac{1}{n^\downarrow}\sum_{j=1}^{n^\downarrow}\mathbf{h}^{\ell\downarrow}_j.
+$$
+
+Next, for each electron $(i,\alpha)$, define averaged pairwise features:
+$$
+\mathbf{g}^{\ell\alpha\uparrow}_i
+= \frac{1}{n^\uparrow}\sum_{j=1}^{n^\uparrow}\mathbf{h}^{\ell\alpha\uparrow}_{ij},
+\qquad
+\mathbf{g}^{\ell\alpha\downarrow}_i
+= \frac{1}{n^\downarrow}\sum_{j=1}^{n^\downarrow}\mathbf{h}^{\ell\alpha\downarrow}_{ij}.
+$$
+
+Now we *concatenate* all this information into a single feature vector for electron $(i,\alpha)$:
+$$
+\begin{aligned}
+\big(
+\mathbf{h}^{\ell\alpha}_i,
+\frac{1}{n^\uparrow}\sum_{j=1}^{n^\uparrow}\mathbf{h}^{\ell\uparrow}_j,
+\frac{1}{n^\downarrow}\sum_{j=1}^{n^\downarrow}\mathbf{h}^{\ell\downarrow}_j,
+\frac{1}{n^\uparrow}\sum_{j=1}^{n^\uparrow}\mathbf{h}^{\ell\alpha\uparrow}_{ij},
+\frac{1}{n^\downarrow}\sum_{j=1}^{n^\downarrow}\mathbf{h}^{\ell\alpha\downarrow}_{ij}
+\big)
+&=
+\big(\mathbf{h}^{\ell\alpha}_i, \mathbf{g}^{\ell\uparrow}, \mathbf{g}^{\ell\downarrow},
+\mathbf{g}^{\ell\alpha\uparrow}_i, \mathbf{g}^{\ell\alpha\downarrow}_i \big) \\
+&= \mathbf{f}^{\ell\alpha}_i.
+\end{aligned}
+$$
+
+This $\mathbf{f}^{\ell\alpha}_i$ is what enters the **single-electron MLP** at layer $\ell$. The update is
+$$
+\mathbf{h}^{\ell+1,\alpha}_i
+= \tanh\big(\mathbf{V}^\ell \mathbf{f}^{\ell\alpha}_i + \mathbf{b}^\ell\big) + \mathbf{h}^{\ell\alpha}_i,
+$$
+where $\mathbf{V}^\ell$ and $\mathbf{b}^\ell$ are learnable weights and biases, shared between electrons (for the given spin sector). The residual connection $+\mathbf{h}^{\ell\alpha}_i$ stabilizes training.
+
+In parallel, the pairwise features are updated with a **pairwise MLP**:
+$$
+\mathbf{h}^{\ell+1,\alpha\beta}_{ij}
+= \tanh\big(\mathbf{W}^\ell \mathbf{h}^{\ell\alpha\beta}_{ij} + \mathbf{c}^\ell\big)
++ \mathbf{h}^{\ell\alpha\beta}_{ij},
+$$
+with weights $\mathbf{W}^\ell$ and biases $\mathbf{c}^\ell$, again shared over all pairs $(i,j,\alpha,\beta)$.
+
+By repeating these updates for $\ell = 0,\dots,L-1$, we eventually obtain **final single-electron features**
+$$
+\mathbf{h}^{L\alpha}_j \quad \text{for each electron } j \text{ of spin } \alpha.
+$$
+Notice how the indices work:
+- $\ell$ runs over layers and disappears at the end,
+- $i$ or $j$ always refer to a specific electron within a spin sector,
+- $\alpha,\beta$ tell you which spin sector that electron belongs to.
+
+---
+
+### From final features to orbitals
+
+The final orbitals are built as a function of the last-layer features $\mathbf{h}^{L\alpha}_j$, plus some additional “envelope” factors that handle the long-range decay and cusp conditions. For each determinant index $k$, spin $\alpha$, orbital index $i$, and electron $j$ we define
+$$
+\begin{aligned}
+\phi^{k\alpha}_i\big(\mathbf{r}^\alpha_j; \{\mathbf{r}^\alpha_{/j}\}; \{\mathbf{r}^{\bar{\alpha}}\}\big)
+&= \left(\mathbf{w}^{k\alpha}_i \cdot \mathbf{h}^{L\alpha}_j + g^{k\alpha}_i\right) \\
+&\quad\times \sum_{m} \pi^{k\alpha}_{im}
+\exp\Big(
+- \big|\mathbf{\Sigma}_{im}^{k\alpha} \big(\mathbf{r}^{\alpha}_j - \mathbf{R}_m\big)\big|
+\Big).
+\end{aligned}
+$$
+Here:
+- $\mathbf{w}^{k\alpha}_i$ and $g^{k\alpha}_i$ are learnable linear parameters for the “MLP part” of the orbital,
+- the sum over $m$ is an “envelope” over nuclei (or centers),
+- $\pi^{k\alpha}_{im}$ and $\mathbf{\Sigma}^{k\alpha}_{im}$ are learnable coefficients and matrices controlling the exponential decay around nucleus $m$.
+
+All these parameters depend on the indices:
+- $k$ selects which determinant in the sum,
+- $i$ selects which orbital (row in the determinant),
+- $\alpha$ selects the spin sector,
+- $m$ selects which nuclear center in the envelope.
+
+The dependence on all other electrons is hidden inside $\mathbf{h}^{L\alpha}_j$, which was built from the full set of positions $\{\mathbf{r}^\uparrow\},\{\mathbf{r}^\downarrow\}$ through the deep network.
+
+---
+
+### Assembling the spin-separated determinants
+
+For each determinant index $k$ and spin sector $\alpha\in\{\uparrow,\downarrow\}$, we build a matrix
+$$
+D^{k\alpha}_{ij}
+= \phi^{k\alpha}_i\big( \mathbf{r}^\alpha_j; \{\mathbf{r}^\alpha_{/j}\}; \{\mathbf{r}^{\bar{\alpha}}\}\big),
+$$
+with:
+- rows indexed by the orbital label $i = 1,\dots,n^\alpha$,
+- columns indexed by the electron label $j = 1,\dots,n^\alpha$ (with that spin).
+
+Taking the determinant gives a properly antisymmetric function of the positions of electrons **with that spin**:
+$$
+\det\big[D^{k\alpha}\big]
+= \det\left[\phi^{k\alpha}_i(\mathbf{r}^\alpha_j; \{\mathbf{r}^\alpha_{/j}\}; \{\mathbf{r}^{\bar{\alpha}}\})\right].
+$$
+
+For the full wavefunction, we combine spin-up and spin-down blocks:
+$$
+\begin{aligned}
+\psi(\mathbf{r}^\uparrow_1,\ldots,\mathbf{r}^\uparrow_{n^\uparrow},
+     \mathbf{r}^\downarrow_1,\ldots,\mathbf{r}^\downarrow_{n^\downarrow})
+= \sum_{k} \omega_k \;&
+\det\left[\phi^{k \uparrow}_i(\mathbf{r}^\uparrow_j; \{\mathbf{r}^\uparrow_{/j}\}; \{\mathbf{r}^\downarrow\})\right] \\
+&\times
+\det\left[\phi^{k \downarrow}_i(\mathbf{r}^\downarrow_j; \{\mathbf{r}^\downarrow_{/j}\}; \{\mathbf{r}^\uparrow\})\right].
+\end{aligned}
+$$
+We have don't explained why we can write the determinant as that product.
+In electronic structure, when we separate spin and spatial parts using spin-orbitals, the full Slater determinant over all electrons factorizes into the product of: one determinant involving only spin-up electrons, another determinant involving only spin-down electrons.
+
+Each of these determinants is antisymmetric under exchange of two electrons **with the same spin**. The overall wavefunction constructed as the product of a spin-up determinant and a spin-down determinant is antisymmetric under exchange of any two electrons (when you take into account the spin labels). FermiNet keeps this structure and lets each block be represented by a powerful neural network ansatz for the orbitals.
+
+Up to this point the building blocks are just MLP layers (with residual connections and special feature mixing), but the careful indexing
+- $(i,\alpha)$ for “which electron/spin”,
+- $j$ for summation over electrons,
+- $\ell$ for layers,
+- $k$ for determinant index,
+is what guarantees that the final object has the correct permutation symmetry and antisymmetry required for a fermionic wavefunction.
+
 ![[ferminet.png|280x315]]
 
-Until this point we have only use MLPs vanilla. 
+(Architecture of Fermite Source  )
+
 ## Jastrow Factor for Psi Former
 
 [[Psi Former Ansatz]]. @vonglehn2023selfattentionansatzabinitioquantum
-$$ \Psi_{\theta}(\mathbf{x})=\exp(\mathcal{J}_{\theta}(\mathbf{x}))\sum_{k=1}^{N_{\det}}\det[\boldsymbol{\Phi}_{\theta}^{k}(x)] $$
-Where  $\mathcal{J}_{\theta}:(\mathbb{R}^{3}\times \{ \uparrow,\downarrow \})^{n}\to \mathbb{R}$ is the [[Jastrow Factor for Psi Former]] and $\Phi$ are [[Orbital for neural network fermi net|spin orbitals]]. It has two learnable parameters
+
+The Psiformer wavefunction has the usual Slater–Jastrow structure
 $$
-\mathcal{J}_{\theta}(x)=\sum_{i<j;\sigma_{i}=\sigma_{j}}-\frac{1}{4}\frac{\alpha^{2}_{par}}{\alpha_{par}+\lvert \mathbf{r}_{i}-\mathbf{r}_{j} \rvert }+\sum_{i,j;\sigma_{i}\neq \sigma_{j}}-\frac{1}{2}\frac{\alpha^{2}_{anti}}{\alpha_{anti}+\lvert \mathbf{r}_{i}-\mathbf{r}_{j} \rvert }
+\Psi_{\theta}(\mathbf{x})
+=
+\exp\big(\mathcal{J}_{\theta}(\mathbf{x})\big)\,
+\sum_{k=1}^{N_{\det}}\det[\boldsymbol{\Phi}^{k}_{\theta}(\mathbf{x})],
 $$
-The architecture of **Psiformer** is:
+where $\mathbf{x} = (x_1,\dots,x_N)$ is the collection of all $N$ electron states 
+$$
+x_i = (\mathbf{r}_i,\sigma_i), \qquad \mathbf{r}_i \in \mathbb{R}^3,\;\sigma_i \in \{\uparrow,\downarrow\}.
+$$
+
+- $\mathcal{J}_\theta:(\mathbb{R}^{3}\times \{\uparrow,\downarrow\})^{N}\to \mathbb{R}$ is the **Jastrow factor**, encoding (here) only electron–electron cusp information.
+- $\boldsymbol{\Phi}^k_\theta$ is the matrix of (spin-)orbitals for determinant $k$.
+
+In Psiformer, the Jastrow factor is *very* simple: it has only two learnable parameters, one for parallel-spin pairs and one for antiparallel-spin pairs:
+$$
+\mathcal{J}_{\theta}(\mathbf{x})
+=
+\sum_{i<j;\,\sigma_{i}=\sigma_{j}}
+-\frac{1}{4}\frac{\alpha^{2}_{\mathrm{par}}}{\alpha_{\mathrm{par}}+\lvert \mathbf{r}_{i}-\mathbf{r}_{j} \rvert }
+\;+\;
+\sum_{i,j;\,\sigma_{i}\neq \sigma_{j}}
+-\frac{1}{2}\frac{\alpha^{2}_{\mathrm{anti}}}{\alpha_{\mathrm{anti}}+\lvert \mathbf{r}_{i}-\mathbf{r}_{j} \rvert }.
+$$
+
+- $\alpha_{\mathrm{par}}$ controls the strength of the Jastrow for **same-spin** electron pairs.
+- $\alpha_{\mathrm{anti}}$ does the same for **opposite-spin** pairs.
+
+This Jastrow is responsible for enforcing the electron–electron cusp conditions. The neural network itself (the Psiformer) only sees **electron–nucleus** information in its attention stream; all explicit $|\mathbf{r}_i-\mathbf{r}_j|$ dependence lives in $\mathcal{J}_\theta$.
+
+---
+
+## Applying Attention to Fermi Net (Psiformer-style)
+
+Conceptually, Psiformer is “FermiNet with the two-electron stream replaced by self-attention”, we can see it clearly doing.
+
+- FermiNet: separate one-electron and two-electron feature streams, then mix.
+- Psiformer: a **single stream** of self-attention layers on electron–nuclear features only; electron–electron features enter only via the Jastrow.
+
+We now explain the indices and equations carefully.
+### Indices
+
+We will use:
+
+- $i,j = 1,\dots,N$: electron indices.
+- $I = 1,\dots,N_{\text{nuc}}$: nucleus index.
+- $\sigma_i \in \{\uparrow,\downarrow\}$: spin of electron $i$.
+- $\ell = 0,\dots,L-1$: layer index in the Psiformer.
+- $h = 1,\dots,H$: attention head index.
+- $k = 1,\dots,N_{\det}$: determinant index.
+- $d$: hidden dimension of the per-electron feature vectors.
+So at each layer $\ell$, each electron $i$ carries a feature (hidden state)
+$$
+\mathbf{h}_i^{\ell} \in \mathbb{R}^{d}.
+$$
+### Input features and initial hidden states
+
+Psiformer only uses **electron–nuclear** features (plus spin) as input to the attention stack.
+For each electron $i$:
+1. Let $\mathbf{R}_I$ be nuclear positions.
+2. Build raw features by concatenating for all $I$:
+   - some function of $\mathbf{r}_i - \mathbf{R}_I$ (relative position),
+   - $|\mathbf{r}_i - \mathbf{R}_I|$ (distance),
+   - and the spin as a scalar (e.g. $\sigma_i = +1$ for $\uparrow$, $-1$ for $\downarrow$).
+
+In the paper they rescale the electron–nucleus vectors so that large distances grow only logarithmically, but at the level of notation we can just write
+$$
+\mathbf{f}_i^{0} \in \mathbb{R}^{d_{\text{in}}}
+\quad\text{(electron–nucleus features + spin)}.
+$$
+These are then mapped into the model hidden dimension by a linear layer
+$$
+\mathbf{h}_{i}^{0} = \mathbf{W}^{0}\,\mathbf{f}_{i}^{0},
+$$
+where $\mathbf{W}^0 \in \mathbb{R}^{d \times d_{\text{in}}}$ is learned.
+So:
+- index $i$ is “which electron”,
+- superscript $0$ means “before any attention layers.”
+### One self-attention layer
+
+At layer $\ell$, we have all electron hidden states
+$$
+\mathbf{h}_1^{\ell},\dots,\mathbf{h}_N^{\ell}.
+$$
+
+For each **head** $h$ and electron $i$, we compute:
+
+- Query:
+  $$
+  \mathbf{q}^{\ell h}_i = \mathbf{W}^{\ell h}_q \mathbf{h}^{\ell}_i
+  $$
+- Key:
+  $$
+  \mathbf{k}^{\ell h}_i = \mathbf{W}^{\ell h}_k \mathbf{h}^{\ell}_i
+  $$
+- Value:
+  $$
+  \mathbf{v}^{\ell h}_i = \mathbf{W}^{\ell h}_v \mathbf{h}^{\ell}_i
+  $$
+
+Here each $\mathbf{W}^{\ell h}_q,\mathbf{W}^{\ell h}_k,\mathbf{W}^{\ell h}_v$ is a learned matrix, shared across all electrons $i$, but specific to layer $\ell$ and head $h$.
+
+Then the **self-attention output for electron $i$, head $h$** is
+$$
+\mathbf{A}^{\ell h}_i
+=
+\sum_{j=1}^{N}
+\underbrace{
+\frac{\exp\big((\mathbf{q}^{\ell h}_i)^{\mathsf T}\mathbf{k}^{\ell h}_j / \sqrt{d_k}\big)}
+     {\sum_{j'=1}^N \exp\big((\mathbf{q}^{\ell h}_i)^{\mathsf T}\mathbf{k}^{\ell h}_{j'} / \sqrt{d_k}\big)}
+}_{\text{attention weight from } i \text{ to } j}
+\mathbf{v}^{\ell h}_j.
+$$
+
+- $j$ runs over “all other electrons,” so electron $i$ “looks” at all others via attention.
+- $d_k$ is the key/query dimension (usually $d_k = d/H$ or similar).
+
+This is exactly your
+$$
+A^{\ell}_{h} = [\text{SelfAttn}(\mathbf{h}_1^\ell,\dots,\mathbf{h}_N^\ell;\mathbf{W}^{\ell h}_q,\mathbf{W}^{\ell h}_k,\mathbf{W}^{\ell h}_v)],
+$$
+but now written explicitly with indices $i$ and $j$.
+
+Next, we **concatenate over heads** for each electron:
+$$
+\mathbf{A}^{\ell}_i = \text{concat}_{h=1}^H\big[\mathbf{A}^{\ell h}_i\big]
+\in \mathbb{R}^{Hd_v},
+$$
+where $d_v$ is the value dimension of each head.
+
+This is your
+$$
+A^{\ell} = \text{concat}_{h}[A_{h}],
+$$
+but again with the electron index $i$ made explicit.
+
+### Residual projection and MLP
+
+We then map the concatenated attention output back to the hidden dimension and add a residual connection:
+$$
+\mathbf{f}_{i}^{\ell+1}
+=
+\mathbf{h}_{i}^{\ell}
++
+\mathbf{W}_{o}^{\ell}\,\mathbf{A}^{\ell}_i,
+$$
+where $\mathbf{W}_{o}^{\ell}$ is a learned matrix.
+
+Then we pass this through a small MLP (just a linear + $\tanh$ here), again with a residual:
+$$
+\mathbf{h}_{i}^{\ell+1}
+=
+\mathbf{f}_{i}^{\ell+1}
++
+\tanh\big(\mathbf{W}^{\ell+1}\mathbf{f}_{i}^{\ell+1} + \mathbf{b}^{\ell+1}\big).
+$$
+
+So a full Psiformer layer $\ell$ is:
+
+1. Self-attention: $\{\mathbf{h}_i^\ell\} \to \{\mathbf{A}^\ell_i\}$.
+2. Linear + residual: $\{\mathbf{A}^\ell_i\} \to \{\mathbf{f}_i^{\ell+1}\}$.
+3. MLP + residual: $\{\mathbf{f}_i^{\ell+1}\} \to \{\mathbf{h}_i^{\ell+1}\}$.
+
+Repeat this for $\ell=0,\dots,L-1$ and you get **final hidden states**
+$$
+\mathbf{h}_j^{L} \quad \text{for each electron } j.
+$$
+Here:
+- $L$ = number of layers in the Psiformer.
+- For each layer, $i$ indexes the electron the output belongs to, $j$ indexes electrons we attend over.
+- $h$ indexes different heads in multi-head attention.
+
+### From hidden states to orbitals and determinants
+
+From the final hidden states $\mathbf{h}_j^L$, we build the spin-orbital matrix for each determinant $k$.
+
+For each determinant index $k$ and orbital index $i$, define a **linear “orbital head”**:
+$$
+\tilde{\phi}^{k}_i(x_j)
+=
+\mathbf{w}^{k}_i \cdot \mathbf{h}^{L}_j
++
+g^{k}_i,
+$$
+where $\mathbf{w}^{k}_i$ and $g^{k}_i$ are learned. The dependence on spin $\sigma_j$ and all other electrons is implicit in $\mathbf{h}_j^L$: the self-attention layers have already mixed that information in.
+
+Then we multiply by an **envelope** to enforce the correct asymptotic decay:
+$$
+\Omega^{k}_{ij}
+=
+\sum_{m}
+\pi^{k}_{im}
+\exp\big(
+- \big|\mathbf{\Sigma}^{k}_{im}(\mathbf{r}_j - \mathbf{R}_m)\big|
+\big),
+$$
+where
+- $m$ indexes nuclei (or “envelope centers”),
+- $\pi^{k}_{im}$ and $\mathbf{\Sigma}^{k}_{im}$ are learned parameters.
+
+The final spin-orbital entries are
+$$
+\Phi^{k}_{ij}
+=
+\Omega^{k}_{ij}\,
+\tilde{\phi}^{k}_i(x_j).
+$$
+
+Collecting these into the matrix
+$$
+\boldsymbol{\Phi}^k(\mathbf{x}) = 
+\big[\Phi^{k}_{ij}\big]_{i,j=1}^N,
+$$
+we form the determinant
+$$
+\det[\boldsymbol{\Phi}^k(\mathbf{x})]
+=
+\det\big[\Phi^{k}_{ij}\big]
+=
+\det\big[\phi^{k}_i(x_j)\big],
+$$
+and finally the full Psiformer wavefunction
+$$
+\Psi_{\theta}(\mathbf{x})
+=
+\exp(\mathcal{J}_{\theta}(\mathbf{x}))
+\sum_{k=1}^{N_{\det}}\det[\boldsymbol{\Phi}^{k}_{\theta}(\mathbf{x})].
+$$
+
+So the story in terms of indices is:
+
+- $i$ = which **orbital** (row of the determinant).
+- $j$ = which **electron** the orbital is evaluated on (column of the determinant).
+- $k$ = which **determinant** in the sum.
+- $\ell$ = which **layer** of the attention/MLP stack produced the hidden states.
+- $h$ = which **attention head** participated in mixing information across electrons.
+- $I,m$ = which **nucleus/center** is used for the envelope.
+
+The self-attention layers are what let $\mathbf{h}_j^L$ depend on all other electrons in a flexible, learned way, while the determinant over $i,j$ and the Jastrow over $i,j$ enforce fermionic antisymmetry and cusp conditions.
+
 
 ![[psiformer.png|271x339]]
 
-(Source: Pfau et all)
-## Applying Attention to Fermi Net
-$$ \mathbf{h}_{i}^{0}=\mathbf{W}^{0}\mathbf{f}_{i}^{0} $$
-First compute:
-$$ A^{l}_{h}=[\text{SelfAttn}(\mathbf{h}^{l}_{1},\dots,\mathbf{h}^{\ell}_{N};\mathbf{W}^{\ell h}_{q},\mathbf{W}^{\ell h}_{k},\mathbf{W}^{\ell h}_{v})] $$
-Compute the query, the key and value using the hidden states and learnable matrices $\mathbf{W}$.
-$$ \mathbf{k}_{i}=\mathbf{W}_{k}\mathbf{h}_{i},\mathbf{q}_{i}=\mathbf{W}_{q}\mathbf{h}_{i},\mathbf{v}_{i}=\mathbf{W}_{v}\mathbf{h}_{i} $$
-Concatenate:
-$$A^{\ell}=\text{concat}_{h}[A_{h}]$$
-And then used it apply:
-$$
-\mathbf{f}_{i}^{\ell+1}=\mathbf{h}_{i}^{\ell}+W_{o}^{\ell}A^{\ell}
-$$
-And generate a new hidden state:
-$$ \mathbf{h}_{i}^{\ell+1}=\mathbf{f}_{i}^{\ell+1}+\tanh(\mathbf{W}^{\ell+1}\mathbf{f}_{i}^{\ell+1}+\mathbf{b}^{\ell+1}) $$
-And repeat the same process
-[[Attention mechanism Psiformer]]
-With it you can obtain you hidden states, and then how you use it?
-With them you create the [[Orbital for neural network fermi net]]
-And you have it.
+(Architecture of Psi Former, Source: Pfau et all)
 
 # Methodology
 
