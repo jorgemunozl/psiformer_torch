@@ -1,6 +1,6 @@
 ---
 date: 2025-10-23 19:32
-modified: 2025-11-18 07:55
+modified: 2025-11-19 07:31
 ---
 # Development of a Transformed based architecture to solve the Time Independent Many Electron Schrodinger Equation
 
@@ -77,7 +77,7 @@ Where $E$,the energy of the system, is constant. You also obtain that the spatia
 $$
 \hat{H}R(\mathbf{\vec{r}})=ER(\mathbf{\vec{r}})
 $$
-We usually represent $R$ as $\psi$. And in this work we are going to only focus in the TDSE, when we treat with constant energy, the electron are almost always found near the lowest energy state, known as the ground state. Solutions with higher energy known as excited states are relevant to photochemistry , but in this work we will restrict our attention to ground states.
+We are going to represent the spatial function  $R$ as $\psi$. And in this work we are going to only focus in the TDSE, when we treat with constant energy, the electron are almost always found near the lowest energy state, known as the ground state. Solutions with higher energy known as excited states are relevant to photochemistry , but in this work we will restrict our attention to ground states.
 ### The many electron Schrodinger Equation
 When we are considering more than one single particle we consider the spin $(\sigma)$ and the interaction between particles. Thus in its time-independent form the Schrodinger equation can be written as an eigen value problem:
 $$ \hat{H}\psi(\mathbf{x}_{0},\dots ,\mathbf{x}_{n})=E\psi(\mathbf{x}_{1},\dots ,\mathbf{x}_{n}) $$
@@ -301,8 +301,6 @@ You typically train a MLP, using a training data set, a loss function (e.g Mean 
 
 As we mention there exist different methods to update our parameters. Like Gradient Descent, Stochastic Gradient Descent, [[Adaptive Moment Estimation]] ADAM, those are based on a Euclid Geometry, but in this case since our loss function $\mathcal{L}_{\theta}$ depends on a probability distribution $p_{\theta}$ measuring "distances" between distributions is something that the the KL (Kull Lidberg) can make. In fact the you can show that the FIM appears studying KL locally.
 
-
-
 , a metric on the space of probability distributions is the Fisher metric which uses the  is the Fisher Information Matrix (FIM) $\mathcal{F}$ defined as:
 Let $p$ be a probability distribution that is conditioned to the parameters $\theta$. Define the score $s_{\theta}\in  \mathbb{R}^{d}$, $d$ the number of parameters:
 $$
@@ -317,10 +315,6 @@ $$
 We can think of like if each theta defines a point in that space.
 
 Using this metric, how is that pos [[Fisher Information Matrix]]
-
-
-
-
 but in this work we are going to use 
 $$
 \Delta \theta _{\text{nat}}=-\eta \mathcal{F}^{-1} \Delta_{\theta}\mathcal{L}
@@ -343,51 +337,175 @@ Approx:
 $$
 \mathbb{E}_{p(\mathbf{X})}[(\mathbf{a}_{\ell}\otimes \mathbf{e}_{\ell})(\mathbf{a}_{\ell}\otimes \mathbf{e}_{\ell})^{\mathsf{\top}}]^{-1}\approx \mathbb{E}_{p(\mathbf{X})}[\mathbf{a}_{\ell}\mathbf{a_{\ell}}^{\mathsf{\top}}]^{-1}\otimes \mathbb{E}_{p(\mathbf{X})}[\mathbf{e}_{\ell}\mathbf{e}_{\ell}^{\mathsf{\top}}]^{-1}
 $$
+
 We specifically we are going to use: 
 $$
 \mathbb{E}_{p}(\mathbf{X})\left[ \frac{\partial \log p(\mathbf{X})}{\partial \text{vec}(\mathbf{W}_{\ell})}\frac{\partial \log p(\mathbf{X})^{\mathsf{\top}}}{\partial \text{vec}(\mathbf{W}_{\ell})} \right]\approx \mathbb{E}_{p(\mathbf{X})}[\mathbf{\hat{a}}_{\ell}\mathbf{\hat{a}_{\ell}}^{\mathsf{\top}}]^{-1}\otimes \mathbb{E}_{p(\mathbf{X})}[\mathbf{\hat{e}_{\ell}}\mathbf{\hat{e}}_{\ell}^{\mathsf{\top}}]^{-1}
 $$
-
 [[Kroenecker Factored Approximate Curvature]]
+### Attention Mechanisms
 
-### Attention Mechanism
+The idea of an *attention mechanism* was introduced in neural machine translation by Bahdanau et al. @bahdanau2014neural Instead of compressing an entire input sequence into a single fixed-size vector, the model learns to **focus** on different parts of the input when generating each output token.
 
-The first attention mechanism were introduced by using the follow:
-### Self Attention and Multi Head Attention
+Given a query vector $\mathbf{q} \in \mathbb{R}^{d_h}$ and a set of key–value pairs
+$\{(\mathbf{k}_j, \mathbf{v}_j)\}_{j=1}^T$ with $\mathbf{k}_j, \mathbf{v}_j \in \mathbb{R}^{d_h}$, the (scaled dot–product) attention mechanism computes:
 
-From the embedding space $d$ we can generate sub spaces where the heads are going to live and its dimension is $d_{h}$.
-We compute the queries, keys and values using learnable matrices $\mathbf{W}$.
+1. **Compatibility scores**
+   $$
+   e_j \;=\; \frac{\mathbf{q}^\top \mathbf{k}_j}{\sqrt{d_h}}, \qquad j = 1,\dots,T,
+   $$
+
+2. **Normalized attention weights**
+   $$
+   \alpha_j \;=\; \frac{\exp(e_j)}{\sum_{m=1}^{T} \exp(e_m)}
+   \;=\; \text{Softmax}_j\!\left( \frac{\mathbf{q}^\top \mathbf{k}_j}{\sqrt{d_h}} \right),
+   $$
+
+3. **Weighted sum of values**
+   $$
+   \mathbf{o} \;=\; \sum_{j=1}^{T} \alpha_j \mathbf{v}_j.
+   $$
+
+Intuitively, the query $\mathbf{q}$ asks: *“which elements of the set are relevant to me now?”*  
+The keys $\mathbf{k}_j$ encode *what each element offers*, and the values $\mathbf{v}_j$ encode *what we take from each element once we decide to pay attention to it*.
+
+### Self-Attention and Multi-Head Self-Attention
+
+In **self-attention**, the queries, keys, and values are all obtained from the **same** set of input vectors.  
+Consider a sequence of input embeddings
 $$
-\mathbf{o}_{t,i}=\sum_{j=1}^{t}\text{Softmax}\left( \frac{\mathbf{q}^{T}_{t,i}\mathbf{k}_{j,i}}{\sqrt{ d_{h} }} \right) \mathbf{v}_{j,i}
+\mathbf{x}_1, \dots, \mathbf{x}_T \in \mathbb{R}^{d},
 $$
-Finally concatenate to create a 
+and stack them into a matrix
 $$
-\mathbf{u}_{t}=W^{O}[\mathbf{o}_{t,1};\mathbf{o}_{t,2};\dots ;\mathbf{o}_{t,n_{h}}]
+\mathbf{X} \in \mathbb{R}^{T \times d}, \quad
+\mathbf{X} = 
+\begin{bmatrix}
+\mathbf{x}_1^\top \\
+\vdots \\
+\mathbf{x}_T^\top
+\end{bmatrix}.
 $$
-### Transformers architecture
+To build one attention **head** of dimension $d_h$, we introduce three learnable matrices:
+$$
+\mathbf{W}^Q \in \mathbb{R}^{d \times d_h}, \quad
+\mathbf{W}^K \in \mathbb{R}^{d \times d_h}, \quad
+\mathbf{W}^V \in \mathbb{R}^{d \times d_h}.
+$$
+We then compute queries, keys, and values:
+$$
+\mathbf{Q} = \mathbf{X} \mathbf{W}^Q \in \mathbb{R}^{T \times d_h}, \qquad
+\mathbf{K} = \mathbf{X} \mathbf{W}^K \in \mathbb{R}^{T \times d_h}, \qquad
+\mathbf{V} = \mathbf{X} \mathbf{W}^V \in \mathbb{R}^{T \times d_h}.
+$$
 
-@Vaswani2017 
-There exist several architectures that I can use Recurrent Neural Network, Long Short Term Memory. 
+The **scaled dot-product self-attention** for this head is:
+$$
+\text{Attention}(\mathbf{Q}, \mathbf{K}, \mathbf{V})
+= \text{Softmax}\!\left( \frac{\mathbf{Q}\mathbf{K}^\top}{\sqrt{d_h}} \right) \mathbf{V},
+$$
+where the softmax is applied row-wise.  Element-wise, the output at position $t$ is
+$$
+\mathbf{o}_t = \sum_{j=1}^{T} \alpha_{tj} \mathbf{v}_j, \quad \text{with} \quad
+\alpha_{tj} = \frac{\exp\!\left( \mathbf{q}_t^\top \mathbf{k}_j / \sqrt{d_h} \right)}{\sum_{m=1}^{T} \exp\!\left( \mathbf{q}_t^\top \mathbf{k}_m / \sqrt{d_h} \right)}.
+$$
+You can think of this as: *each position $t$ in the sequence “looks at” every other position $j$ and decides how much to care about it*.
+#### Multi-Head Self-Attention
 
-Recurrent Neural Network are: [[Recurrent Neural Network]]
-And long short term memory are: [[Long Short Memory]]
+A single head can only look at interactions in one “representation subspace” of dimension $d_h$.  
+**Multi-head attention** uses several heads in parallel, each with its own projection matrices, so that different types of relationships can be captured simultaneously.
+Let $n_h$ be the number of heads. For head $i = 1, \dots, n_h$ we have
+$$
+\mathbf{W}_i^Q,\, \mathbf{W}_i^K,\, \mathbf{W}_i^V \in \mathbb{R}^{d \times d_h}.
+$$
 
-Why on earth I would use [[Transformer]]? They are extremely good finding relations between its elements. And the best is that scale well due its [[Transform Architecture]]
+Head $i$ computes:
+$$
+\text{head}_i(\mathbf{X})
+= \text{Attention}(\mathbf{X}\mathbf{W}_i^Q,\, \mathbf{X}\mathbf{W}_i^K,\, \mathbf{X}\mathbf{W}_i^V)
+\in \mathbb{R}^{T \times d_h}.
+$$
+The outputs of all heads are concatenated along the feature dimension and then linearly mixed:
+$$
+\mathbf{U} 
+= \left[ \text{head}_1(\mathbf{X}) \,;\, \dots \,;\, \text{head}_{n_h}(\mathbf{X}) \right]
+\in \mathbb{R}^{T \times (n_h d_h)},
+$$
+$$
+\mathbf{O} = \mathbf{U} \mathbf{W}^O, \qquad
+\mathbf{W}^O \in \mathbb{R}^{(n_h d_h) \times d}.
+$$
+If we focus on one time step $t$ and head $i$, we can write the per-head output as
+$$
+\mathbf{o}_{t,i} = \sum_{j=1}^{T} 
+\text{Softmax}_j\!\left( \frac{\mathbf{q}_{t,i}^\top \mathbf{k}_{j,i}}{\sqrt{d_h}} \right)\mathbf{v}_{j,i},
+$$
+and the final vector at time $t$ after concatenation and output projection as
+$$
+\mathbf{u}_t =
+\mathbf{W}^{O} 
+\begin{bmatrix}
+\mathbf{o}_{t,1} \\
+\vdots \\
+\mathbf{o}_{t,n_h}
+\end{bmatrix}.
+$$
 
-Attention mechanism appear with @bahdanau2014neural but it didn't work so:
+From a physics point of view, you can read multi-head attention as **several different “channels” of interaction**: one head might focus on short-range relations, another on long-range ones, another on some specific pattern (e.g. symmetry, local structure), and so on.
+### Transformer Architecture
 
-- [[Attention mechanism]]
-- [[Self attention mechanism on one head]]
-- [[Multi-head attention]]
+The **Transformer** was introduced by Vaswani et al. @Vaswani2017 with the slogan *“Attention Is All You Need.”*  Its core building block is a **layer** that combines:
+1. **Multi-head self-attention**  
+2. **Position-wise feed-forward network (FFN)**
+Both sublayers use **residual connections** and **layer normalization**.
+For an input sequence $\mathbf{X} \in \mathbb{R}^{T \times d}$ (already including positional information), one Transformer layer performs:
+3. **Multi-head self-attention sublayer**
+   $$
+   \mathbf{H} = \text{MHA}(\mathbf{X}), \qquad
+   \mathbf{X}^{(1)} = \text{LayerNorm}\!\left( \mathbf{X} + \mathbf{H} \right).
+   $$
+4. **Feed-forward sublayer** (applied independently at each position)
+   $$
+   \text{FFN}(\mathbf{x}) = \sigma\!\left( \mathbf{x}\mathbf{W}_1 + \mathbf{b}_1 \right)\mathbf{W}_2 + \mathbf{b}_2,
+   $$
+   typically with $\sigma$ a nonlinearity such as ReLU or GELU and an intermediate width $d_{\text{ff}} > d$.
+At the sequence level:   
+$$
+   \mathbf{Z} = \text{FFN}(\mathbf{X}^{(1)}), \qquad
+   \mathbf{X}^{\text{out}} = \text{LayerNorm}\!\left( \mathbf{X}^{(1)} + \mathbf{Z} \right).
+   $$
+Stacking several such layers yields a deep architecture where, at each layer, every position can interact with every other position through self-attention.
+
+In the original formulation, **positional encodings** (sinusoidal or learned) are added to the embeddings so that the model can distinguish different positions in the sequence:
+$$
+\mathbf{X}_0 = \mathbf{E} + \mathbf{P},
+$$
+where $\mathbf{E}$ are token embeddings and $\mathbf{P}$ are positional encodings.
+### Why Transformers Instead of RNNs or LSTMs?
+
+Recurrent Neural Networks (RNNs) and Long Short-Term Memory (LSTM) networks process the sequence **sequentially**:
+each new state depends on the previous one. This has two important consequences:
+
+1. **Limited long-range dependencies.**  
+   Information must flow through many time steps, which can lead to vanishing or exploding gradients and makes it hard to model very long-range interactions.
+2. **Poor parallelization.**  
+   Because each step depends on the previous one, you cannot compute all time steps in parallel. Training and inference are inherently sequential.
+Transformers address both issues:
+- **Global interactions in one step.**  
+  Self-attention allows every position to directly interact with every other position in a *single* layer, which is ideal when we care about *all-to-all* correlations (as in many-electron systems, where each electron “feels” all the others).
+- **Full parallelism over sequence length.**  
+  Given $\mathbf{X}$, the matrices $\mathbf{Q}$, $\mathbf{K}$, $\mathbf{V}$ and the attention outputs for all time steps are computed via matrix multiplications. This is extremely efficient on modern accelerators (GPUs/TPUs).
+
+For a many-electron Schrödinger equation, the wave function depends on the joint configuration of all particles.  
+A Transformer-based ansatz naturally provides a way for each electron’s representation to **look at all other electrons** and the nuclei, capturing complex correlation patterns through attention, while remaining highly parallelizable.
 # Psi Former Model
 
 This sections describes the architectures of the model that we are going to use.
 First introduce Fermine which generates the hidden states using merely MLP whereas PsiFormer Generate the Hidden states using the Multi Head Attention (MHA) and a MLP.
 ## Fermi Net
-
-A very important work for us is: Fermi Net @Pfau_2020  it uses different MLP to learn the forms of the orbitals. Their ansatz is: [[Fermi Net]]
+A very important work for us is: Fermi Net @Pfau_2020  it uses different MLP to learn the forms of the orbitals. Their ansatz is nothing but the average sum of $k$ determinants.
 $$ \psi(\mathbf{x}_{i},\dots,\mathbf{x}_{n})=\sum_{k}\omega_{k}\det[\Phi ^{k}] $$
-With:
+Whit
 $$
 \begin{vmatrix}
 \phi_{1}^{k}(\mathbf{x}_{1})  & \dots  &  \phi_{1}^{k}(\mathbf{x}_{n}) \\
@@ -396,13 +514,20 @@ $$
 
 \end{vmatrix}=\det[\phi_{i}^{k}(\mathbf{x}_{j})]=\det[\Phi ^{k}]
 $$
-The elements of the determinant are obtained via [[Obtaining the orbital fermi net flow]]
+Where $\omega_{k}$ are learnable paremeters. How we generate those determinants for fermi net?
+Each orbital $\phi_{i}^{k}\in \mathbb{R}$. Realize that this orbital only take a single input, which is restrictive.
 
-For each pair electron-nuclei $(\alpha,\beta \in \{ \uparrow,\downarrow \})$
+So we are doing:
+
+$$
+\phi^{k\alpha}_i(\mathbf{r}^\alpha_j; \{\mathbf{r}^\alpha_{/j}\}; \{\mathbf{r}^{\bar{\alpha}}\})
+$$
+What does this mean? 
+Now we are going to explain how for each pair electron-nuclei $(\alpha,\beta \in \{ \uparrow,\downarrow \})$
 $$
 \mathbf{h}_{i}^{\ell \alpha} \gets \text{concatenate}(\mathbf{r}^\alpha_i - \mathbf{R}_I, |\mathbf{r}^\alpha_i - \mathbf{R}_I|\ \forall\ I)
 $$
-Pair electron electron.
+Pair electron electron, $\alpha,\beta$ is the spin of the $i$ and $j$ electron respectively.
 $$
 \mathbf{h}_{ij}^{\ell \alpha\beta} \gets \text{concatenate}(\mathbf{r}^\alpha_i - \mathbf{r}^\beta_j, |\mathbf{r}^\alpha_i - \mathbf{r}^\beta_j|\ \forall\ j,\beta)
 $$
@@ -420,11 +545,14 @@ $$
 $$
 Each 
 $$
-\begin{align}
-    \mathbf{h}^{\ell+1 \alpha}_i &= \mathrm{tanh}\left(\mathbf{V}^\ell \mathbf{f}^{\ell \alpha}_i + \mathbf{b}^\ell\right) + \mathbf{h}^{\ell\alpha}_i \nonumber \\
-    \mathbf{h}^{\ell+1 \alpha\beta}_{ij} &= \mathrm{tanh}\left(\mathbf{W}^\ell\mathbf{h}^{\ell \alpha\beta}_{ij} + \mathbf{c}^\ell\right) + \mathbf{h}^{\ell \alpha\beta}_{ij}
-\end{align}
+\mathbf{h}^{\ell+1 \alpha}_i= \mathrm{tanh}\left(\mathbf{V}^\ell \mathbf{f}^{\ell \alpha}_i + \mathbf{b}^\ell\right) + \mathbf{h}^{\ell\alpha}_i
 $$
+And for the 
+$$
+\mathbf{h}^{\ell+1 \alpha\beta}_{ij} = \mathrm{tanh}\left(\mathbf{W}^\ell\mathbf{h}^{\ell \alpha\beta}_{ij} +\mathbf{c}^\ell\right) + \mathbf{h}^{\ell \alpha\beta}_{ij}
+$$
+
+
 Like this until obtain $\mathbf{h}_{j}^{L\alpha}$. And from it you obtain your orbitals. Which are a affine map scaled by a exponential factor 
 $$
 \begin{align}
