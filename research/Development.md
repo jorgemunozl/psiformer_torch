@@ -1,6 +1,6 @@
 ---
 date: 2025-10-23 19:32
-modified: 2025-11-19 07:31
+modified: 2025-11-19 09:58
 ---
 # Development of a Transformed based architecture to solve the Time Independent Many Electron Schrodinger Equation
 
@@ -297,52 +297,250 @@ $$
 We call parameters to the set of all the weights and bias of each layer. And represented it with the symbol $\theta$.
 $$\{ \mathbf{W}^{(l)},\mathbf{b}^{(l)}\}_{l=2}^{L}=\theta$$
 You typically train a MLP, using a training data set, a loss function (e.g Mean Square Error, Mean Absolute Error, Cross entropy) and an optimizer (e.g GD, SGD, ADAM). Additionally you can use regularization techniques such as dropout to improve the generalization of the Net.
+
+
 ### Natural gradient Descent
 
-As we mention there exist different methods to update our parameters. Like Gradient Descent, Stochastic Gradient Descent, [[Adaptive Moment Estimation]] ADAM, those are based on a Euclid Geometry, but in this case since our loss function $\mathcal{L}_{\theta}$ depends on a probability distribution $p_{\theta}$ measuring "distances" between distributions is something that the the KL (Kull Lidberg) can make. In fact the you can show that the FIM appears studying KL locally.
+As we mentioned, there are many ways to update the parameters of a neural network: Gradient Descent, Stochastic Gradient Descent, [[Adaptive Moment Estimation]] (ADAM), etc. All of them implicitly assume that the parameter space $\Theta \subset \mathbb{R}^d$ is equipped with the standard Euclidean metric, so that “length” and “steepest descent” are measured with respect to $\|\Delta\theta\|_2$.
 
-, a metric on the space of probability distributions is the Fisher metric which uses the  is the Fisher Information Matrix (FIM) $\mathcal{F}$ defined as:
-Let $p$ be a probability distribution that is conditioned to the parameters $\theta$. Define the score $s_{\theta}\in  \mathbb{R}^{d}$, $d$ the number of parameters:
+In our case the loss $\mathcal{L}(\theta)$ depends on a probability distribution $p_\theta$, not just on $\theta$ directly. For example, in variational Monte Carlo we take
 $$
-s_{\theta}(x)=\nabla_{\theta}\log p(x|\theta)
+p_\theta(x)
+= \frac{|\psi_\theta(x)|^2}{\displaystyle \int |\psi_\theta(x')|^2\,dx'} ,
 $$
-The FIM associated to $p$ is:
-$$ \mathcal{F}(\theta)=\mathbb{E}_{x\sim p(\cdot|\theta)}[s_{\theta}(x)s_{\theta}(x)^{\mathsf{\top}}]$$
-Define the parametric family:
-$$
-\mathcal{M}=\{ p_{\theta}(z)|\theta \in \Theta \subset \mathbb{R}^{d}\}
-$$
-We can think of like if each theta defines a point in that space.
+so $\theta$ parametrizes an entire family of probability densities over configurations $x$. It is therefore more natural to measure distances between *distributions* $p_\theta$ and $p_{\theta+\Delta\theta}$, rather than between the parameter vectors themselves.
 
-Using this metric, how is that pos [[Fisher Information Matrix]]
-but in this work we are going to use 
+A canonical way to measure the distance between nearby probability distributions is the Kullback–Leibler (KL) divergence
 $$
-\Delta \theta _{\text{nat}}=-\eta \mathcal{F}^{-1} \Delta_{\theta}\mathcal{L}
+\mathrm{KL}\big(p_\theta \,\|\, p_{\theta+\Delta\theta}\big)
+= \mathbb{E}_{x\sim p_\theta}\!\left[\log\frac{p_\theta(x)}{p_{\theta+\Delta\theta}(x)}\right].
+$$
+For small steps $\Delta\theta$ one can show that a second–order Taylor expansion of the KL gives
+$$
+\mathrm{KL}\big(p_\theta \,\|\, p_{\theta+\Delta\theta}\big)
+= \tfrac12\,\Delta\theta^\top \mathcal{F}(\theta)\,\Delta\theta + \mathcal{O}(\|\Delta\theta\|^3),
+$$
+where $\mathcal{F}(\theta)$ is the Fisher Information Matrix (FIM). To define it, introduce the **score function**
+$$
+s_\theta(x) \in \mathbb{R}^d, \qquad
+s_\theta(x) = \nabla_\theta \log p(x\mid \theta),
+$$
+then the FIM is
+$$
+\mathcal{F}(\theta)
+= \mathbb{E}_{x\sim p(\cdot\mid\theta)}\!\big[\,s_\theta(x)\,s_\theta(x)^{\mathsf T}\big].
 $$
 
-Optimizing Neural Networks with Kronecker-factored Approximate Curvature
-[[Natural Gradient Descent]]
-A quick introduction to Markov chains and Markov chain Monte Carlo (revised version)
+The set of distributions
+$$
+\mathcal{M} = \{\, p_\theta(z)\;|\; \theta \in \Theta \subset \mathbb{R}^d \,\}
+$$
+can be viewed as a differentiable manifold, and $\mathcal{F}(\theta)$ defines a Riemannian metric on its tangent space. Concretely, for tangent vectors $u,v \in \mathbb{R}^d$ at $\theta$ we define the inner product
+$$
+\langle u,v \rangle_\theta
+= u^{\mathsf T}\,\mathcal{F}(\theta)\,v.
+$$
+This metric says: two parameter directions are “close” if they induce similar infinitesimal changes in the *distribution* $p_\theta$.
+
+Now ask the usual steepest–descent question, but with this non-Euclidean metric:
+
+Find the direction $\Delta\theta$ that decreases $\mathcal{L}(\theta)$ the fastest, among all directions with fixed “length” $\|\Delta\theta\|_\theta^2 = \Delta\theta^\top \mathcal{F}(\theta)\,\Delta\theta$.
+
+Solving this constrained optimization problem (e.g. with Lagrange multipliers) yields the **natural gradient** direction
+$$
+\Delta\theta_{\text{nat}} \;\propto\; -\,\mathcal{F}(\theta)^{-1}\,\nabla_\theta \mathcal{L}(\theta).
+$$
+Thus the natural gradient descent update is
+$$
+\Delta\theta_{\text{nat}}
+= -\,\eta\,\mathcal{F}(\theta)^{-1}\,\nabla_\theta \mathcal{L}(\theta),
+$$
+where $\eta>0$ is a step size. Compared with the usual gradient $\nabla_\theta \mathcal{L}$, the factor $\mathcal{F}^{-1}$ “preconditions” the gradient by the local geometry of the model’s probability distribution: directions that barely change $p_\theta$ are amplified, directions that change it a lot are damped.
+
+Natural gradient descent is therefore meaningful exactly in the situation we care about: when the loss depends on the parameters *through* a probability model $p_\theta$ (e.g. likelihood, cross-entropy, KL, variational objectives, variational Monte Carlo energy, etc.).
+
 ### Kronecker Factored Approximate Curvature
 
-[[Kroenecker Factored Approximate Curvature]]
-Find the [[Fisher Information Matrix]] analiticaly becomes very hard for that matter we have two approximations.
-1. $\mathcal{F_{ij}}$ are assumed to be zero when $\theta_{i}$ and $\theta_{j}$ are in different layers of the network.
-2. The other approximation is the follow:
+Directly computing and inverting the full Fisher matrix $\mathcal{F}(\theta)$ is infeasible for modern neural networks, since $\theta$ can have millions of components. Kronecker Factored Approximate Curvature (KFAC) is an efficient approximation that makes natural gradient updates practical for layered networks.
+
+We sketch the construction for a fully connected layer $\ell$ with weight matrix $W_\ell$ and (for simplicity) no bias. Bias terms can be included by augmenting the activations with a constant $1$; we comment on this below.
+#### Forward definition of $\mathbf{a}_\ell$
+
+Consider a standard MLP. For a single input sample $x$, the forward pass at layer $\ell$ is
+
+- **Input (activation) to layer $\ell$**:
 $$
-\mathbb{E}_{p(\mathbf{X})}\left[ \frac{\partial \log p(X)}{\partial \text{vec}(\mathbf{W}_{\ell})}\frac{\partial \log p(X)}{\partial \mathbf{W}_{\ell}}^{\mathsf{T}} \right]=\mathbb{E}_{p(\mathbf{X})}[(\mathbf{a}_{\ell}\otimes \mathbf{e}_{\ell})(\mathbf{a}_{\ell}\otimes \mathbf{e}_{\ell})^{\mathsf{T}}]
+\mathbf{a}_\ell \in \mathbb{R}^{n_\ell}
 $$
-Where $\mathbf{a}_{\ell}$ are the forward activation and $\mathbf{e}_{\ell}$ are the backward sensitivities for that layer.
-Approx:
+ This is the column vector of activations coming into layer $\ell$. For the first hidden layer, $\mathbf{a}_1$ is just the (possibly preprocessed) input. For deeper layers it is the nonlinearity output from the previous layer.
+
+- **Pre-activation at layer $\ell$**:
+  $$
+  \mathbf{h}_\ell = W_\ell \,\mathbf{a}_\ell,
+  $$
+  where $W_\ell \in \mathbb{R}^{m_\ell \times n_\ell}$.
+- **Output activation of layer $\ell$**:
+  $$
+  \tilde{\mathbf{a}}_\ell = \phi(\mathbf{h}_\ell),
+  $$
+  where $\phi$ is applied element-wise. In many notations $\tilde{\mathbf{a}}_\ell$ would become the input to the next layer, but to keep notation consistent with the Fisher block for $W_\ell$, we explicitly distinguish:
+  - $\mathbf{a}_\ell$: input to $W_\ell$,
+  - $\mathbf{h}_\ell$: pre-activation,
+  - $\tilde{\mathbf{a}}_\ell$: output activation of layer $\ell$.
+
+In KFAC, when we talk about $\mathbf{a}_\ell$ for the Fisher block of $W_\ell$, we always mean “the vector that $W_\ell$ multiplies on the right”.
+#### Backward definition of $\mathbf{e}_\ell$
+Let the loss for a single sample be $\mathcal{L}(\theta)$ (for example, negative log-likelihood or negative log of the wave-function probability). Define the **backward sensitivity** (or error signal) at layer $\ell$ as
 $$
-\mathbb{E}_{p(\mathbf{X})}[(\mathbf{a}_{\ell}\otimes \mathbf{e}_{\ell})(\mathbf{a}_{\ell}\otimes \mathbf{e}_{\ell})^{\mathsf{\top}}]^{-1}\approx \mathbb{E}_{p(\mathbf{X})}[\mathbf{a}_{\ell}\mathbf{a_{\ell}}^{\mathsf{\top}}]^{-1}\otimes \mathbb{E}_{p(\mathbf{X})}[\mathbf{e}_{\ell}\mathbf{e}_{\ell}^{\mathsf{\top}}]^{-1}
+\mathbf{e}_\ell
+= \frac{\partial \mathcal{L}}{\partial \mathbf{h}_\ell} \in \mathbb{R}^{m_\ell}.
+$$
+This is computed via backpropagation:
+- At the output layer $L$:
+  $$
+  \mathbf{e}_L
+  = \frac{\partial \mathcal{L}}{\partial \mathbf{h}_L}
+  = \left(\frac{\partial \mathcal{L}}{\partial \tilde{\mathbf{a}}_L}\right) \odot \phi'(\mathbf{h}_L),
+  $$
+  where $\odot$ is the element-wise product or also Hadamard product.
+- For hidden layers $\ell < L$:
+$$
+  \mathbf{e}_\ell
+  = \frac{\partial \mathcal{L}}{\partial \mathbf{h}_\ell}
+  = \left(W_{\ell+1}^{\mathsf T} \mathbf{e}_{\ell+1}\right) \odot \phi'(\mathbf{h}_\ell).
+$$
+In the context of natural gradient for probabilistic models, $\mathcal{L}$ is often chosen as $-\log p(X\mid\theta)$, so up to a sign we can also think of $\mathbf{e}_\ell$ as
+$$
+\mathbf{e}_\ell = \frac{\partial \log p(X\mid\theta)}{\partial \mathbf{h}_\ell}.
+$$
+#### Gradient w.r.t. $W_\ell$ and the form $\mathbf{a}_\ell \otimes \mathbf{e}_\ell$
+
+For a single sample, using the chain rule,
+$$
+\frac{\partial \mathcal{L}}{\partial W_\ell}
+= \frac{\partial \mathcal{L}}{\partial \mathbf{h}_\ell}
+  \frac{\partial \mathbf{h}_\ell}{\partial W_\ell}
+= \mathbf{e}_\ell\, \mathbf{a}_\ell^{\mathsf T}.
 $$
 
-We specifically we are going to use: 
+If instead of $\mathcal{L}$ we use $\log p(X\mid\theta)$ (as in the Fisher definition), we get
 $$
-\mathbb{E}_{p}(\mathbf{X})\left[ \frac{\partial \log p(\mathbf{X})}{\partial \text{vec}(\mathbf{W}_{\ell})}\frac{\partial \log p(\mathbf{X})^{\mathsf{\top}}}{\partial \text{vec}(\mathbf{W}_{\ell})} \right]\approx \mathbb{E}_{p(\mathbf{X})}[\mathbf{\hat{a}}_{\ell}\mathbf{\hat{a}_{\ell}}^{\mathsf{\top}}]^{-1}\otimes \mathbb{E}_{p(\mathbf{X})}[\mathbf{\hat{e}_{\ell}}\mathbf{\hat{e}}_{\ell}^{\mathsf{\top}}]^{-1}
+\frac{\partial \log p(X\mid\theta)}{\partial W_\ell}
+= \mathbf{e}_\ell\, \mathbf{a}_\ell^{\mathsf T},
 $$
-[[Kroenecker Factored Approximate Curvature]]
+with $\mathbf{e}_\ell = \partial \log p / \partial \mathbf{h}_\ell$.
+
+Now vectorize the gradient. Using the standard identity
+$$
+\mathrm{vec}(uv^{\mathsf T}) = v \otimes u,
+$$
+with $u = \mathbf{e}_\ell$ and $v = \mathbf{a}_\ell$, we obtain
+$$
+\frac{\partial \log p(X\mid\theta)}{\partial \mathrm{vec}(W_\ell)}
+= \mathrm{vec}\!\left(\frac{\partial \log p}{\partial W_\ell}\right)
+= \mathrm{vec}(\mathbf{e}_\ell\,\mathbf{a}_\ell^{\mathsf T})
+= \mathbf{a}_\ell \otimes \mathbf{e}_\ell.
+$$
+
+This gives the key structural form used by KFAC.
+
+#### Fisher block for a single layer
+
+The Fisher block associated with the parameters $W_\ell$ is
+$$
+\mathcal{F}_\ell
+= \mathbb{E}_{p(\mathbf{X})}\!\left[
+\frac{\partial \log p(X\mid\theta)}{\partial \mathrm{vec}(W_\ell)}
+\frac{\partial \log p(X\mid\theta)}{\partial \mathrm{vec}(W_\ell)}^{\mathsf T}
+\right].
+$$
+
+Plugging in the expression above,
+$$
+\mathcal{F}_\ell
+= \mathbb{E}_{p(\mathbf{X})}\!\big[
+(\mathbf{a}_\ell \otimes \mathbf{e}_\ell)
+(\mathbf{a}_\ell \otimes \mathbf{e}_\ell)^{\mathsf T}
+\big].
+$$
+
+Here $p(\mathbf{X})$ denotes the distribution over inputs and labels (or configurations, in the VMC case). In practice this expectation is approximated by averaging over a mini-batch of samples $X$ and the corresponding forward/backward passes that produce $\mathbf{a}_\ell$ and $\mathbf{e}_\ell$.
+
+Computing and inverting $\mathcal{F}_\ell$ directly is still expensive, because its dimension is
+$$
+(\text{dim}(\mathbf{a}_\ell)\,\text{dim}(\mathbf{e}_\ell))
+\times
+(\text{dim}(\mathbf{a}_\ell)\,\text{dim}(\mathbf{e}_\ell)).
+$$
+KFAC makes two key approximations to make this tractable.
+
+1. **Block–diagonal across layers.**  
+   Off–diagonal blocks $\mathcal{F}_{ij}$ are assumed negligible when $\theta_i$ and $\theta_j$ belong to different layers. This makes the Fisher approximately block–diagonal, with one block per layer.
+
+2. **Kronecker factorization within each layer.**  
+   Inside a layer, KFAC assumes that the correlation between activations and errors factorizes:
+   $$
+   \mathcal{F}_\ell
+   = \mathbb{E}_{p(\mathbf{X})}\!\big[
+   (\mathbf{a}_\ell \otimes \mathbf{e}_\ell)
+   (\mathbf{a}_\ell \otimes \mathbf{e}_\ell)^{\mathsf T}
+   \big]
+   = \mathbb{E}_{p(\mathbf{X})}\!\big[
+   (\mathbf{a}_\ell\mathbf{a}_\ell^{\mathsf T}) \otimes
+   (\mathbf{e}_\ell\mathbf{e}_\ell^{\mathsf T})
+   \big]
+   \;\approx\;
+   \mathbb{E}_{p(\mathbf{X})}[\mathbf{a}_\ell\mathbf{a}_\ell^{\mathsf T}]
+   \;\otimes\;
+   \mathbb{E}_{p(\mathbf{X})}[\mathbf{e}_\ell\mathbf{e}_\ell^{\mathsf T}].
+   $$
+
+Define the *activation covariance* and *error covariance*:
+$$
+A_\ell = \mathbb{E}_{p(\mathbf{X})}[\mathbf{a}_\ell\mathbf{a}_\ell^{\mathsf T}],
+\qquad
+S_\ell = \mathbb{E}_{p(\mathbf{X})}[\mathbf{e}_\ell\mathbf{e}_\ell^{\mathsf T}].
+$$
+In practice these expectations are updated as running averages over mini-batches:
+$$
+A_\ell \approx \frac{1}{B}\sum_{b=1}^B \mathbf{a}_\ell^{(b)} \mathbf{a}_\ell^{(b)\mathsf T},
+\qquad
+S_\ell \approx \frac{1}{B}\sum_{b=1}^B \mathbf{e}_\ell^{(b)} \mathbf{e}_\ell^{(b)\mathsf T},
+$$
+where $b$ indexes samples in the batch and $\mathbf{a}_\ell^{(b)}, \mathbf{e}_\ell^{(b)}$ are obtained by a standard forward and backward pass for that sample.
+With this approximation we have
+$$
+\mathcal{F}_\ell \approx A_\ell \otimes S_\ell.
+$$
+
+The crucial property of the Kronecker product is that
+$$
+(A_\ell \otimes S_\ell)^{-1}
+= A_\ell^{-1} \otimes S_\ell^{-1},
+$$
+so the inverse of the (huge) layer–Fisher block can be obtained by inverting the much smaller matrices $A_\ell$ and $S_\ell$. Thus the natural gradient update for the weights of layer $\ell$ becomes
+$$
+\Delta\theta_{\text{nat},\ell}
+\approx -\,\eta\,\big(A_\ell^{-1} \otimes S_\ell^{-1}\big)\,
+\nabla_{\mathrm{vec}(W_\ell)} \mathcal{L}.
+$$
+
+In summary, KFAC replaces the intractable inverse
+$$
+\mathbb{E}_{p(\mathbf{X})}\big[ (\mathbf{a}_\ell\otimes \mathbf{e}_\ell)
+(\mathbf{a}_\ell\otimes \mathbf{e}_\ell)^{\mathsf T} \big]^{-1}
+$$
+by the efficiently computable approximation
+$$
+\mathbb{E}_{p(\mathbf{X})}\big[(\mathbf{a}_\ell\otimes \mathbf{e}_\ell)
+(\mathbf{a}_\ell\otimes \mathbf{e}_\ell)^{\mathsf T}\big]^{-1}
+\;\approx\;
+\mathbb{E}_{p(\mathbf{X})}[\mathbf{a}_\ell\mathbf{a}_\ell^{\mathsf T}]^{-1}
+\otimes
+\mathbb{E}_{p(\mathbf{X})}[\mathbf{e}_\ell\mathbf{e}_\ell^{\mathsf T}]^{-1},
+$$
+which captures the dominant curvature structure while keeping the cost of natural gradient descent comparable to standard first–order methods.
+We have ignored biases above for clarity. In practice one can either (i) augment $\mathbf{a}_\ell$ with a constant $1$ to absorb biases into $W_\ell$, or (ii) maintain separate smaller KFAC factors for biases; both approaches preserve the same Kronecker structure.
 ### Attention Mechanisms
 
 The idea of an *attention mechanism* was introduced in neural machine translation by Bahdanau et al. @bahdanau2014neural Instead of compressing an entire input sequence into a single fixed-size vector, the model learns to **focus** on different parts of the input when generating each output token.
@@ -362,10 +560,9 @@ $\{(\mathbf{k}_j, \mathbf{v}_j)\}_{j=1}^T$ with $\mathbf{k}_j, \mathbf{v}_j \in 
    $$
 
 3. **Weighted sum of values**
-   $$
-   \mathbf{o} \;=\; \sum_{j=1}^{T} \alpha_j \mathbf{v}_j.
-   $$
-
+$$
+\mathbf{o} \;=\; \sum_{j=1}^{T} \alpha_j \mathbf{v}_j.
+$$
 Intuitively, the query $\mathbf{q}$ asks: *“which elements of the set are relevant to me now?”*  
 The keys $\mathbf{k}_j$ encode *what each element offers*, and the values $\mathbf{v}_j$ encode *what we take from each element once we decide to pay attention to it*.
 
@@ -410,7 +607,7 @@ $$
 \alpha_{tj} = \frac{\exp\!\left( \mathbf{q}_t^\top \mathbf{k}_j / \sqrt{d_h} \right)}{\sum_{m=1}^{T} \exp\!\left( \mathbf{q}_t^\top \mathbf{k}_m / \sqrt{d_h} \right)}.
 $$
 You can think of this as: *each position $t$ in the sequence “looks at” every other position $j$ and decides how much to care about it*.
-#### Multi-Head Self-Attention
+### Multi-Head Self-Attention
 
 A single head can only look at interactions in one “representation subspace” of dimension $d_h$.  
 **Multi-head attention** uses several heads in parallel, each with its own projection matrices, so that different types of relationships can be captured simultaneously.
@@ -450,8 +647,8 @@ $$
 \mathbf{o}_{t,n_h}
 \end{bmatrix}.
 $$
-
 From a physics point of view, you can read multi-head attention as **several different “channels” of interaction**: one head might focus on short-range relations, another on long-range ones, another on some specific pattern (e.g. symmetry, local structure), and so on.
+
 ### Transformer Architecture
 
 The **Transformer** was introduced by Vaswani et al. @Vaswani2017 with the slogan *“Attention Is All You Need.”*  Its core building block is a **layer** that combines:
@@ -460,20 +657,20 @@ The **Transformer** was introduced by Vaswani et al. @Vaswani2017 with the sloga
 Both sublayers use **residual connections** and **layer normalization**.
 For an input sequence $\mathbf{X} \in \mathbb{R}^{T \times d}$ (already including positional information), one Transformer layer performs:
 3. **Multi-head self-attention sublayer**
-   $$
+$$
    \mathbf{H} = \text{MHA}(\mathbf{X}), \qquad
    \mathbf{X}^{(1)} = \text{LayerNorm}\!\left( \mathbf{X} + \mathbf{H} \right).
-   $$
+$$
 4. **Feed-forward sublayer** (applied independently at each position)
-   $$
+$$
    \text{FFN}(\mathbf{x}) = \sigma\!\left( \mathbf{x}\mathbf{W}_1 + \mathbf{b}_1 \right)\mathbf{W}_2 + \mathbf{b}_2,
-   $$
-   typically with $\sigma$ a nonlinearity such as ReLU or GELU and an intermediate width $d_{\text{ff}} > d$.
+$$
+typically with $\sigma$ a nonlinearity such as ReLU or GELU and an intermediate width $d_{\text{ff}} > d$.
 At the sequence level:   
 $$
    \mathbf{Z} = \text{FFN}(\mathbf{X}^{(1)}), \qquad
    \mathbf{X}^{\text{out}} = \text{LayerNorm}\!\left( \mathbf{X}^{(1)} + \mathbf{Z} \right).
-   $$
+$$
 Stacking several such layers yields a deep architecture where, at each layer, every position can interact with every other position through self-attention.
 
 In the original formulation, **positional encodings** (sinusoidal or learned) are added to the embeddings so that the model can distinguish different positions in the sequence:
@@ -481,28 +678,25 @@ $$
 \mathbf{X}_0 = \mathbf{E} + \mathbf{P},
 $$
 where $\mathbf{E}$ are token embeddings and $\mathbf{P}$ are positional encodings.
+
 ### Why Transformers Instead of RNNs or LSTMs?
 
-Recurrent Neural Networks (RNNs) and Long Short-Term Memory (LSTM) networks process the sequence **sequentially**:
-each new state depends on the previous one. This has two important consequences:
-
-1. **Limited long-range dependencies.**  
-   Information must flow through many time steps, which can lead to vanishing or exploding gradients and makes it hard to model very long-range interactions.
-2. **Poor parallelization.**  
-   Because each step depends on the previous one, you cannot compute all time steps in parallel. Training and inference are inherently sequential.
+Recurrent Neural Networks (RNNs) and Long Short-Term Memory (LSTM) networks process the sequence **sequentially** this is each new state depends on the previous one. This has two important consequences:
+1.   Information must flow through many time steps, which can lead to vanishing or exploding gradients and makes it hard to model very long-range interactions.
+2. Poor parallelization because each step depends on the previous one, you cannot compute all time steps in parallel. Training and inference are inherently sequential.
 Transformers address both issues:
-- **Global interactions in one step.**  
-  Self-attention allows every position to directly interact with every other position in a *single* layer, which is ideal when we care about *all-to-all* correlations (as in many-electron systems, where each electron “feels” all the others).
-- **Full parallelism over sequence length.**  
-  Given $\mathbf{X}$, the matrices $\mathbf{Q}$, $\mathbf{K}$, $\mathbf{V}$ and the attention outputs for all time steps are computed via matrix multiplications. This is extremely efficient on modern accelerators (GPUs/TPUs).
+- Global interactions in one step, self-attention allows every position to directly interact with every other position in a *single* layer, which is ideal when we care about *all-to-all* correlations (as in many-electron systems, where each electron “feels” all the others).
+- Full parallelism over sequence length. Given $\mathbf{X}$, the matrices $\mathbf{Q}$, $\mathbf{K}$, $\mathbf{V}$ and the attention outputs for all time steps are computed via matrix multiplications. This is extremely efficient on modern accelerators (GPUs/TPUs).
+For a many-electron Schrödinger equation, the wave function depends on the joint configuration of all particles.  A Transformer-based ansatz naturally provides a way for each electron’s representation to **look at all other electrons** and the nuclei, capturing complex correlation patterns through attention, while remaining highly parallelizable.
 
-For a many-electron Schrödinger equation, the wave function depends on the joint configuration of all particles.  
-A Transformer-based ansatz naturally provides a way for each electron’s representation to **look at all other electrons** and the nuclei, capturing complex correlation patterns through attention, while remaining highly parallelizable.
 # Psi Former Model
+
+
+## Fermionic Neural Network
 
 This sections describes the architectures of the model that we are going to use.
 First introduce Fermine which generates the hidden states using merely MLP whereas PsiFormer Generate the Hidden states using the Multi Head Attention (MHA) and a MLP.
-## Fermi Net
+s## Fermi Net
 A very important work for us is: Fermi Net @Pfau_2020  it uses different MLP to learn the forms of the orbitals. Their ansatz is nothing but the average sum of $k$ determinants.
 $$ \psi(\mathbf{x}_{i},\dots,\mathbf{x}_{n})=\sum_{k}\omega_{k}\det[\Phi ^{k}] $$
 Whit
@@ -551,8 +745,6 @@ And for the
 $$
 \mathbf{h}^{\ell+1 \alpha\beta}_{ij} = \mathrm{tanh}\left(\mathbf{W}^\ell\mathbf{h}^{\ell \alpha\beta}_{ij} +\mathbf{c}^\ell\right) + \mathbf{h}^{\ell \alpha\beta}_{ij}
 $$
-
-
 Like this until obtain $\mathbf{h}_{j}^{L\alpha}$. And from it you obtain your orbitals. Which are a affine map scaled by a exponential factor 
 $$
 \begin{align}
@@ -573,7 +765,7 @@ Why there are two determinants?
 ![[ferminet.png|280x315]]
 
 Until this point we have only use MLPs vanilla. 
-## Jastrow Factor
+## Jastrow Factor for Psi Former
 
 [[Psi Former Ansatz]]. @vonglehn2023selfattentionansatzabinitioquantum
 $$ \Psi_{\theta}(\mathbf{x})=\exp(\mathcal{J}_{\theta}(\mathbf{x}))\sum_{k=1}^{N_{\det}}\det[\boldsymbol{\Phi}_{\theta}^{k}(x)] $$
@@ -606,19 +798,19 @@ With it you can obtain you hidden states, and then how you use it?
 With them you create the [[Orbital for neural network fermi net]]
 And you have it.
 
---- 
 # Methodology
 
 To implement the code, the choose of the library is important.
 The three options to implement this kind of matter are JAX, Tensor Flow and pytorch, each one with his advantages and disadvantages.
 ## Environment
 
-For this project we are going to be using Pytorch due his user-friendly and support. Python. with UV
+For this project we are going to be using Pytorch due his user-friendly and support. Python, and several libraries as transformers from hugging face, a library who implements KFCA and like guide the implement of Fermi Net by google deepmind which is made it on TensorFlow
+
+Project manager with UV.
 ## Training
 
 Due the high computational power needed we are going to using GPUS and of course CUDA.
-
-Is clear that we are going to use virtual GPUS, for that matter we have two option or well use a GPU via SSH or directly using services like Azure , Colab, or anothers matters.
+Is clear that we are going to use virtual GPUS, for that matter we have two option or well use a GPU via SSH or directly using services like Azure , Colab, or anothers matters. For simplicity we are going to use Colab services.
 The election of the GPU is not trivial. use TPUS are not a bad idea.
 ## References
 
