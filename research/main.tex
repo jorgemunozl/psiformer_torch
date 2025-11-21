@@ -1,22 +1,4 @@
-\documentclass{article}
-
-% if you need to pass options to natbib, use, e.g.:
-%     \PassOptionsToPackage{numbers, compress}{natbib}
-% before loading neurips_2024
-
-
-% ready for submission
-
-% to compile a preprint version, e.g., for submission to arXiv, add add the
-% [preprint] option:
-%     \usepackage[preprint]{neurips_2024}
-
-
-% to compile a camera-ready version, add the [final] option, e.g.:
-%     \usepackage[final]{neurips_2024}
-% to avoid loading the natbib package, add option nonatbib:
-%    \usepackage[nonatbib]{neurips_2024}
-
+\documentclass[twocolumn]{article}
 
 \usepackage[utf8]{inputenc} % allow utf-8 input
 \usepackage[T1]{fontenc}    % use 8-bit T1 fonts
@@ -27,998 +9,33 @@
 \usepackage{nicefrac}       % compact symbols for 1/2, etc.
 \usepackage{microtype}      % microtypography
 \usepackage{xcolor}         % colors
-
-
-\title{Formatting Instructions For NeurIPS 2024}
-
-
-% The \author macro works with any number of authors. There are two commands
-% used to separate the names and addresses of multiple authors: \And and \AND.
-%
-% Using \And between authors leaves it to LaTeX to determine where to break the
-% lines. Using \AND forces a line break at that point. So, if LaTeX puts 3 of 4
-% authors names on the first line, and the last on the second line, try using
-% \AND instead of \And before the third author name.
-
-
-\author{%
-  David S.~Hippocampus\thanks{Use footnote for providing further information
-    about author (webpage, alternative address)---\emph{not} for acknowledging
-    funding agencies.} \\
-  Department of Computer Science\\
-  Cranberry-Lemon University\\
-  Pittsburgh, PA 15213 \\
-  \texttt{hippo@cs.cranberry-lemon.edu} \\
-  % examples of more authors
-  % \And
-  % Coauthor \\
-  % Affiliation \\
-  % Address \\
-  % \texttt{email} \\
-  % \AND
-  % Coauthor \\
-  % Affiliation \\
-  % Address \\
-  % \texttt{email} \\
-  % \And
-  % Coauthor \\
-  % Affiliation \\
-  % Address \\
-  % \texttt{email} \\
-  % \And
-  % Coauthor \\
-  % Affiliation \\
-  % Address \\
-  % \texttt{email} \\
+\usepackage{amsmath}
+\usepackage{authblk}
+\usepackage{hyperref}
+\usepackage{cleveref}   % smart refs: \cref
+\usepackage[
+  a4paper,
+  left=2cm,
+  right=2cm,
+  top=2cm,
+  bottom=2cm
+]{geometry}
+\usepackage{braket}
+\usepackage{graphicx}
+\title{Development of a Transformed based architecture to solve the Time Independent Schrodinger Equation for many bodies}
+\author[1]{Jorge Alvaro Munoz Laredo}
+\affil[1]{Faculty of Physics, Universidad Nacional de Ingeniería, Lima, Peru\\
+\texttt{jorge.munoz.l@uni.pe}
 }
-
 
 \begin{document}
 
-
-\maketitle
-
-
-\begin{abstract}
-  With accurate solutions to the many electron Schrodinger equation all the chemistry
-  could derived from first principles. Try to find analytical is prohibitively hard due
-  the intrinsic relations between each component on a molecule.
-  In this work I develop the use of a architecture based on the Transformer 
-  architecture to tackle this problem.
-\end{abstract}
-
-
-\section{Introduction}
-
-The success of deep Learning across different fields like protein folding  @jumper2021highly, visual modeling @dosovitskiy2021imageworth16x16words, ODEs solvers @RAISSI2019686 has sparked great interest from the scientific community to apply DL methods to their fields. 
-
-Quantum Chemistry, specifically finding a good aproximmation for the Quantum Many-Body wave eqaution  the is one of those places where have shown that deep learning could overpass traditional methods @Luo_2019 , @Qiao_2020, but there is still many challenges specifically, the computational power needed for large molecules becomes prohibitively expensive. 
-
-Tackling that problem the Transformer architecture had demonstrate that scaling laws are not so much complicated for him. Cite
-
-Motivated for that in this work I develop a transformer architecture called Psifomer. @vonglehn2023selfattentionansatzabinitioquantum  
-
-\section{Objectives}
-
-- Obtain a model which is able to replicate the energy ground states of certain atoms.
-- Compare our model with another State of the art methods to solve the Many electrons Schrodinger equation
-
-
-I provide an outline of the model architecture and procedure 
-In theoretical frame work we  will and in methodology we will 
-
-
-\section{Theoretical Framework}
-
-In order to solve the problem we have to grasp the physics laws that our solution have to follow, 
-
-
-We consider the follow:
-
-\subsection{The Schrodinger Equation}
-
-The schrodinger equation was presented in a series of publication made it by Schrodinger in the year 1916.
-
-It was received pretty well by the scientific comunnity. 
-
-And its relevance is high, in principle it is able to explain all the atomic phenomena and all the facts of chemical bindings.
-
-\subsection{The many electron Schrodinger Equation}
-
-In quantum chemistry is regular used atomic units, the unit of distance is the Bohr Radious and the unit of energy is Hartree (Ha).
-
-In its time-independent form the Schrodinger equation can be written as a eigenfunction equation.
-
-
-$$ \hat{H}\psi(\mathbf{x}_{0},\dots ,\mathbf{x}_{n})=E\psi(\mathbf{x}_{1},\dots ,\mathbf{x}_{n}) $$
-
-Where $\hat{H}$ is a Hermitian linear operator called the Hamiltonian and the scalar eigenvalue $E$ corresponds to the energy of a particular solution.
-
-$$
-U=\frac{1}{4\pi\varepsilon_{0}}\frac{e^{2}}{\lvert r_{i}-r_{j} \rvert }
-$$
-
-Using atomic units we [[Quantum Chemistry units|Atomic Units]]:
-
-The Hamiltonian using the [[Quantum Chemistry units]] becomes:
-
-$$ \hat{H}=-\frac{1}{2}\sum \nabla^{2}+\sum \frac{1}{\lvert r_{i}-r_{j} \rvert }-\sum \frac{Z_{I}}{\lvert r_{i}-R_{I} \rvert }+\sum \frac{Z_{I}Z_{J}}{\lvert R_{i}-R_{j} \rvert } $$
-
-Where $Z_{I}$ are the [[atomic number]] $r_{i}$ is the distance from a reference frame 
-
-Now the [[Fermi Dirac Statistics]] tell us that this solution of this equation should be **anti symmetric** this is:
-
-$$
-\psi(\dots,\mathbf{x}_{i},\dots,\mathbf{x}_{j},\dots)=-\psi(\dots ,\mathbf{x}_{j},\dots ,\mathbf{x}_{i},\dots)
-$$
-
-The potential energy becomes infinite when two electrons overlap , this could be formalized via the [[Kato Cusp Conditions]], a Jastrow factor $\exp(\mathcal{J})$. The explicit form of $\mathcal{J}$ depends on the author.
-
-
-
-
-\subsection{Approximating a solution}
-
-Find possible solution in the traditional way is prohibitively hard. So what people have doing and it seem that it becomes a success is guess that solution and using another techniques to improve the solution, to this guess solution we called **Ansatz**.
-
-Once that you have your Ansatz, which normally depends on depends on certain parameters.
-
-
-
-\subVariational{Monte Carlo}
-
-Once that you guess an **Ansatz** you optimize using the **rayleight quotient**.
-
-$$ \mathcal{L}=\frac{\bra{\psi} \hat{H}\ket{\psi} }{\braket{ \psi | \psi } }=\frac{\int d\mathbf{r}\psi ^{*}(\mathbf{r})\hat{H}\psi(\mathbf{r})}{\int d\mathbf{r}\psi ^{*}(\mathbf{r})\psi(\mathbf{r})} $$
-
-
-So how we optimized this. Here appears [[Variational Quantum Monte Carlo]].
-
-Which can be re-written as:
-$$ E_{L}(x)=\Psi ^{-1}_{\theta}(x)\hat{H}\Psi_{\theta}(x) $$
-
-$$ \mathcal{L}_{\theta}=\mathbb{E}_{x\sim \Psi^{2}_{\theta}}[E_{L}(x)] $$
-
-And here we use [[Metropolis algorithm]] to work in real life.
-
-## Using Deep Learning
-
-They are a quite example of it.
-
-examples @shangSolvingManyelectronSchrodinger2025 Related work
-
-### Neural Networksee
-
-### RNN
-
-
-Fermi Net
-
-A very important work for us is: Fermi Net @Pfau_2020  it uses different MLP to learn the forms of the orbitals. Their ansatz is: [[Fermi Net]]
-
-$$ \psi(\mathbf{x}_{i},\dots,\mathbf{x}_{n})=\sum_{k}\omega_{k}\det[\Phi ^{k}] $$
-
-With:
-
-$$
-\begin{vmatrix}
-\phi_{1}^{k}(\mathbf{x}_{1})  & \dots  &  \phi_{1}^{k}(\mathbf{x}_{n}) \\
-\vdots   &  & \vdots  \\
-\phi_{n}^{k}(\mathbf{x}_{1}) & \dots & \phi_{n}^{k}(\mathbf{x}_{n})
-
-\end{vmatrix}=\det[\phi_{i}^{k}(\mathbf{x}_{j})]=\det[\Phi ^{k}]
-$$
-
-The elements of the determinant are obtained via
-
-$\alpha \in \{ \uparrow,\downarrow \}$
-
-$$
-\mathbf{h}_{i}^{\ell \alpha} \gets \text{concatenate}(\mathbf{r}^\alpha_i - \mathbf{R}_I, |\mathbf{r}^\alpha_i - \mathbf{R}_I|\ \forall\ I)
-$$
-$$
-\mathbf{h}_{ij}^{\ell \alpha\beta} \gets \text{concatenate}(\mathbf{r}^\alpha_i - \mathbf{r}^\beta_j, |\mathbf{r}^\alpha_i - \mathbf{r}^\beta_j|\ \forall\ j,\beta)
-$$
-
-$$
- \begin{align}
-    &\left(
-    \mathbf{h}^{\ell\alpha}_i,
-    \frac{1}{n^\uparrow}\sum_{j=1}^{n^\uparrow} \mathbf{h}^{\ell\uparrow}_j, \frac{1}{n^\downarrow} \sum_{j=1}^{n^\downarrow} \mathbf{h}^{\ell\downarrow}_j,
-    \frac{1}{n^\uparrow} \sum_{j=1}^{n^\uparrow} \mathbf{h}^{\ell\alpha\uparrow}_{ij},
-    \frac{1}{n^\downarrow} \sum_{j=1}^{n^\downarrow} \mathbf{h}^{\ell\alpha\downarrow}_{ij}\right) \nonumber \\
-    &\qquad =
-    \left(\mathbf{h}^{\ell\alpha}_i, \mathbf{g}^{\ell\uparrow}, \mathbf{g}^{\ell\downarrow}, \mathbf{g}^{\ell\alpha\uparrow}_i, \mathbf{g}^{\ell\alpha\downarrow}_i\right) = \mathbf{f}^{\ell \alpha}_i,
-\end{align}
-$$
-
-
-$$
-\begin{align}
-    \mathbf{h}^{\ell+1 \alpha}_i &= \mathrm{tanh}\left(\mathbf{V}^\ell \mathbf{f}^{\ell \alpha}_i + \mathbf{b}^\ell\right) + \mathbf{h}^{\ell\alpha}_i \nonumber \\
-    \mathbf{h}^{\ell+1 \alpha\beta}_{ij} &= \mathrm{tanh}\left(\mathbf{W}^\ell\mathbf{h}^{\ell \alpha\beta}_{ij} + \mathbf{c}^\ell\right) + \mathbf{h}^{\ell \alpha\beta}_{ij}
-\end{align}
-$$
-
-$$
-\begin{multline}
-    \phi^{k\alpha}_i(\mathbf{r}^\alpha_j; \{\mathbf{r}^\alpha_{/j}\}; \{\mathbf{r}^{\bar{\alpha}}\}) =
-    \left(\mathbf{w}^{k\alpha}_i \cdot \mathbf{h}^{L\alpha}_j + g^{k\alpha}_i\right)\\
-	\sum_{m} \pi^{k\alpha}_{im}\mathrm{exp}\left(-|\mathbf{\Sigma}_{im}^{k \alpha}(\mathbf{r}^{\alpha}_j-\mathbf{R}_m)|\right),
-\end{multline}
-$$
-
-$$ \phi ^{k\alpha}_{i}(\mathbf{r}^{\alpha}_{j};\{ \mathbf{r}^{\alpha}_{/j} \};\{ \mathbf{r}^{\bar{\alpha}} \})=(\mathbf{w}^{k\alpha}_{i}\cdot \mathbf{h}^{L\alpha}_{j}+g^{k\alpha}_{i})\sum_{m}\pi_{im}^{k\alpha}\exp\left( -\left\lvert \Sigma _{im}^{k\alpha}(\mathbf{r}^{\alpha}_{j}-\mathbf{R}_{m})\right\rvert  \right)$$.
-
-$$
-​￼\begin{align}
-	\psi(\mathbf{r}^\uparrow_1,\ldots,\mathbf{r}^\downarrow_{n^\downarrow}) = \sum_{k}\omega_k &\left(\det\left[\phi^{k \uparrow}_i(\mathbf{r}^\uparrow_j; \{\mathbf{r}^\uparrow_{/j}\}; \{\mathbf{r}^\downarrow\})\right]\right.\\&\left.\hphantom{\left(\right.}\det\left[\phi^{k\downarrow}_i(\mathbf{r}^\downarrow_j; \{\mathbf{r}^\downarrow_{/j}\});
-	\{\mathbf{r}^\uparrow\};\right]\right).
-\end{align}
-$$
-
-You com
-
-![[ferminet.png|280x315]]
-
-Motivated for the antisymmetry and the Kato cusp conditions our **Ansatz** take the form of: [
-### Transformers
-
-There exist several architectures that I can use Recurrent Neural Network, Long Short Term Memory. 
-
-@Vaswani2017 
-
-Recurrent Neural Network are: [[Recurrent Neural Network]]
-And long short term memory are: [[Long Short Memory]]
-
-Why on earth I would use [[Transformer]]? They are extremely good finding relations between its elements. And the best is that scale well due its [[Transform Architecture]]
-
-Attention mechanism appear with @bahdanau2014neural but it didn't work so:
-
-- [[Attention mechanism]]
-- [[Self attention mechanism on one head]]
-- [[Multi-head attention]]
-$$
-\mathbf{o}_{t,i}=\sum_{j=1}^{t}\text{Softmax}\left( \frac{\mathbf{q}^{T}_{t,i}\mathbf{k}_{j,i}}{\sqrt{ d_{h} }} \right) \mathbf{v}_{j,i}
-$$
-$$
-\mathbf{u}_{t}=W^{O}[\mathbf{o}_{t,1};\mathbf{o}_{t,2};\dots ;\mathbf{o}_{t,n_{h}}]
-$$
-
-# Psi Former
-
-[[Psi Former Ansatz]]. @vonglehn2023selfattentionansatzabinitioquantum
-$$ \Psi_{\theta}(\mathbf{x})=\exp(\mathcal{J}_{\theta}(\mathbf{x}))\sum_{k=1}^{N_{\det}}\det[\boldsymbol{\Phi}_{\theta}^{k}(x)] $$
-
-Where $\mathcal{J}_{\theta}$ is the [[Jastrow Factor for si Former]] and $\Phi$ are [[orbital for neural network fermi net|orbitals]]. 
-
-
-Where $\mathcal{J}_{\theta}:(\mathbb{R}^{3}\times \{ \uparrow,\downarrow \})^{n}\to \mathbb{R}$
-
-- So the question is how you define the outputs of that functions:
-- [[Jastrow Factor]]
-$$
-\mathcal{J}_{\theta}(x)=\sum_{i<j;\sigma_{i}=\sigma_{j}}-\frac{1}{4}\frac{\alpha^{2}_{par}}{\alpha_{par}+\lvert \mathbf{r}_{i}-\mathbf{r}_{j} \rvert }+\sum_{i,j;\sigma_{i}\neq \sigma_{j}}-\frac{1}{2}\frac{\alpha^{2}_{anti}}{\alpha_{anti}+\lvert \mathbf{r}_{i}-\mathbf{r}_{j} \rvert }
-$$
-
-Architecture
-
-![[psiformer.png|271x339]]
-
-### Loss function
-
-We are going to take the [[Rayleigh Quotient like Expectation Value]] like loss function.
-
-### Optimizer 
-
-[[Kroenecker factored Approximate Curvature]]
-
-### Flow of the architecture
-
-First compute:
-$$ v_{h}=[\text{SelfAttn}(\mathbf{h}^{l}_{1},\dots,\mathbf{h}^{\ell}_{N};\mathbf{W}^{\ell h}_{q},\mathbf{W}^{\ell h}_{k},\mathbf{W}^{\ell h}_{v})] $$
-
-Start with:
-
-$$\mathbf{W}_{o}^{\ell}\text{concat}_{h}[\text{SelfAttn}(\mathbf{h}^{l}_{1},\dots,\mathbf{h}^{\ell}_{N};\mathbf{W}^{\ell h}_{q},\mathbf{W}^{\ell h}_{k},\mathbf{W}^{\ell h}_{v})]$$
-
-With it you can obtain you hidden states, and then how you use it
-
-
-
-With them you create the [[orbital for neural network fermi net]]
-
-And you have it.
-
-# Methodology
-
-To implement the code, the choose of the library is important.
-
-The three options to implement this kind of matter are JAX, Tensor Flow and pytorch, each one with his advantages and disadvantages.
-
-## Environment
-
-For this project we are going to be using Pytorch due his user-friendly and support. Python. with UV
-
-## Training
-
-Due the high computational power needed we are going to using GPUS and of course CUDA.
-
-Is clear that we are going to use virtual GPUS, for that matter we have two option or well use a GPU via SSH or directly using services like Azure , Colab, or anothers matters.
-
-The election of the GPU is not trivial. use TPUS are not a bad idea.
-
-
-
-\clearpage
-\clearpage
-\clearpage
-
-
-
-begin{abstract}
-  The abstract paragraph should be indented \nicefrac{1}{2}~inch (3~picas) on
-  both the left- and right-hand margins. Use 10~point type, with a vertical
-  spacing (leading) of 11~points.  The word \textbf{Abstract} must be centered,
-  bold, and in point size 12. Two line spaces precede the abstract. The abstract
-  must be limited to one paragraph.
-\end{abstract}
-
-
-
-\section{Submission of papers to NeurIPS 2024}
-
-
-Please read the instructions below carefully and follow them faithfully.
-
-
-\subsection{Style}
-
-
-Papers to be submitted to NeurIPS 2024 must be prepared according to the
-instructions presented here. Papers may only be up to {\bf nine} pages long,
-including figures. Additional pages \emph{containing only acknowledgments and
-references} are allowed. Papers that exceed the page limit will not be
-reviewed, or in any other way considered for presentation at the conference.
-
-
-The margins in 2024 are the same as those in previous years.
-
-
-Authors are required to use the NeurIPS \LaTeX{} style files obtainable at the
-NeurIPS website as indicated below. Please make sure you use the current files
-and not previous versions. Tweaking the style files may be grounds for
-rejection.
-
-
-
-
-
-
-
-
-
-\subsection{Retrieval of style files}
-
-
-The style files for NeurIPS and other conference information are available on
-the website at
-\begin{center}
-  \url{http://www.neurips.cc/}
-\end{center}
-The file \verb+neurips_2024.pdf+ contains these instructions and illustrates the
-various formatting requirements your NeurIPS paper must satisfy.
-
-
-The only supported style file for NeurIPS 2024 is \verb+neurips_2024.sty+,
-rewritten for \LaTeXe{}.  \textbf{Previous style files for \LaTeX{} 2.09,
-  Microsoft Word, and RTF are no longer supported!}
-
-
-The \LaTeX{} style file contains three optional arguments: \verb+final+, which
-creates a camera-ready copy, \verb+preprint+, which creates a preprint for
-submission to, e.g., arXiv, and \verb+nonatbib+, which will not load the
-\verb+natbib+ package for you in case of package clash.
-
-
-\paragraph{Preprint option}
-If you wish to post a preprint of your work online, e.g., on arXiv, using the
-NeurIPS style, please use the \verb+preprint+ option. This will create a
-nonanonymized version of your work with the text ``Preprint. Work in progress.''
-in the footer. This version may be distributed as you see fit, as long as you do not say which conference it was submitted to. Please \textbf{do
-  not} use the \verb+final+ option, which should \textbf{only} be used for
-papers accepted to NeurIPS.
-
-
-At submission time, please omit the \verb+final+ and \verb+preprint+
-options. This will anonymize your submission and add line numbers to aid
-review. Please do \emph{not} refer to these line numbers in your paper as they
-will be removed during generation of camera-ready copies.
-
-
-The file \verb+neurips_2024.tex+ may be used as a ``shell'' for writing your
-paper. All you have to do is replace the author, title, abstract, and text of
-the paper with your own.
-
-
-The formatting instructions contained in these style files are summarized in
-Sections \ref{gen_inst}, \ref{headings}, and \ref{others} below.
-
-
-\section{General formatting instructions}
-\label{gen_inst}
-
-
-The text must be confined within a rectangle 5.5~inches (33~picas) wide and
-9~inches (54~picas) long. The left margin is 1.5~inch (9~picas).  Use 10~point
-type with a vertical spacing (leading) of 11~points.  Times New Roman is the
-preferred typeface throughout, and will be selected for you by default.
-Paragraphs are separated by \nicefrac{1}{2}~line space (5.5 points), with no
-indentation.
-
-
-The paper title should be 17~point, initial caps/lower case, bold, centered
-between two horizontal rules. The top rule should be 4~points thick and the
-bottom rule should be 1~point thick. Allow \nicefrac{1}{4}~inch space above and
-below the title to rules. All pages should start at 1~inch (6~picas) from the
-top of the page.
-
-
-For the final version, authors' names are set in boldface, and each name is
-centered above the corresponding address. The lead author's name is to be listed
-first (left-most), and the co-authors' names (if different address) are set to
-follow. If there is only one co-author, list both author and co-author side by
-side.
-
-
-Please pay special attention to the instructions in Section \ref{others}
-regarding figures, tables, acknowledgments, and references.
-
-
-\section{Headings: first level}
-\label{headings}
-
-
-All headings should be lower case (except for first word and proper nouns),
-flush left, and bold.
-
-
-First-level headings should be in 12-point type.
-
-
-\subsection{Headings: second level}
-
-
-Second-level headings should be in 10-point type.
-
-
-\subsubsection{Headings: third level}
-
-
-Third-level headings should be in 10-point type.
-
-
-\paragraph{Paragraphs}
-
-
-There is also a \verb+\paragraph+ command available, which sets the heading in
-bold, flush left, and inline with the text, with the heading followed by 1\,em
-of space.
-
-
-\section{Citations, figures, tables, references}
-\label{others}
-
-
-These instructions apply to everyone.
-
-
-\subsection{Citations within the text}
-
-
-The \verb+natbib+ package will be loaded for you by default.  Citations may be
-author/year or numeric, as long as you maintain internal consistency.  As to the
-format of the references themselves, any style is acceptable as long as it is
-used consistently.
-
-
-The documentation for \verb+natbib+ may be found at
-\begin{center}
-  \url{http://mirrors.ctan.org/macros/latex/contrib/natbib/natnotes.pdf}
-\end{center}
-Of note is the command \verb+\citet+, which produces citations appropriate for
-use in inline text.  For example,
-\begin{verbatim}
-   \citet{hasselmo} investigated\dots
-\end{verbatim}
-produces
-\begin{quote}
-  Hasselmo, et al.\ (1995) investigated\dots
-\end{quote}
-
-
-If you wish to load the \verb+natbib+ package with options, you may add the
-following before loading the \verb+neurips_2024+ package:
-\begin{verbatim}
-   \PassOptionsToPackage{options}{natbib}
-\end{verbatim}
-
-
-If \verb+natbib+ clashes with another package you load, you can add the optional
-argument \verb+nonatbib+ when loading the style file:
-\begin{verbatim}
-   \usepackage[nonatbib]{neurips_2024}
-\end{verbatim}
-
-
-As submission is double blind, refer to your own published work in the third
-person. That is, use ``In the previous work of Jones et al.\ [4],'' not ``In our
-previous work [4].'' If you cite your other papers that are not widely available
-(e.g., a journal paper under review), use anonymous author names in the
-citation, e.g., an author of the form ``A.\ Anonymous'' and include a copy of the anonymized paper in the supplementary material.
-
-
-\subsection{Footnotes}
-
-
-Footnotes should be used sparingly.  If you do require a footnote, indicate
-footnotes with a number\footnote{Sample of the first footnote.} in the
-text. Place the footnotes at the bottom of the page on which they appear.
-Precede the footnote with a horizontal rule of 2~inches (12~picas).
-
-
-Note that footnotes are properly typeset \emph{after} punctuation
-marks.\footnote{As in this example.}
-
-
-\subsection{Figures}
-
-
-\begin{figure}
-  \centering
-  \fbox{\rule[-.5cm]{0cm}{4cm} \rule[-.5cm]{4cm}{0cm}}
-  \caption{Sample figure caption.}
-\end{figure}
-
-
-All artwork must be neat, clean, and legible. Lines should be dark enough for
-purposes of reproduction. The figure number and caption always appear after the
-figure. Place one line space before the figure caption and one line space after
-the figure. The figure caption should be lower case (except for first word and
-proper nouns); figures are numbered consecutively.
-
-
-You may use color figures.  However, it is best for the figure captions and the
-paper body to be legible if the paper is printed in either black/white or in
-color.
-
-
-\subsection{Tables}
-
-
-All tables must be centered, neat, clean and legible.  The table number and
-title always appear before the table.  See Table~\ref{sample-table}.
-
-
-Place one line space before the table title, one line space after the
-table title, and one line space after the table. The table title must
-be lower case (except for first word and proper nouns); tables are
-numbered consecutively.
-
-
-Note that publication-quality tables \emph{do not contain vertical rules.} We
-strongly suggest the use of the \verb+booktabs+ package, which allows for
-typesetting high-quality, professional tables:
-\begin{center}
-  \url{https://www.ctan.org/pkg/booktabs}
-\end{center}
-This package was used to typeset Table~\ref{sample-table}.
-
-
-\begin{table}
-  \caption{Sample table title}
-  \label{sample-table}
-  \centering
-  \begin{tabular}{lll}
-    \toprule
-    \multicolumn{2}{c}{Part}                   \\
-    \cmidrule(r){1-2}
-    Name     & Description     & Size ($\mu$m) \\
-    \midrule
-    Dendrite & Input terminal  & $\sim$100     \\
-    Axon     & Output terminal & $\sim$10      \\
-    Soma     & Cell body       & up to $10^6$  \\
-    \bottomrule
-  \end{tabular}
-\end{table}
-
-\subsection{Math}
-Note that display math in bare TeX commands will not create correct line numbers for submission. Please use LaTeX (or AMSTeX) commands for unnumbered display math. (You really shouldn't be using \$\$ anyway; see \url{https://tex.stackexchange.com/questions/503/why-is-preferable-to} and \url{https://tex.stackexchange.com/questions/40492/what-are-the-differences-between-align-equation-and-displaymath} for more information.)
-
-\subsection{Final instructions}
-
-Do not change any aspects of the formatting parameters in the style files.  In
-particular, do not modify the width or length of the rectangle the text should
-fit into, and do not change font sizes (except perhaps in the
-\textbf{References} section; see below). Please note that pages should be
-numbered.
-
-
-\section{Preparing PDF files}
-
-
-Please prepare submission files with paper size ``US Letter,'' and not, for
-example, ``A4.''
-
-
-Fonts were the main cause of problems in the past years. Your PDF file must only
-contain Type 1 or Embedded TrueType fonts. Here are a few instructions to
-achieve this.
-
-
-\begin{itemize}
-
-
-\item You should directly generate PDF files using \verb+pdflatex+.
-
-
-\item You can check which fonts a PDF files uses.  In Acrobat Reader, select the
-  menu Files$>$Document Properties$>$Fonts and select Show All Fonts. You can
-  also use the program \verb+pdffonts+ which comes with \verb+xpdf+ and is
-  available out-of-the-box on most Linux machines.
-
-
-\item \verb+xfig+ "patterned" shapes are implemented with bitmap fonts.  Use
-  "solid" shapes instead.
-
-
-\item The \verb+\bbold+ package almost always uses bitmap fonts.  You should use
-  the equivalent AMS Fonts:
-\begin{verbatim}
-   \usepackage{amsfonts}
-\end{verbatim}
-followed by, e.g., \verb+\mathbb{R}+, \verb+\mathbb{N}+, or \verb+\mathbb{C}+
-for $\mathbb{R}$, $\mathbb{N}$ or $\mathbb{C}$.  You can also use the following
-workaround for reals, natural and complex:
-\begin{verbatim}
-   \newcommand{\RR}{I\!\!R} %real numbers
-   \newcommand{\Nat}{I\!\!N} %natural numbers
-   \newcommand{\CC}{I\!\!\!\!C} %complex numbers
-\end{verbatim}
-Note that \verb+amsfonts+ is automatically loaded by the \verb+amssymb+ package.
-
-
-\end{itemize}
-
-
-If your file contains type 3 fonts or non embedded TrueType fonts, we will ask
-you to fix it.
-
-
-\subsection{Margins in \LaTeX{}}
-
-
-Most of the margin problems come from figures positioned by hand using
-\verb+\special+ or other commands. We suggest using the command
-\verb+\includegraphics+ from the \verb+graphicx+ package. Always specify the
-figure width as a multiple of the line width as in the example below:
-\begin{verbatim}
-   \usepackage[pdftex]{graphicx} ...
-   \includegraphics[width=0.8\linewidth]{myfile.pdf}
-\end{verbatim}
-See Section 4.4 in the graphics bundle documentation
-(\url{http://mirrors.ctan.org/macros/latex/required/graphics/grfguide.pdf})
-
-
-A number of width problems arise when \LaTeX{} cannot properly hyphenate a
-line. Please give LaTeX hyphenation hints using the \verb+\-+ command when
-necessary.
-
-\begin{ack}
-Use unnumbered first level headings for the acknowledgments. All acknowledgments
-go at the end of the paper before the list of references. Moreover, you are required to declare
-funding (financial activities supporting the submitted work) and competing interests (related financial activities outside the submitted work).
-More information about this disclosure can be found at: \url{https://neurips.cc/Conferences/2024/PaperInformation/FundingDisclosure}.
-
-
-Do {\bf not} include this section in the anonymized submission, only in the final paper. You can use the \texttt{ack} environment provided in the style file to automatically hide this section in the anonymized submission.
-\end{ack}
-
-\section*{References}
-
-
-References follow the acknowledgments in the camera-ready paper. Use unnumbered first-level heading for
-the references. Any choice of citation style is acceptable as long as you are
-consistent. It is permissible to reduce the font size to \verb+small+ (9 point)
-when listing the references.
-Note that the Reference section does not count towards the page limit.
-\medskip
-
-
-{
-\small
-
-
-[1] Alexander, J.A.\ \& Mozer, M.C.\ (1995) Template-based algorithms for
-connectionist rule extraction. In G.\ Tesauro, D.S.\ Touretzky and T.K.\ Leen
-(eds.), {\it Advances in Neural Information Processing Systems 7},
-pp.\ 609--616. Cambridge, MA: MIT Press.
-
-
-[2] Bower, J.M.\ \& Beeman, D.\ (1995) {\it The Book of GENESIS: Exploring
-  Realistic Neural Models with the GEneral NEural SImulation System.}  New York:
-TELOS/Springer--Verlag.
-
-
-[3] Hasselmo, M.E., Schnell, E.\ \& Barkai, E.\ (1995) Dynamics of learning and
-recall at excitatory recurrent synapses and cholinergic modulation in rat
-hippocampal region CA3. {\it Journal of Neuroscience} {\bf 15}(7):5249-5262.
-}
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\appendix
-
-\section{Appendix / supplemental material}
-
-
-Optionally include supplemental material (complete proofs, additional experiments and plots) in appendix.
-All such materials \textbf{SHOULD be included in the main submission.}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\newpage
-\section*{NeurIPS Paper Checklist}
-
-%%% BEGIN INSTRUCTIONS %%%
-The checklist is designed to encourage best practices for responsible machine learning research, addressing issues of reproducibility, transparency, research ethics, and societal impact. Do not remove the checklist: {\bf The papers not including the checklist will be desk rejected.} The checklist should follow the references and follow the (optional) supplemental material.  The checklist does NOT count towards the page
-limit.
-
-Please read the checklist guidelines carefully for information on how to answer these questions. For each question in the checklist:
-\begin{itemize}
-    \item You should answer \answerYes{}, \answerNo{}, or \answerNA{}.
-    \item \answerNA{} means either that the question is Not Applicable for that particular paper or the relevant information is Not Available.
-    \item Please provide a short (1–2 sentence) justification right after your answer (even for NA).
-   % \item {\bf The papers not including the checklist will be desk rejected.}
-\end{itemize}
-
-{\bf The checklist answers are an integral part of your paper submission.} They are visible to the reviewers, area chairs, senior area chairs, and ethics reviewers. You will be asked to also include it (after eventual revisions) with the final version of your paper, and its final version will be published with the paper.
-
-The reviewers of your paper will be asked to use the checklist as one of the factors in their evaluation. While "\answerYes{}" is generally preferable to "\answerNo{}", it is perfectly acceptable to answer "\answerNo{}" provided a proper justification is given (e.g., "error bars are not reported because it would be too computationally expensive" or "we were unable to find the license for the dataset we used"). In general, answering "\answerNo{}" or "\answerNA{}" is not grounds for rejection. While the questions are phrased in a binary way, we acknowledge that the true answer is often more nuanced, so please just use your best judgment and write a justification to elaborate. All supporting evidence can appear either in the main paper or the supplemental material, provided in appendix. If you answer \answerYes{} to a question, in the justification please point to the section(s) where related material for the question can be found.
-
-IMPORTANT, please:
-\begin{itemize}
-    \item {\bf Delete this instruction block, but keep the section heading ``NeurIPS paper checklist"},
-    \item  {\bf Keep the checklist subsection headings, questions/answers and guidelines below.}
-    \item {\bf Do not modify the questions and only use the provided macros for your answers}.
-\end{itemize}
-
-
-%%% END INSTRUCTIONS %%%
-
-
-\begin{enumerate}
-
-\item {\bf Claims}
-    \item[] Question: Do the main claims made in the abstract and introduction accurately reflect the paper's contributions and scope?
-    \item[] Answer: \answerTODO{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
-    \item[] Justification: \justificationTODO{}
-    \item[] Guidelines:
-    \begin{itemize}
-        \item The answer NA means that the abstract and introduction do not include the claims made in the paper.
-        \item The abstract and/or introduction should clearly state the claims made, including the contributions made in the paper and important assumptions and limitations. A No or NA answer to this question will not be perceived well by the reviewers.
-        \item The claims made should match theoretical and experimental results, and reflect how much the results can be expected to generalize to other settings.
-        \item It is fine to include aspirational goals as motivation as long as it is clear that these goals are not attained by the paper.
-    \end{itemize}
-
-\item {\bf Limitations}
-    \item[] Question: Does the paper discuss the limitations of the work performed by the authors?
-    \item[] Answer: \answerTODO{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
-    \item[] Justification: \justificationTODO{}
-    \item[] Guidelines:
-    \begin{itemize}
-        \item The answer NA means that the paper has no limitation while the answer No means that the paper has limitations, but those are not discussed in the paper.
-        \item The authors are encouraged to create a separate "Limitations" section in their paper.
-        \item The paper should point out any strong assumptions and how robust the results are to violations of these assumptions (e.g., independence assumptions, noiseless settings, model well-specification, asymptotic approximations only holding locally). The authors should reflect on how these assumptions might be violated in practice and what the implications would be.
-        \item The authors should reflect on the scope of the claims made, e.g., if the approach was only tested on a few datasets or with a few runs. In general, empirical results often depend on implicit assumptions, which should be articulated.
-        \item The authors should reflect on the factors that influence the performance of the approach. For example, a facial recognition algorithm may perform poorly when image resolution is low or images are taken in low lighting. Or a speech-to-text system might not be used reliably to provide closed captions for online lectures because it fails to handle technical jargon.
-        \item The authors should discuss the computational efficiency of the proposed algorithms and how they scale with dataset size.
-        \item If applicable, the authors should discuss possible limitations of their approach to address problems of privacy and fairness.
-        \item While the authors might fear that complete honesty about limitations might be used by reviewers as grounds for rejection, a worse outcome might be that reviewers discover limitations that aren't acknowledged in the paper. The authors should use their best judgment and recognize that individual actions in favor of transparency play an important role in developing norms that preserve the integrity of the community. Reviewers will be specifically instructed to not penalize honesty concerning limitations.
-    \end{itemize}
-
-\item {\bf Theory Assumptions and Proofs}
-    \item[] Question: For each theoretical result, does the paper provide the full set of assumptions and a complete (and correct) proof?
-    \item[] Answer: \answerTODO{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
-    \item[] Justification: \justificationTODO{}
-    \item[] Guidelines:
-    \begin{itemize}
-        \item The answer NA means that the paper does not include theoretical results.
-        \item All the theorems, formulas, and proofs in the paper should be numbered and cross-referenced.
-        \item All assumptions should be clearly stated or referenced in the statement of any theorems.
-        \item The proofs can either appear in the main paper or the supplemental material, but if they appear in the supplemental material, the authors are encouraged to provide a short proof sketch to provide intuition.
-        \item Inversely, any informal proof provided in the core of the paper should be complemented by formal proofs provided in appendix or supplemental material.
-        \item Theorems and Lemmas that the proof relies upon should be properly referenced.
-    \end{itemize}
-
-    \item {\bf Experimental Result Reproducibility}
-    \item[] Question: Does the paper fully disclose all the information needed to reproduce the main experimental results of the paper to the extent that it affects the main claims and/or conclusions of the paper (regardless of whether the code and data are provided or not)?
-    \item[] Answer: \answerTODO{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
-    \item[] Justification: \justificationTODO{}
-    \item[] Guidelines:
-    \begin{itemize}
-        \item The answer NA means that the paper does not include experiments.
-        \item If the paper includes experiments, a No answer to this question will not be perceived well by the reviewers: Making the paper reproducible is important, regardless of whether the code and data are provided or not.
-        \item If the contribution is a dataset and/or model, the authors should describe the steps taken to make their results reproducible or verifiable.
-        \item Depending on the contribution, reproducibility can be accomplished in various ways. For example, if the contribution is a novel architecture, describing the architecture fully might suffice, or if the contribution is a specific model and empirical evaluation, it may be necessary to either make it possible for others to replicate the model with the same dataset, or provide access to the model. In general. releasing code and data is often one good way to accomplish this, but reproducibility can also be provided via detailed instructions for how to replicate the results, access to a hosted model (e.g., in the case of a large language model), releasing of a model checkpoint, or other means that are appropriate to the research performed.
-        \item While NeurIPS does not require releasing code, the conference does require all submissions to provide some reasonable avenue for reproducibility, which may depend on the nature of the contribution. For example
-        \begin{enumerate}
-            \item If the contribution is primarily a new algorithm, the paper should make it clear how to reproduce that algorithm.
-            \item If the contribution is primarily a new model architecture, the paper should describe the architecture clearly and fully.
-            \item If the contribution is a new model (e.g., a large language model), then there should either be a way to access this model for reproducing the results or a way to reproduce the model (e.g., with an open-source dataset or instructions for how to construct the dataset).
-            \item We recognize that reproducibility may be tricky in some cases, in which case authors are welcome to describe the particular way they provide for reproducibility. In the case of closed-source models, it may be that access to the model is limited in some way (e.g., to registered users), but it should be possible for other researchers to have some path to reproducing or verifying the results.
-        \end{enumerate}
-    \end{itemize}
-
-
-\item {\bf Open access to data and code}
-    \item[] Question: Does the paper provide open access to the data and code, with sufficient instructions to faithfully reproduce the main experimental results, as described in supplemental material?
-    \item[] Answer: \answerTODO{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
-    \item[] Justification: \justificationTODO{}
-    \item[] Guidelines:
-    \begin{itemize}
-        \item The answer NA means that paper does not include experiments requiring code.
-        \item Please see the NeurIPS code and data submission guidelines (\url{https://nips.cc/public/guides/CodeSubmissionPolicy}) for more details.
-        \item While we encourage the release of code and data, we understand that this might not be possible, so “No” is an acceptable answer. Papers cannot be rejected simply for not including code, unless this is central to the contribution (e.g., for a new open-source benchmark).
-        \item The instructions should contain the exact command and environment needed to run to reproduce the results. See the NeurIPS code and data submission guidelines (\url{https://nips.cc/public/guides/CodeSubmissionPolicy}) for more details.
-        \item The authors should provide instructions on data access and preparation, including how to access the raw data, preprocessed data, intermediate data, and generated data, etc.
-        \item The authors should provide scripts to reproduce all experimental results for the new proposed method and baselines. If only a subset of experiments are reproducible, they should state which ones are omitted from the script and why.
-        \item At submission time, to preserve anonymity, the authors should release anonymized versions (if applicable).
-        \item Providing as much information as possible in supplemental material (appended to the paper) is recommended, but including URLs to data and code is permitted.
-    \end{itemize}
-
-
-\item {\bf Experimental Setting/Details}
-    \item[] Question: Does the paper specify all the training and test details (e.g., data splits, hyperparameters, how they were chosen, type of optimizer, etc.) necessary to understand the results?
-    \item[] Answer: \answerTODO{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
-    \item[] Justification: \justificationTODO{}
-    \item[] Guidelines:
-    \begin{itemize}
-        \item The answer NA means that the paper does not include experiments.
-        \item The experimental setting should be presented in the core of the paper to a level of detail that is necessary to appreciate the results and make sense of them.
-        \item The full details can be provided either with the code, in appendix, or as supplemental material.
-    \end{itemize}
-
-\item {\bf Experiment Statistical Significance}
-    \item[] Question: Does the paper report error bars suitably and correctly defined or other appropriate information about the statistical significance of the experiments?
-    \item[] Answer: \answerTODO{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
-    \item[] Justification: \justificationTODO{}
-    \item[] Guidelines:
-    \begin{itemize}
-        \item The answer NA means that the paper does not include experiments.
-        \item The authors should answer "Yes" if the results are accompanied by error bars, confidence intervals, or statistical significance tests, at least for the experiments that support the main claims of the paper.
-        \item The factors of variability that the error bars are capturing should be clearly stated (for example, train/test split, initialization, random drawing of some parameter, or overall run with given experimental conditions).
-        \item The method for calculating the error bars should be explained (closed form formula, call to a library function, bootstrap, etc.)
-        \item The assumptions made should be given (e.g., Normally distributed errors).
-        \item It should be clear whether the error bar is the standard deviation or the standard error of the mean.
-        \item It is OK to report 1-sigma error bars, but one should state it. The authors should preferably report a 2-sigma error bar than state that they have a 96\% CI, if the hypothesis of Normality of errors is not verified.
-        \item For asymmetric distributions, the authors should be careful not to show in tables or figures symmetric error bars that would yield results that are out of range (e.g. negative error rates).
-        \item If error bars are reported in tables or plots, The authors should explain in the text how they were calculated and reference the corresponding figures or tables in the text.
-    \end{itemize}
-
-\item {\bf Experiments Compute Resources}
-    \item[] Question: For each experiment, does the paper provide sufficient information on the computer resources (type of compute workers, memory, time of execution) needed to reproduce the experiments?
-    \item[] Answer: \answerTODO{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
-    \item[] Justification: \justificationTODO{}
-    \item[] Guidelines:
-    \begin{itemize}
-        \item The answer NA means that the paper does not include experiments.
-        \item The paper should indicate the type of compute workers CPU or GPU, internal cluster, or cloud provider, including relevant memory and storage.
-        \item The paper should provide the amount of compute required for each of the individual experimental runs as well as estimate the total compute.
-        \item The paper should disclose whether the full research project required more compute than the experiments reported in the paper (e.g., preliminary or failed experiments that didn't make it into the paper).
-    \end{itemize}
-
-\item {\bf Code Of Ethics}
-    \item[] Question: Does the research conducted in the paper conform, in every respect, with the NeurIPS Code of Ethics \url{https://neurips.cc/public/EthicsGuidelines}?
-    \item[] Answer: \answerTODO{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
-    \item[] Justification: \justificationTODO{}
-    \item[] Guidelines:
-    \begin{itemize}
-        \item The answer NA means that the authors have not reviewed the NeurIPS Code of Ethics.
-        \item If the authors answer No, they should explain the special circumstances that require a deviation from the Code of Ethics.
-        \item The authors should make sure to preserve anonymity (e.g., if there is a special consideration due to laws or regulations in their jurisdiction).
-    \end{itemize}
-
-
-\item {\bf Broader Impacts}
-    \item[] Question: Does the paper discuss both potential positive societal impacts and negative societal impacts of the work performed?
-    \item[] Answer: \answerTODO{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
-    \item[] Justification: \justificationTODO{}
-    \item[] Guidelines:
-    \begin{itemize}
-        \item The answer NA means that there is no societal impact of the work performed.
-        \item If the authors answer NA or No, they should explain why their work has no societal impact or why the paper does not address societal impact.
-        \item Examples of negative societal impacts include potential malicious or unintended uses (e.g., disinformation, generating fake profiles, surveillance), fairness considerations (e.g., deployment of technologies that could make decisions that unfairly impact specific groups), privacy considerations, and security considerations.
-        \item The conference expects that many papers will be foundational research and not tied to particular applications, let alone deployments. However, if there is a direct path to any negative applications, the authors should point it out. For example, it is legitimate to point out that an improvement in the quality of generative models could be used to generate deepfakes for disinformation. On the other hand, it is not needed to point out that a generic algorithm for optimizing neural networks could enable people to train models that generate Deepfakes faster.
-        \item The authors should consider possible harms that could arise when the technology is being used as intended and functioning correctly, harms that could arise when the technology is being used as intended but gives incorrect results, and harms following from (intentional or unintentional) misuse of the technology.
-        \item If there are negative societal impacts, the authors could also discuss possible mitigation strategies (e.g., gated release of models, providing defenses in addition to attacks, mechanisms for monitoring misuse, mechanisms to monitor how a system learns from feedback over time, improving the efficiency and accessibility of ML).
-    \end{itemize}
-
-\item {\bf Safeguards}
-    \item[] Question: Does the paper describe safeguards that have been put in place for responsible release of data or models that have a high risk for misuse (e.g., pretrained language models, image generators, or scraped datasets)?
-    \item[] Answer: \answerTODO{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
-    \item[] Justification: \justificationTODO{}
-    \item[] Guidelines:
-    \begin{itemize}
-        \item The answer NA means that the paper poses no such risks.
-        \item Released models that have a high risk for misuse or dual-use should be released with necessary safeguards to allow for controlled use of the model, for example by requiring that users adhere to usage guidelines or restrictions to access the model or implementing safety filters.
-        \item Datasets that have been scraped from the Internet could pose safety risks. The authors should describe how they avoided releasing unsafe images.
-        \item We recognize that providing effective safeguards is challenging, and many papers do not require this, but we encourage authors to take this into account and make a best faith effort.
-    \end{itemize}
-
-\item {\bf Licenses for existing assets}
-    \item[] Question: Are the creators or original owners of assets (e.g., code, data, models), used in the paper, properly credited and are the license and terms of use explicitly mentioned and properly respected?
-    \item[] Answer: \answerTODO{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
-    \item[] Justification: \justificationTODO{}
-    \item[] Guidelines:
-    \begin{itemize}
-        \item The answer NA means that the paper does not use existing assets.
-        \item The authors should cite the original paper that produced the code package or dataset.
-        \item The authors should state which version of the asset is used and, if possible, include a URL.
-        \item The name of the license (e.g., CC-BY 4.0) should be included for each asset.
-        \item For scraped data from a particular source (e.g., website), the copyright and terms of service of that source should be provided.
-        \item If assets are released, the license, copyright information, and terms of use in the package should be provided. For popular datasets, \url{paperswithcode.com/datasets} has curated licenses for some datasets. Their licensing guide can help determine the license of a dataset.
-        \item For existing datasets that are re-packaged, both the original license and the license of the derived asset (if it has changed) should be provided.
-        \item If this information is not available online, the authors are encouraged to reach out to the asset's creators.
-    \end{itemize}
-
-\item {\bf New Assets}
-    \item[] Question: Are new assets introduced in the paper well documented and is the documentation provided alongside the assets?
-    \item[] Answer: \answerTODO{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
-    \item[] Justification: \justificationTODO{}
-    \item[] Guidelines:
-    \begin{itemize}
-        \item The answer NA means that the paper does not release new assets.
-        \item Researchers should communicate the details of the dataset/code/model as part of their submissions via structured templates. This includes details about training, license, limitations, etc.
-        \item The paper should discuss whether and how consent was obtained from people whose asset is used.
-        \item At submission time, remember to anonymize your assets (if applicable). You can either create an anonymized URL or include an anonymized zip file.
-    \end{itemize}
-
-\item {\bf Crowdsourcing and Research with Human Subjects}
-    \item[] Question: For crowdsourcing experiments and research with human subjects, does the paper include the full text of instructions given to participants and screenshots, if applicable, as well as details about compensation (if any)?
-    \item[] Answer: \answerTODO{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
-    \item[] Justification: \justificationTODO{}
-    \item[] Guidelines:
-    \begin{itemize}
-        \item The answer NA means that the paper does not involve crowdsourcing nor research with human subjects.
-        \item Including this information in the supplemental material is fine, but if the main contribution of the paper involves human subjects, then as much detail as possible should be included in the main paper.
-        \item According to the NeurIPS Code of Ethics, workers involved in data collection, curation, or other labor should be paid at least the minimum wage in the country of the data collector.
-    \end{itemize}
-
-\item {\bf Institutional Review Board (IRB) Approvals or Equivalent for Research with Human Subjects}
-    \item[] Question: Does the paper describe potential risks incurred by study participants, whether such risks were disclosed to the subjects, and whether Institutional Review Board (IRB) approvals (or an equivalent approval/review based on the requirements of your country or institution) were obtained?
-    \item[] Answer: \answerTODO{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
-    \item[] Justification: \justificationTODO{}
-    \item[] Guidelines:
-    \begin{itemize}
-        \item The answer NA means that the paper does not involve crowdsourcing nor research with human subjects.
-        \item Depending on the country in which research is conducted, IRB approval (or equivalent) may be required for any human subjects research. If you obtained IRB approval, you should clearly state this in the paper.
-        \item We recognize that the procedures for this may vary significantly between institutions and locations, and we expect authors to adhere to the NeurIPS Code of Ethics and the guidelines for their institution.
-        \item For initial submissions, do not include any information that would break anonymity (if applicable), such as the institution conducting the review.
-    \end{itemize}
-
-\end{enumerate}
-
-
-
-\section{Development of a Transformed based architecture to solve the
-Time Independent Many Electron Schrodinger
-Equation}\label{development-of-a-transformed-based-architecture-to-solve-the-time-independent-many-electron-schrodinger-equation}
-
-\section{Abstract}\label{abstract}
-
-With accurate solutions to the many-electron Schrodinger equation all
+\twocolumn[
+\begin{@twocolumnfalse}
+  \maketitle
+
+  \begin{abstract}
+    With accurate solutions to the many-electron Schrodinger equation all
 the chemistry could be derived from first principles, but analytical
 treatment is intractable due the intrinsic strong electron-electron
 correlations, anti symmetry and cusp behavior. Recently, due to its high
@@ -1034,7 +51,14 @@ formulated within Variational Monte Carlo (VMC), evaluation will be do
 it by comparing against another traditional methods, I also outline
 design questions for further improvement, including sparsified/global
 attention and optimizer choices inspired by recent transformer advances.
-\# Introduction
+  \end{abstract}
+
+  \vspace{1em} % a bit of vertical space before the columns start
+\end{@twocolumnfalse}
+]
+
+
+\section{Introduction}
 
 The electronic structure problem remains challenging: the wave functions
 which describes fully the systems lives in a \(3N\)-dimensional space
@@ -1043,11 +67,9 @@ interesting molecules have around 10 electrons), additionally it must
 satisfy certain properties due to physical laws plus that the solutions
 lives on the complex space.
 
-Although the governing laws have been known for a century---see
-Schrödinger's formulation of wave mechanics {[}Schrödinger,
-1926{]}---obtaining practical approximations to the quantum many-body
+Although the governing laws have been known for a century---see Schrödinger's formulation of wave mechanics \cite{Schrodinger1926_undulatory} obtaining practical approximations to the quantum many-body
 wavefunction remains difficult. Established approaches such as
-density-functional theory, the Born--Oppenheimer separation, and
+density-functional theory , the Born--Oppenheimer separation \cite{BornOppenheimer1927}, and
 structured variational ansätze trade generality for tractability by
 imposing specific functional forms or approximations to correlation.
 These choices are effective within their regimes but can struggle for
@@ -1057,15 +79,13 @@ functional form, we learn it, while enforcing essential physics
 (antisymmetry, cusp behavior, permutation symmetry).
 
 Deep learning has reshaped several scientific domains, from protein
-structure prediction @jumper2021highly to vision
-@dosovitskiy2021imageworth16x16words and PDE surrogates @RAISSI2019686.
+structure prediction \cite{jumper2021highly} to vision modeling \cite{dosovitskiy2021imageworth16x16words} and PDE surrogates \cite{RAISSI2019686}.
 Motivated by these successes, the community has explored neural
-approaches for quantum many-body problems, seeking accurate and scalable
+approaches for quantum many-body problems , seeking accurate and scalable
 approximations to the many-electron wavefunction.
 
 Thus neural wavefunction models have emerged as a promising alternative.
-Architectures such as \textbf{FermiNet} and \textbf{PauliNet} combine
-flexible function approximators with determinant structures to respect
+Architectures such as \textbf{FermiNet} \cite{Pfau_2020} and \textbf{PauliNet} \cite{} combine flexible function approximators with determinant structures to respect
 antisymmetry, improving variational expressivity. However, two practical
 limitations persist. First, error or compute cost often scales
 unfavorably with the number of electrons, restricting applicability to
@@ -1095,20 +115,17 @@ sample complexity and stabilize training. The optimization is formulated
 within \textbf{Variational Monte Carlo (VMC)} by minimizing the
 variational energy.
 
-\textbf{Contributions.} 1. A transformer-based neural wavefunction
-(\textbf{Psiformer}) that separates correlation modeling (attention)
-from fermionic symmetry (determinant heads) while embedding
-Coulomb-aware priors. 2. A VMC training recipe with practical choices
-for stability (feature design, damping, and optional natural-gradient
-preconditioning).
-
-@vonglehn2023selfattentionansatzabinitioquantum\\
-@Luo\_2019 @Qiao\_2020.
-
-The objectives are the follow: \# Objectives
+\textbf{Contributions.} 
 
 \begin{itemize}
-\tightlist
+    \item A transformer-based neural wavefunction (\textbf{Psiformer}) that separates correlation modeling (attention) from fermionic symmetry (determinant heads) while embedding Coulomb-aware priors. 
+    \item A VMC training recipe with practical choices for stability (feature design, damping, and optional natural-gradient preconditioning).
+\end{itemize}
+
+The objectives are the follow: 
+
+\section{Objectives}
+\begin{itemize}
 \item
   Obtain a model which is able to approximate the ground state state
   energy of the carbon atom.
@@ -1116,28 +133,32 @@ The objectives are the follow: \# Objectives
   Compare our model with another state of the art methods to solve the
   many electrons Schrodinger equation respect the ground state energy.
 \item
-  Look for future improvements when try to tackle larger molecules. \#
-  Overview
+  Look for future improvements when try to tackle larger molecules. 
 \end{itemize}
 
-This work is structured as follow: The theoretical framework introduces
+\section{Overview}
+
+This work is structured as follow: The theoretical framework \cref{sec:theo} introduces
 the foundations of quantum many-body theory, the structure of the
 Schrodinger equation for many-bodies like also foundational concepts of
 Deep Learning that are going to be used in the development of this
 specific problem.
 
-Section {[}Number{]} introduce \textbf{Psi Former} a transformer based
-architecture built upon \textbf{Fermi Net}. Section {[}Number{]} talk
+Section  introduce \textbf{Psi Former} a transformer based
+architecture built upon \textbf{Fermi Net}. Section  talk
 about the Methodology which is going to be used to implement this work.
-\# Theoretical Framework
 
-The concepts presented in this section provideS the physical and
+\section{Theoretical Framework}\label{sec:theo}
+
+The concepts presented in this section provides the physical and
 mathematical background for our specific problem, introduces the physics
 of the wave function like also the necessary deep learning concepts.
-\#\# The physics law behind the solution
 
-All the physics and methods related necessary. \#\#\# The Schrodinger
-Equation
+\subsection{The physics law behind the solution}
+
+All the physics and methods related necessary. 
+
+\subsubsection{The Schrodinger Equation}
 
 The Schrodinger equation was presented in a series of publications made
 it by Erwin Schrodinger in the year 1926. There we search the complex
@@ -1149,12 +170,9 @@ quantity \(\lvert \psi (\mathbf{r},t)\rvert^{2}\) is the
 \textbf{probability density} to find the particle near \(\mathbf{r}\) at
 time \(t\).
 
-Guided by de Broglie's discover of the wave particle duality and a very
-smart intuition Schrodinger proposed the time dependent equation (TDSE):
+Guided by de Broglie's discover [cite] of the wave particle duality and a very smart intuition Schrodinger proposed the time dependent equation (TDSE):
 \[ i\hbar \frac{\partial \psi}{\partial t}=\hat{H}\psi \] Where \(i\) is
-the complex unit, \(\hbar\) is the {[}{[}Reduced Planck Constant{]}{]}
-approximate to \(1.054571817\dots \times 10^{-34} J\cdot s\) and
-\(\hat{H}\) is a Hermitian linear operator called the
+the complex unit, \(\hbar\) is the Reduced Planck Constant [cite] approximate to \(1.054571817\dots \times 10^{-34} J\cdot s\) and \(\hat{H}\) is a Hermitian linear operator called the
 \textbf{Hamiltonian} which represents the total energy of the system,
 for a single non relativistic (low energy) particle of mass \(m\) in a
 scalar potential \(V(\mathbf{r},t)\). \[
@@ -1181,13 +199,10 @@ that the spatial part is conditioned by: \[
 \] We are going to represent the spatial function \(R\) as \(\psi\). And
 in this work we are going to only focus in the TDSE, when we treat with
 constant energy, the electron are almost always found near the lowest
-energy state, known as the ground state. Solutions with higher energy
-known as excited states are relevant to photochemistry , but in this
-work we will restrict our attention to ground states. \#\#\# The many
-electron Schrodinger Equation When we are considering more than one
-single particle we consider the spin \((\sigma)\) and the interaction
-between particles. Thus in its time-independent form the Schrodinger
-equation can be written as an eigen value problem:
+energy state, known as the ground state. Solutions with higher energy known as excited states are relevant to photochemistry , but in this work we will restrict our attention to ground states. \subsubsection{The many electron Schrodinger Equation}
+
+When we are considering more than one single particle we consider the spin \((\sigma)\) and the interaction between particles. Thus in its time-independent form the Schrodinger equation can be written as an eigen value problem:
+
 \[ \hat{H}\psi(\mathbf{x}_{0},\dots ,\mathbf{x}_{n})=E\psi(\mathbf{x}_{1},\dots ,\mathbf{x}_{n}) \]
 Where \(\mathbf{x}_{i}=\{ \mathbf{r}_{i},\sigma \}\),
 \(\mathbf{r}_{i}\in \mathbb{R}^{3}\) is the position of each particle
@@ -1236,24 +251,19 @@ coordinates \(\mathbf r_i\) (fast, light particles) and \(\nabla_I^2\)
 acts on the \textbf{nuclear} coordinates \(\mathbf R_I\) (slow, heavy
 particles). Let \(N\) electrons at \(\mathbf r_i\) and \(M\) nuclei at
 \(\mathbf R_I\) with charges \(Z_I\) and masses \(M_I\) (in units of
-\(m_e\)) then the \textbf{Hamiltonian} can be written as: \[
-\boxed{
-\hat H =
--\sum_{i=1}^{N}\frac{1}{2}\nabla_i^{2}
--\sum_{I=1}^{M}\frac{1}{2M_I}\nabla_{I}^{2}
--\sum_{i=1}^{N}\sum_{I=1}^{M}\frac{Z_I}{|\mathbf r_i-\mathbf R_I|}
-+\sum_{1\le i<j\le N}\frac{1}{|\mathbf r_i-\mathbf r_j|}
-+\sum_{1\le I<J\le M}\frac{Z_I Z_J}{|\mathbf R_I-\mathbf R_J|}
-}
-\] \#\#\# Conditions of the solution
+\(m_e\)) then the \textbf{Hamiltonian} can be written as:
 
-As with any differential equation, where one is searching one solution
-is important to consider initial conditions (IC) and boundary conditions
-(BC), here we have to fulfill certain conditions that comes from
-physical laws. \#\#\#\# Fermi--Dirac statistics and Pauli Exclusion
-Bosons (e.g., photons) follow \textbf{Bose--Einstein} statistics,
-whereas fermions (e.g., electrons, protons) follow \textbf{Fermi--Dirac}
-statistics, because at the microscopic level identical particles are
+\begin{align}
+\hat H &= -\sum_{i=1}^{N}\frac{1}{2}\nabla_i^{2} -\sum_{I=1}^{M}\frac{1}{2M_I}\nabla_{I}^{2} -\sum_{i=1}^{N}\sum_{I=1}^{M}\frac{Z_I}{|\mathbf r_i-\mathbf R_I|}\\
++&\sum_{1\le i<j\le N}\frac{1}{|\mathbf r_i-\mathbf r_j|}+\sum_{1\le I<J\le M}\frac{Z_I Z_J}{|\mathbf R_I-\mathbf R_J|}
+\end{align}
+
+\subsubsection{Conditions of the solution}
+
+As with any differential equation, where one is searching one solution is important to consider initial conditions (IC) and boundary conditions (BC), here we have to fulfill certain conditions that comes from
+physical laws.
+
+Bosons (e.g., photons) follow \textbf{Bose--Einstein} statistics, whereas fermions (e.g., electrons, protons) follow \textbf{Fermi Dirac} statistics \cite{Fermi1926Quantelung, Dirac1926TheoryQM}, because at the microscopic level identical particles are
 indistinguishable then the wave function should be equal but Pauli
 Exclusion don't like that , the many-particle wave function must be
 \textbf{anti symmetric} under the exchange of any two fermions. This
@@ -1264,10 +274,9 @@ determinant, which involves one-particle states only (a wave function
 with a single input) . An interchange of any pair of particles
 corresponds to an interchange of two columns of the determinant; this
 interchange introduces a change in the sign of the determinant. For even
-permutations we have \((-1)^{P}=1\), and for odd permutations we have
-\((-1)^{P}=-1\). {[}{[}Fermi Dirac Statistics{]}{]}
+permutations we have \((-1)^{P}=1\), and for odd permutations we have \((-1)^{P}=-1\). 
 
-\[
+\begin{equation}
 \Psi(\mathbf x_1,\ldots,\mathbf x_N)
 \propto
 \begin{vmatrix}
@@ -1275,22 +284,24 @@ permutations we have \((-1)^{P}=1\), and for odd permutations we have
 \phi_1(\mathbf x_2) & \phi_2(\mathbf x_2) & \cdots & \phi_N(\mathbf x_2)\\
 \vdots & \vdots & \ddots & \vdots\\
 \phi_1(\mathbf x_N) & \phi_2(\mathbf x_N) & \cdots & \phi_N(\mathbf x_N)
-\end{vmatrix},
-\] Where \(\phi_k\) are orthonormal (by construction)
-{[}{[}spin-orbital\textbar spin orbitals{]}{]}. This is, for instance
+\end{vmatrix}
+\end{equation}
+Where \(\phi_k\) are orthonormal (by construction)
+spin-orbital\textbar spin orbitals. This is, for instance
 \((N=2)\): \[
 \Psi(\mathbf x_1,\mathbf x_2)
 \propto\Big[\phi_a(\mathbf x_1)\phi_b(\mathbf x_2)-\phi_a(\mathbf x_2)\phi_b(\mathbf x_1)\Big].
-\] \#\#\#\# Kato Cusp Conditions
+\]  
+
+Kato Cusp Conditions
 
 The potential energy becomes infinite, when particles overlap, which
 places strict constraints on the form of the wave function at these
-points, knows as the \textbf{Kato Cusp Conditions} {[}cite{]}. The cusp
-conditions states that the wave function must be non-differentiable at
-these points, and give exact values for the average derivatives at the
-cusps. This can be obtained if we multiply to the ansatz by multiplying
+points, knows as the \textbf{Kato Cusp Conditions} \cite{Kato1957EigenfunctionsManyParticle}. The cusp conditions states that the wave function must be non-differentiable at these points, and give exact values for the average derivatives at the cusps. This can be obtained if we multiply to the ansatz by multiplying
 by a Jastrow factor \(\mathcal{J}\)which satisfies these conditions
-analytically. {[}cite{]}. - Electron-nucleus cusp (electron with charge
+analytically \cite{Jastrow1955ManyBodyProblem}.
+
+Electron-nucleus cusp (electron with charge
 \(-1\), nucleus charge \(+Z\), reduced mass \(\mu \approx 1\))
 \[\lim_{ riI \to 0 } \left( \frac{\partial \psi}{\partial r_{iI}} \right)=-Z\psi(r_{iI}=0)
 \] - Electron-electron cusp, opposite spins (charges \(-1\), reduced
@@ -1299,16 +310,14 @@ mass \(\mu=\frac{1}{2}\)) \[
 \] Where \(r_{iI}(r_{ij})\) is an electron-nuclear (electron-electron)
 distance, \(Z_{I}\) is the nuclear charge of the \(I\text{-th}\)
 nucleous and ave implies a spherical averaging over all directions.
-{[}{[}Kato Cusp Conditions{]}{]}.
 
-So that is the problem we need to find a \(\psi\) such that it satisfies
-all those \#\#\# Approximations to the problem
+So that is the problem we need to find a \(\psi\) such that it satisfies all those conditions.
 
-Is clear that find analytical solutions is practically impossible, so
-what people have been doing is first apply good approximations.
+\subsubsection{Approximations to the problem}
 
-\textbf{Born Oppenheimer} approximation makes it possible to separate
-the motion of the nuclei and the motion of the electrons, neglects the
+Is clear that find analytical solutions is practically impossible, so what people have been doing is first apply good approximations.
+
+\textbf{Born Oppenheimer approximation} \cite{BornOppenheimer1927} makes it possible to separate the motion of the nuclei and the motion of the electrons, neglects the
 motion of the atomic nuclei when describing the electrons in a molecule.
 The physical basis for the Born-Oppenheimer approximation is the fact
 that the mass of an atomic nucleus in a molecule is much larger than the
@@ -1323,15 +332,16 @@ difference is a factor of more than 1000. Consequently, the electrons
 are moving and responding to forces very quickly, and the nuclei are
 not, then we fix the nucleus, \(\mathbf{R}_{I}\) becomes a constant,
 thus the kinetic term for nucleus becomes zero. And the potential energy
-for the repulsion between nucleus becomes a constant. \[
-\boxed{
+for the repulsion between nucleus becomes a constant. 
+
+\begin{align}
 \hat H_{\mathrm{el}} =
 -\sum_{i=1}^{N}\frac{1}{2}\nabla_i^{2}
--\sum_{i=1}^{N}\sum_{I=1}^{M}\frac{Z_I}{|\mathbf r_i-\mathbf R_I|}
+-\sum_{i=1}^{N}\sum_{I=1}^{M}\frac{Z_I}{|\mathbf r_i-\mathbf R_I|}\\
 +\sum_{1\le i<j\le N}\frac{1}{|\mathbf r_i-\mathbf r_j|}
 + \sum_{I<J}\frac{Z_I Z_J}{|\mathbf R_I-\mathbf R_J|}
-}
-\]
+\end{align}
+
 
 This is the form that we are going to work with; a second useful
 approach to the problem is use an \textbf{Ansatz}, which is a guess
@@ -1339,22 +349,24 @@ solution guided by intuition, this normally depend on certain number of
 parameters, then the problem becomes on optimize this \textbf{Ansatz}.
 
 Another important matter are the complex numbers, we should to work with
-them, no! Why is that? \#\#\# Rayleigh Quotient We need a way to measure
-how well our Ansatz \(\psi_{\theta}\) is doing, if our ansatz is bad
-then don't reflect the truly form of the system, Deep learning approachs
-use data sets to train their ansatz (model initialized on randoms
-parameters) in this case we don't need any external but physical
-principles. Lets first introduce the \textbf{Rayleigh quotient}. If
-\(A\) is an operator and \(x\) is a state, the number: \[
-R_{A}(x)=\frac{\braket{ x |A|x  }}{\braket{ x | x } }
-\] is the \textbf{expectation value} of that operator in that state. The
-important for us is that if \(\psi\) is a wave function and \(\hat{H}\)
-the \textbf{Hamiltonian}, then the Rayleigh quotient: \[
-R_{\hat{H}}(\psi)=\frac{\braket{ \psi | \hat{H}| \psi}}{\braket{ \psi | \psi } }
-\] is the average (expected) energy of the system when it is in the
-state \(\psi\). \#\#\# Variational Principle
+them, no! Why is that? 
 
-The {[}{[}Variational Principle{]}{]} states that the expectation value
+\subsubsection{Rayleigh Quotient}
+We need a way to measure how well our Ansatz \(\psi_{\theta}\) is doing, if our ansatz is bad then don't reflect the truly form of the system, Deep learning approaches use data sets to train their ansatz (model initialized on randoms parameters) in this case we don't need any external but physical principles. Lets first introduce the \textbf{Rayleigh quotient}. If
+\(A\) is an operator and \(x\) is a state, the number: 
+\[
+R_{A}(x)=\frac{ \langle x |A   |x\rangle}{\bra{x}x\rangle }
+\] 
+is the \textbf{expectation value} of that operator in that state. The
+important for us is that if \(\psi\) is a wave function and \(\hat{H}\)
+the \textbf{Hamiltonian}, then the Rayleigh quotient: 
+\[
+R_{\hat{H}}(\psi)=\frac{\braket{ \psi | \hat{H}| \psi}}{\braket{ \psi | \psi } }
+\] is the average (expected) energy of the system when it is in the state \(\psi\).
+
+\subsubsection{Variational Principle} 
+
+The Variational Principle states that the expectation value
 for the binding energy obtained using an approximate wave function and
 the exact Hamiltonian operator will be higher than or equal to the true
 energy for the system. This idea is really powerful. When implemented it
@@ -1367,10 +379,12 @@ R_{\hat{H}}(\psi_{\text{ansatz}})\geq R_{\hat{H}}(\psi_{\text{true}})
 that minimizes the rayleigh quotient. \[
 \psi_{0}=\underset{\psi}{\text{argmin}}( R_{\hat{H}}(\psi))
 \] So if we minimize the rayleigh quotient of our ansatz we are going to
-be more near of the true wave function. \#\#\# Variational Monte Carlo
+be more near of the true wave function. 
 
-To the process that we are going to use for optimize our ansatz is
-called Variational Monte Carlo (VMC). Now we can see to the rayleigh
+
+\subsubsection{Variational Monte Carlo}
+
+To the process that we are going to use for optimize our ansatz is called Variational Monte Carlo (VMC)\cite{McMillan1965GroundStateHe4}. Now we can see to the rayleigh
 quotient as a loss function \(\mathcal{L}\) with the form of. \[
 \mathcal{L}(\Psi_{\theta})=\frac{\bra{\Psi_{\theta}} \hat{H}\ket{\Psi_{\theta}} }{\braket{ \Psi_{\theta} | \Psi _{\theta}} }=\frac{\int d\mathbf{r}\Psi ^{*}(\mathbf{r})\hat{H}\Psi(\mathbf{r})}{\int d\mathbf{r}\Psi ^{*}(\mathbf{r})\Psi(\mathbf{r})}
 \] Evaluate that integral is hard, another smart approach is the follow,
@@ -1397,21 +411,21 @@ probability distribution. This is \[
 E_{L}(\mathbf{R}_{k})=\frac{\hat{H}\psi(\mathbf{R}_{k})}{\psi(\mathbf{R}_{k})}=-\frac{1}{2}\frac{\nabla^{2}\psi(\mathbf{R_{k}})}{\psi(\mathbf{R}_{k})}+V(\mathbf{R}_{k})
 \] Calculus tell us that for a any derivable function \(f\). \[
 \frac{\nabla^{2}f}{f}=[\nabla^{2}\log f+(\nabla f)^{2}]
-\] In practice is more numerically stable work using that form, thus: \[
-E_{L}(\mathbf{R}_{k})=-\frac{1}{2}\sum_{i=1}^{N} \sum_{j=1}^{3} \left[ \frac{\partial ^{2} \log \lvert \Psi(x) \rvert }{\partial r_{ij}^{2}}+\left( \frac{\partial \log \lvert \Psi(x) \rvert }{\partial r_{ij}} \right)^{2} \right]+V(\mathbf{R_{k}})
-\] The gradient of the energy respect to the parameters by a
-parameterized wave functions is: \[
+\] 
+In practice is more numerically stable work using that form, thus: 
+\begin{align}
+&E_{L}(\mathbf{R}_{k})= \\& -\frac{1}{2}\sum_{i=1}^{N} \sum_{j=1}^{3} \left[ \frac{\partial ^{2} \log \lvert \Psi(x) \rvert }{\partial r_{ij}^{2}}+\left( \frac{\partial \log \lvert \Psi(x) \rvert }{\partial r_{ij}} \right)^{2} \right]+V(\mathbf{R_{k}})    
+\end{align}
+The gradient of the energy respect to the parameters by a
+parameterized wave functions is: 
+\[
 \nabla _{\theta}\mathcal{L}=2\mathbb{E}_{x\sim \Psi^{2}}[(E_{L}(x)-\mathbb{E}_{x'\sim\Psi^{2}}[E_{L}(x')])\nabla \log \lvert \Psi(x) \rvert ]
-\] \#\#\# Metropolis Hastings (MH) Algorithm To obtain samples from the
-probability distribution \(p_{\theta}\) we are going to use the
-{[}{[}Metropolis Hasting algorithm{]}{]}. (MH)
+\] 
 
-MH is a {[}{[}Markov Chain Monte Carlo{]}{]} (MCMC) method used to
-obtain a sequence of random samples from a probability distribution. The
+\subsubsection{Metropolis Hastings Algorithm}
+To obtain samples from the probability distribution \(p_{\theta}\) we are going to use the Metropolis Hasting algorithm (MH) \cite{Metropolis1953Equation} which is a Markov Chain Monte Carlo (MCMC) method used to obtain a sequence of random samples from a probability distribution. The
 reason to use this method over another well knows methods (e.g.~example)
-is that MH don't suffer of the {[}{[}Curse of Dimensionality{]}{]} this
-is, it remains strong while increase the dimension of the problem, and
-since we are going to be working on dimension around ten is efficient
+is that MH don't suffer of the \textit{Curse of Dimensionality} this is, it remains strong while increase the dimension of the problem, and since we are going to be working on dimension around ten is efficient
 use this method. The algorithm works like follow:
 
 \begin{enumerate}
@@ -1422,8 +436,7 @@ use this method. The algorithm works like follow:
 \item
   Propose \(\mathbf{X}'=\mathbf{X}_{0}+\eta\) ,where
   \(\eta \sim q(\eta)\), \(q\) is a probability density on \(E\) called
-  \textbf{proposal kernel}. In our case we are going to a
-  {[}{[}symmetric Gaussian{]}{]}.
+  \textbf{proposal kernel}. In our case we are going to a symmetric Gaussian.
 \item
   Compute the quantity: \[
   A(\mathbf{X_{0}}, \mathbf{X}')=\text{min}\left( 1,\frac{\rho(\mathbf{X}')}{\rho(\mathbf{X}_{0})} \frac{q(\mathbf{X}'-\mathbf{X}_{0})}{q(\mathbf{X}_{0}-\mathbf{X}')}\right)
@@ -1451,12 +464,14 @@ use this method. The algorithm works like follow:
   generates \(E_{L}(\mathbf{R}_{k})\) then average to obtain
   \(\mathbb{E}(E_{L})\) and with it and the derivative from equation
   number {[}number{]} we are able to begin the back propagation step.
-  \#\# Deep Learning Fundamentals This subsection introduces the core
-  concepts of Deep Learning that are going to be applied in this work.
-  \#\#\# Multi Layer Perceptron A multi layer perceptron (MLP) is a
-  nonlinear function
-  \(\mathcal{F}:\mathbb{R}^{\text{in}}\to \mathbb{R}^{\text{out}}\).
-  @nielsenNeuralNetworksDeep2015 , it actually is the composition of
+  
+\subsection{Deep Learning Fundamentals} 
+
+This subsection introduces the core concepts of Deep Learning that are going to be applied in this work.
+
+\subsubsection{Multi Layer Perceptron}
+A multi layer perceptron (MLP) is a nonlinear function \(\mathcal{F}:\mathbb{R}^{\text{in}}\to \mathbb{R}^{\text{out}}\).
+, it actually is the composition of
   \(L\) layers, the first layer is called the input layer, the last
   output layer and the intermediates hidden layers. In each layer we
   find a arbitrary number of neurons although is a good practice always
@@ -1478,13 +493,12 @@ use this method. The algorithm works like follow:
   Mean Square Error, Mean Absolute Error, Cross entropy) and an
   optimizer (e.g GD, SGD, ADAM). Additionally you can use regularization
   techniques such as dropout to improve the generalization of the Net.
-\end{enumerate}
 
 \subsubsection{Natural gradient Descent}\label{natural-gradient-descent}
 
 As we mentioned, there are many ways to update the parameters of a
 neural network: Gradient Descent, Stochastic Gradient Descent,
-{[}{[}Adaptive Moment Estimation{]}{]} (ADAM), etc. All of them
+Adaptive Moment Estimation (ADAM), etc. All of them
 implicitly assume that the parameter space
 \(\Theta \subset \mathbb{R}^d\) is equipped with the standard Euclidean
 metric, so that ``length'' and ``steepest descent'' are measured with
@@ -1509,11 +523,13 @@ distributions is the Kullback--Leibler (KL) divergence \[
 Taylor expansion of the KL gives \[
 \mathrm{KL}\big(p_\theta \,\|\, p_{\theta+\Delta\theta}\big)
 = \tfrac12\,\Delta\theta^\top \mathcal{F}(\theta)\,\Delta\theta + \mathcal{O}(\|\Delta\theta\|^3),
-\] where \(\mathcal{F}(\theta)\) is the Fisher Information Matrix (FIM).
-To define it, introduce the \textbf{score function} \[
-s_\theta(x) \in \mathbb{R}^d, \qquad
-s_\theta(x) = \nabla_\theta \log p(x\mid \theta),
-\] then the FIM is \[
+\] where \(\mathcal{F}(\theta)\) is the Fisher Information Matrix (FIM) \cite{Fisher1922Foundations}.
+To define it, introduce the \textbf{score function} 
+\[
+s_\theta(x) = \nabla_\theta \log p(x\mid \theta) \in \mathbb{R}^d
+\] 
+then the FIM is:
+\[
 \mathcal{F}(\theta)
 = \mathbb{E}_{x\sim p(\cdot\mid\theta)}\!\big[\,s_\theta(x)\,s_\theta(x)^{\mathsf T}\big].
 \]
@@ -1539,9 +555,11 @@ Find the direction \(\Delta\theta\) that decreases
 \(\|\Delta\theta\|_\theta^2 = \Delta\theta^\top \mathcal{F}(\theta)\,\Delta\theta\).
 
 Solving this constrained optimization problem (e.g.~with Lagrange
-multipliers) yields the \textbf{natural gradient} direction \[
+multipliers) yields the \textbf{natural gradient} direction \cite{Amari1998NaturalGW}
+\[
 \Delta\theta_{\text{nat}} \;\propto\; -\,\mathcal{F}(\theta)^{-1}\,\nabla_\theta \mathcal{L}(\theta).
-\] Thus the natural gradient descent update is \[
+\]
+Thus the natural gradient descent update is \[
 \Delta\theta_{\text{nat}}
 = -\,\eta\,\mathcal{F}(\theta)^{-1}\,\nabla_\theta \mathcal{L}(\theta),
 \] where \(\eta>0\) is a step size. Compared with the usual gradient
@@ -1556,19 +574,20 @@ situation we care about: when the loss depends on the parameters
 cross-entropy, KL, variational objectives, variational Monte Carlo
 energy, etc.).
 
-\subsubsection{Kronecker Factored Approximate
-Curvature}\label{kronecker-factored-approximate-curvature}
+\subsubsection{Kronecker Factored Approximate Curvature}\label{kronecker-factored-approximate-curvature}
 
 Directly computing and inverting the full Fisher matrix
 \(\mathcal{F}(\theta)\) is infeasible for modern neural networks, since
 \(\theta\) can have millions of components. Kronecker Factored
-Approximate Curvature (KFAC) is an efficient approximation that makes
+Approximate Curvature (KFAC) \cite{MartensGrosse2015KFAC} is an efficient approximation that makes
 natural gradient updates practical for layered networks.
 
 We sketch the construction for a fully connected layer \(\ell\) with
 weight matrix \(W_\ell\) and (for simplicity) no bias. Bias terms can be
 included by augmenting the activations with a constant \(1\); we comment
-on this below. \#\#\#\# Forward definition of \(\mathbf{a}_\ell\)
+on this below.
+
+\textbf{Forward definition of \(\mathbf{a}_\ell\)}
 
 Consider a standard MLP. For a single input sample \(x\), the forward
 pass at layer \(\ell\) is
@@ -1594,7 +613,7 @@ pass at layer \(\ell\) is
   we explicitly distinguish:
 
   \begin{itemize}
-  \tightlist
+
   \item
     \(\mathbf{a}_\ell\): input to \(W_\ell\),
   \item
@@ -1606,8 +625,11 @@ pass at layer \(\ell\) is
 
 In KFAC, when we talk about \(\mathbf{a}_\ell\) for the Fisher block of
 \(W_\ell\), we always mean ``the vector that \(W_\ell\) multiplies on
-the right''. \#\#\#\# Backward definition of \(\mathbf{e}_\ell\) Let the
-loss for a single sample be \(\mathcal{L}(\theta)\) (for example,
+the right''. 
+
+\textbf{Backward definition of \(\mathbf{e}_\ell\)} 
+
+Let the loss for a single sample be \(\mathcal{L}(\theta)\) (for example,
 negative log-likelihood or negative log of the wave-function
 probability). Define the \textbf{backward sensitivity} (or error signal)
 at layer \(\ell\) as \[
@@ -1626,8 +648,10 @@ product. - For hidden layers \(\ell < L\): \[
 \(\mathcal{L}\) is often chosen as \(-\log p(X\mid\theta)\), so up to a
 sign we can also think of \(\mathbf{e}_\ell\) as \[
 \mathbf{e}_\ell = \frac{\partial \log p(X\mid\theta)}{\partial \mathbf{h}_\ell}.
-\] \#\#\#\# Gradient w.r.t. \(W_\ell\) and the form
-\(\mathbf{a}_\ell \otimes \mathbf{e}_\ell\)
+\]  
+
+\textbf{Gradient w.r.t. \(W_\ell\) and the form \(\mathbf{a}_\ell \otimes \mathbf{e}_\ell\)}
+
 
 For a single sample, using the chain rule, \[
 \frac{\partial \mathcal{L}}{\partial W_\ell}
@@ -1655,8 +679,7 @@ Now vectorize the gradient. Using the standard identity \[
 
 This gives the key structural form used by KFAC.
 
-\paragraph{Fisher block for a single
-layer}\label{fisher-block-for-a-single-layer}
+\textbf{Fisher block for a single layer}
 
 The Fisher block associated with the parameters \(W_\ell\) is \[
 \mathcal{F}_\ell
@@ -1697,21 +720,24 @@ expensive, because its dimension is \[
 \item
   \textbf{Kronecker factorization within each layer.}\\
   Inside a layer, KFAC assumes that the correlation between activations
-  and errors factorizes: \[
+  and errors factorizes: 
+
+  \begin{align}  
   \mathcal{F}_\ell
-  = \mathbb{E}_{p(\mathbf{X})}\!\big[
+  =& \mathbb{E}_{p(\mathbf{X})}\!\big[
   (\mathbf{a}_\ell \otimes \mathbf{e}_\ell)
   (\mathbf{a}_\ell \otimes \mathbf{e}_\ell)^{\mathsf T}
   \big]
-  = \mathbb{E}_{p(\mathbf{X})}\!\big[
+  \\=& \mathbb{E}_{p(\mathbf{X})}\!\big[
   (\mathbf{a}_\ell\mathbf{a}_\ell^{\mathsf T}) \otimes
   (\mathbf{e}_\ell\mathbf{e}_\ell^{\mathsf T})
   \big]
-  \;\approx\;
+  \\\approx &
   \mathbb{E}_{p(\mathbf{X})}[\mathbf{a}_\ell\mathbf{a}_\ell^{\mathsf T}]
   \;\otimes\;
-  \mathbb{E}_{p(\mathbf{X})}[\mathbf{e}_\ell\mathbf{e}_\ell^{\mathsf T}].
-  \]
+  \mathbb{E}_{p(\mathbf{X})}[\mathbf{e}_\ell\mathbf{e}_\ell^{\mathsf T}]
+  \end{align}
+  
 \end{enumerate}
 
 Define the \emph{activation covariance} and \emph{error covariance}: \[
@@ -1744,21 +770,26 @@ natural gradient update for the weights of layer \(\ell\) becomes \[
 In summary, KFAC replaces the intractable inverse \[
 \mathbb{E}_{p(\mathbf{X})}\big[ (\mathbf{a}_\ell\otimes \mathbf{e}_\ell)
 (\mathbf{a}_\ell\otimes \mathbf{e}_\ell)^{\mathsf T} \big]^{-1}
-\] by the efficiently computable approximation \[
-\mathbb{E}_{p(\mathbf{X})}\big[(\mathbf{a}_\ell\otimes \mathbf{e}_\ell)
+\] by the efficiently computable:
+\begin{align}
+\mathcal{F}_{\ell}^{-1} = & \; \mathbb{E}_{p(\mathbf{X})}\big[(\mathbf{a}_\ell\otimes \mathbf{e}_\ell)
 (\mathbf{a}_\ell\otimes \mathbf{e}_\ell)^{\mathsf T}\big]^{-1}
-\;\approx\;
+\\ \approx & \;  
 \mathbb{E}_{p(\mathbf{X})}[\mathbf{a}_\ell\mathbf{a}_\ell^{\mathsf T}]^{-1}
 \otimes
-\mathbb{E}_{p(\mathbf{X})}[\mathbf{e}_\ell\mathbf{e}_\ell^{\mathsf T}]^{-1},
-\] which captures the dominant curvature structure while keeping the
+\mathbb{E}_{p(\mathbf{X})}[\mathbf{e}_\ell\mathbf{e}_\ell^{\mathsf T}]^{-1}
+\end{align}
+
+which captures the dominant curvature structure while keeping the
 cost of natural gradient descent comparable to standard first--order
 methods. We have ignored biases above for clarity. In practice one can
 either (i) augment \(\mathbf{a}_\ell\) with a constant \(1\) to absorb
 biases into \(W_\ell\), or (ii) maintain separate smaller KFAC factors
 for biases; both approaches preserve the same Kronecker structure.
-\#\#\# Attention Mechanisms
 
+\subsubsection{Self-Attention and Multi-Head Self-Attention}\label{self-attention-and-multi-head-self-attention}
+
+\textbf{Attention Mechanisms}
 The idea of an \emph{attention mechanism} was introduced in neural
 machine translation by Bahdanau et al. @bahdanau2014neural Instead of
 compressing an entire input sequence into a single fixed-size vector,
@@ -1784,15 +815,12 @@ dot--product) attention mechanism computes:
 \item
   \textbf{Weighted sum of values} \[
   \mathbf{o} \;=\; \sum_{j=1}^{T} \alpha_j \mathbf{v}_j.
-  \] Intuitively, the query \(\mathbf{q}\) asks: \emph{``which elements
-  of the set are relevant to me now?''}\\
-  The keys \(\mathbf{k}_j\) encode \emph{what each element offers}, and
-  the values \(\mathbf{v}_j\) encode \emph{what we take from each
-  element once we decide to pay attention to it}.
+  \] 
 \end{enumerate}
 
-\subsubsection{Self-Attention and Multi-Head
-Self-Attention}\label{self-attention-and-multi-head-self-attention}
+Intuitively, the query \(\mathbf{q}\) asks: \emph{``which elements
+  of the set are relevant to me now?''} The keys \(\mathbf{k}_j\) encode \emph{what each element offers}, and the values \(\mathbf{v}_j\) encode \emph{what we take from each
+  element once we decide to pay attention to it}.
 
 In \textbf{self-attention}, the queries, keys, and values are all
 obtained from the \textbf{same} set of input vectors.\\
@@ -1811,22 +839,25 @@ introduce three learnable matrices: \[
 \mathbf{W}^Q \in \mathbb{R}^{d \times d_h}, \quad
 \mathbf{W}^K \in \mathbb{R}^{d \times d_h}, \quad
 \mathbf{W}^V \in \mathbb{R}^{d \times d_h}.
-\] We then compute queries, keys, and values: \[
-\mathbf{Q} = \mathbf{X} \mathbf{W}^Q \in \mathbb{R}^{T \times d_h}, \qquad
-\mathbf{K} = \mathbf{X} \mathbf{W}^K \in \mathbb{R}^{T \times d_h}, \qquad
-\mathbf{V} = \mathbf{X} \mathbf{W}^V \in \mathbb{R}^{T \times d_h}.
-\]
+\] We then compute queries, keys, and values: 
+\begin{align}
+    \mathbf{Q} = \mathbf{X} \mathbf{W}^Q \in \mathbb{R}^{T \times d_h}\\
+    \mathbf{K} = \mathbf{X} \mathbf{W}^K \in \mathbb{R}^{T \times d_h}\\
+    \mathbf{V} = \mathbf{X} \mathbf{W}^V \in \mathbb{R}^{T \times d_h}
+\end{align}
 
 The \textbf{scaled dot-product self-attention} for this head is: \[
 \text{Attention}(\mathbf{Q}, \mathbf{K}, \mathbf{V})
 = \text{Softmax}\!\left( \frac{\mathbf{Q}\mathbf{K}^\top}{\sqrt{d_h}} \right) \mathbf{V},
 \] where the softmax is applied row-wise. Element-wise, the output at
 position \(t\) is \[
-\mathbf{o}_t = \sum_{j=1}^{T} \alpha_{tj} \mathbf{v}_j, \quad \text{with} \quad
+\mathbf{o}_t = \sum_{j=1}^{T} \alpha_{tj} \mathbf{v}_j \; \text{with} \
 \alpha_{tj} = \frac{\exp\!\left( \mathbf{q}_t^\top \mathbf{k}_j / \sqrt{d_h} \right)}{\sum_{m=1}^{T} \exp\!\left( \mathbf{q}_t^\top \mathbf{k}_m / \sqrt{d_h} \right)}.
 \] You can think of this as: \emph{each position \(t\) in the sequence
 ``looks at'' every other position \(j\) and decides how much to care
-about it}. \#\#\# Multi-Head Self-Attention
+about it}. \
+
+\textbf{Multi-Head Self-Attention}
 
 A single head can only look at interactions in one ``representation
 subspace'' of dimension \(d_h\).\\
@@ -1868,11 +899,8 @@ focus on short-range relations, another on long-range ones, another on
 some specific pattern (e.g.~symmetry, local structure), and so on.
 
 \subsubsection{Transformer Architecture}\label{transformer-architecture}
-
-The \textbf{Transformer} was introduced by Vaswani et al. @Vaswani2017
-with the slogan \emph{``Attention Is All You Need.''} Its core building
-block is a \textbf{layer} that combines: 1. \textbf{Multi-head
-self-attention}\\
+The \textbf{Transformer} was introduced 
+with the slogan \emph{``Attention Is All You Need.''} \cite{Vaswani2017}. Its core building block is a \textbf{layer} that combines: 1. \textbf{Multi-head self-attention}\\
 2. \textbf{Position-wise feed-forward network (FFN)} Both sublayers use
 \textbf{residual connections} and \textbf{layer normalization}. For an
 input sequence \(\mathbf{X} \in \mathbb{R}^{T \times d}\) (already
@@ -1962,209 +990,7 @@ determinant), - \(j\) = electron index (column of the determinant), -
 \(\alpha,\beta\) = spin labels (\(\uparrow\) or \(\downarrow\)), - \(k\)
 = determinant index in the sum.
 
-\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
 
-\subsubsection{Input coordinates and
-features}\label{input-coordinates-and-features}
-
-We denote by -
-\(\mathbf{r}^\uparrow_1,\dots,\mathbf{r}^\uparrow_{n^\uparrow}\) the
-coordinates of spin-up electrons, -
-\(\mathbf{r}^\downarrow_1,\dots,\mathbf{r}^\downarrow_{n^\downarrow}\)
-the coordinates of spin-down electrons, - \(\mathbf{R}_I\) the positions
-of nuclei, \(I=1,\dots,N_\text{nuc}\).
-
-The network builds two types of features:
-
-\begin{enumerate}
-\def\labelenumi{\arabic{enumi}.}
-\item
-  \textbf{Electron--nucleus features} for each electron \(i\) with spin
-  \(\alpha\): \[
-  \mathbf{h}^{0,\alpha}_i
-  = \text{concatenate}\Big(
-      \mathbf{r}^\alpha_i - \mathbf{R}_I,\;
-      \big|\mathbf{r}^\alpha_i - \mathbf{R}_I\big|
-      \ \forall\, I
-    \Big).
-  \] This produces a feature vector that contains, for electron
-  \((i,\alpha)\), all its relative position vectors to each nucleus,
-  plus their distances.
-\item
-  \textbf{Electron--electron features} for each pair of electrons
-  \((i,\alpha)\) and \((j,\beta)\): \[
-  \mathbf{h}^{0,\alpha\beta}_{ij}
-  = \text{concatenate}\Big(
-      \mathbf{r}^\alpha_i - \mathbf{r}^\beta_j,\;
-      \big|\mathbf{r}^\alpha_i - \mathbf{r}^\beta_j\big|
-      \ \forall\, j,\beta
-    \Big).
-  \] For fixed \((i,\alpha)\), we build such features for all other
-  electrons \((j,\beta)\), capturing their relative positions and
-  distances.
-\end{enumerate}
-
-The superscript \(0\) indicates that these are the features at layer
-\(\ell=0\) (input to the deep network). At deeper layers we will keep
-updating - \(\mathbf{h}^{\ell\alpha}_i\) (single-electron features), -
-\(\mathbf{h}^{\ell\alpha\beta}_{ij}\) (pairwise features), for
-\(\ell = 0,1,\dots,L-1\).
-
-\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
-
-\subsubsection{Mixing and updating features across
-layers}\label{mixing-and-updating-features-across-layers}
-
-At each hidden layer \(\ell\), we want each electron's features to
-depend on \emph{all} other electrons, in a permutation-symmetric way. To
-do this, we form \textbf{averages} over electrons of the same or
-opposite spin.
-
-First, define global spin-averaged single-electron features \[
-\mathbf{g}^{\ell\uparrow} =
-\frac{1}{n^\uparrow}\sum_{j=1}^{n^\uparrow}\mathbf{h}^{\ell\uparrow}_j,
-\qquad
-\mathbf{g}^{\ell\downarrow} =
-\frac{1}{n^\downarrow}\sum_{j=1}^{n^\downarrow}\mathbf{h}^{\ell\downarrow}_j.
-\]
-
-Next, for each electron \((i,\alpha)\), define averaged pairwise
-features: \[
-\mathbf{g}^{\ell\alpha\uparrow}_i
-= \frac{1}{n^\uparrow}\sum_{j=1}^{n^\uparrow}\mathbf{h}^{\ell\alpha\uparrow}_{ij},
-\qquad
-\mathbf{g}^{\ell\alpha\downarrow}_i
-= \frac{1}{n^\downarrow}\sum_{j=1}^{n^\downarrow}\mathbf{h}^{\ell\alpha\downarrow}_{ij}.
-\]
-
-Now we \emph{concatenate} all this information into a single feature
-vector for electron \((i,\alpha)\): \[
-\begin{aligned}
-\big(
-\mathbf{h}^{\ell\alpha}_i,
-\frac{1}{n^\uparrow}\sum_{j=1}^{n^\uparrow}\mathbf{h}^{\ell\uparrow}_j,
-\frac{1}{n^\downarrow}\sum_{j=1}^{n^\downarrow}\mathbf{h}^{\ell\downarrow}_j,
-\frac{1}{n^\uparrow}\sum_{j=1}^{n^\uparrow}\mathbf{h}^{\ell\alpha\uparrow}_{ij},
-\frac{1}{n^\downarrow}\sum_{j=1}^{n^\downarrow}\mathbf{h}^{\ell\alpha\downarrow}_{ij}
-\big)
-&=
-\big(\mathbf{h}^{\ell\alpha}_i, \mathbf{g}^{\ell\uparrow}, \mathbf{g}^{\ell\downarrow},
-\mathbf{g}^{\ell\alpha\uparrow}_i, \mathbf{g}^{\ell\alpha\downarrow}_i \big) \\
-&= \mathbf{f}^{\ell\alpha}_i.
-\end{aligned}
-\]
-
-This \(\mathbf{f}^{\ell\alpha}_i\) is what enters the
-\textbf{single-electron MLP} at layer \(\ell\). The update is \[
-\mathbf{h}^{\ell+1,\alpha}_i
-= \tanh\big(\mathbf{V}^\ell \mathbf{f}^{\ell\alpha}_i + \mathbf{b}^\ell\big) + \mathbf{h}^{\ell\alpha}_i,
-\] where \(\mathbf{V}^\ell\) and \(\mathbf{b}^\ell\) are learnable
-weights and biases, shared between electrons (for the given spin
-sector). The residual connection \(+\mathbf{h}^{\ell\alpha}_i\)
-stabilizes training.
-
-In parallel, the pairwise features are updated with a \textbf{pairwise
-MLP}: \[
-\mathbf{h}^{\ell+1,\alpha\beta}_{ij}
-= \tanh\big(\mathbf{W}^\ell \mathbf{h}^{\ell\alpha\beta}_{ij} + \mathbf{c}^\ell\big)
-+ \mathbf{h}^{\ell\alpha\beta}_{ij},
-\] with weights \(\mathbf{W}^\ell\) and biases \(\mathbf{c}^\ell\),
-again shared over all pairs \((i,j,\alpha,\beta)\).
-
-By repeating these updates for \(\ell = 0,\dots,L-1\), we eventually
-obtain \textbf{final single-electron features} \[
-\mathbf{h}^{L\alpha}_j \quad \text{for each electron } j \text{ of spin } \alpha.
-\] Notice how the indices work: - \(\ell\) runs over layers and
-disappears at the end, - \(i\) or \(j\) always refer to a specific
-electron within a spin sector, - \(\alpha,\beta\) tell you which spin
-sector that electron belongs to.
-
-\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
-
-\subsubsection{From final features to
-orbitals}\label{from-final-features-to-orbitals}
-
-The final orbitals are built as a function of the last-layer features
-\(\mathbf{h}^{L\alpha}_j\), plus some additional ``envelope'' factors
-that handle the long-range decay and cusp conditions. For each
-determinant index \(k\), spin \(\alpha\), orbital index \(i\), and
-electron \(j\) we define \[
-\begin{aligned}
-\phi^{k\alpha}_i\big(\mathbf{r}^\alpha_j; \{\mathbf{r}^\alpha_{/j}\}; \{\mathbf{r}^{\bar{\alpha}}\}\big)
-&= \left(\mathbf{w}^{k\alpha}_i \cdot \mathbf{h}^{L\alpha}_j + g^{k\alpha}_i\right) \\
-&\quad\times \sum_{m} \pi^{k\alpha}_{im}
-\exp\Big(
-- \big|\mathbf{\Sigma}_{im}^{k\alpha} \big(\mathbf{r}^{\alpha}_j - \mathbf{R}_m\big)\big|
-\Big).
-\end{aligned}
-\] Here: - \(\mathbf{w}^{k\alpha}_i\) and \(g^{k\alpha}_i\) are
-learnable linear parameters for the ``MLP part'' of the orbital, - the
-sum over \(m\) is an ``envelope'' over nuclei (or centers), -
-\(\pi^{k\alpha}_{im}\) and \(\mathbf{\Sigma}^{k\alpha}_{im}\) are
-learnable coefficients and matrices controlling the exponential decay
-around nucleus \(m\).
-
-All these parameters depend on the indices: - \(k\) selects which
-determinant in the sum, - \(i\) selects which orbital (row in the
-determinant), - \(\alpha\) selects the spin sector, - \(m\) selects
-which nuclear center in the envelope.
-
-The dependence on all other electrons is hidden inside
-\(\mathbf{h}^{L\alpha}_j\), which was built from the full set of
-positions \(\{\mathbf{r}^\uparrow\},\{\mathbf{r}^\downarrow\}\) through
-the deep network.
-
-\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
-
-\subsubsection{Assembling the spin-separated
-determinants}\label{assembling-the-spin-separated-determinants}
-
-For each determinant index \(k\) and spin sector
-\(\alpha\in\{\uparrow,\downarrow\}\), we build a matrix \[
-D^{k\alpha}_{ij}
-= \phi^{k\alpha}_i\big( \mathbf{r}^\alpha_j; \{\mathbf{r}^\alpha_{/j}\}; \{\mathbf{r}^{\bar{\alpha}}\}\big),
-\] with: - rows indexed by the orbital label \(i = 1,\dots,n^\alpha\), -
-columns indexed by the electron label \(j = 1,\dots,n^\alpha\) (with
-that spin).
-
-Taking the determinant gives a properly antisymmetric function of the
-positions of electrons \textbf{with that spin}: \[
-\det\big[D^{k\alpha}\big]
-= \det\left[\phi^{k\alpha}_i(\mathbf{r}^\alpha_j; \{\mathbf{r}^\alpha_{/j}\}; \{\mathbf{r}^{\bar{\alpha}}\})\right].
-\]
-
-For the full wavefunction, we combine spin-up and spin-down blocks: \[
-\begin{aligned}
-\psi(\mathbf{r}^\uparrow_1,\ldots,\mathbf{r}^\uparrow_{n^\uparrow},
-     \mathbf{r}^\downarrow_1,\ldots,\mathbf{r}^\downarrow_{n^\downarrow})
-= \sum_{k} \omega_k \;&
-\det\left[\phi^{k \uparrow}_i(\mathbf{r}^\uparrow_j; \{\mathbf{r}^\uparrow_{/j}\}; \{\mathbf{r}^\downarrow\})\right] \\
-&\times
-\det\left[\phi^{k \downarrow}_i(\mathbf{r}^\downarrow_j; \{\mathbf{r}^\downarrow_{/j}\}; \{\mathbf{r}^\uparrow\})\right].
-\end{aligned}
-\]
-
-\textbf{Why are there two determinants?}
-
-In electronic structure, when we separate spin and spatial parts using
-spin-orbitals, the full Slater determinant over all electrons factorizes
-into the product of: - one determinant involving only spin-up electrons,
-- another determinant involving only spin-down electrons.
-
-Each of these determinants is antisymmetric under exchange of two
-electrons \textbf{with the same spin}. The overall wavefunction
-constructed as the product of a spin-up determinant and a spin-down
-determinant is antisymmetric under exchange of any two electrons (when
-you take into account the spin labels). FermiNet keeps this structure
-and lets each block be represented by a powerful neural network ansatz
-for the orbitals.
-
-Up to this point the building blocks are just MLP layers (with residual
-connections and special feature mixing), but the careful indexing -
-\((i,\alpha)\) for ``which electron/spin'', - \(j\) for summation over
-electrons, - \(\ell\) for layers, - \(k\) for determinant index, is what
-guarantees that the final object has the correct permutation symmetry
-and antisymmetry required for a fermionic wavefunction.
 
 \section{Psi Former Model}\label{psi-former-model}
 
@@ -2206,8 +1032,6 @@ electrons. The indices: - \(i\) = orbital index (row of the
 determinant), - \(j\) = electron index (column of the determinant), -
 \(\alpha,\beta\) = spin labels (\(\uparrow\) or \(\downarrow\)), - \(k\)
 = determinant index in the sum.
-
-\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
 
 \subsubsection{Input coordinates and
 features}\label{input-coordinates-and-features-1}
@@ -2255,7 +1079,6 @@ updating - \(\mathbf{h}^{\ell\alpha}_i\) (single-electron features), -
 \(\mathbf{h}^{\ell\alpha\beta}_{ij}\) (pairwise features), for
 \(\ell = 0,1,\dots,L-1\).
 
-\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
 
 \subsubsection{Mixing and updating features across
 layers}\label{mixing-and-updating-features-across-layers-1}
@@ -2283,21 +1106,20 @@ features: \[
 \]
 
 Now we \emph{concatenate} all this information into a single feature
-vector for electron \((i,\alpha)\): \[
-\begin{aligned}
-\big(
+vector for electron \((i,\alpha)\): 
+\begin{align}
+&\big(
 \mathbf{h}^{\ell\alpha}_i,
 \frac{1}{n^\uparrow}\sum_{j=1}^{n^\uparrow}\mathbf{h}^{\ell\uparrow}_j,
 \frac{1}{n^\downarrow}\sum_{j=1}^{n^\downarrow}\mathbf{h}^{\ell\downarrow}_j,
 \frac{1}{n^\uparrow}\sum_{j=1}^{n^\uparrow}\mathbf{h}^{\ell\alpha\uparrow}_{ij},
 \frac{1}{n^\downarrow}\sum_{j=1}^{n^\downarrow}\mathbf{h}^{\ell\alpha\downarrow}_{ij}
 \big)
-&=
+\\=&
 \big(\mathbf{h}^{\ell\alpha}_i, \mathbf{g}^{\ell\uparrow}, \mathbf{g}^{\ell\downarrow},
-\mathbf{g}^{\ell\alpha\uparrow}_i, \mathbf{g}^{\ell\alpha\downarrow}_i \big) \\
-&= \mathbf{f}^{\ell\alpha}_i.
-\end{aligned}
-\]
+\mathbf{g}^{\ell\alpha\uparrow}_i, \mathbf{g}^{\ell\alpha\downarrow}_i \big)  = \mathbf{f}^{\ell\alpha}_i.
+\end{align}
+
 
 This \(\mathbf{f}^{\ell\alpha}_i\) is what enters the
 \textbf{single-electron MLP} at layer \(\ell\). The update is \[
@@ -2324,8 +1146,6 @@ disappears at the end, - \(i\) or \(j\) always refer to a specific
 electron within a spin sector, - \(\alpha,\beta\) tell you which spin
 sector that electron belongs to.
 
-\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
-
 \subsubsection{From final features to
 orbitals}\label{from-final-features-to-orbitals-1}
 
@@ -2333,16 +1153,18 @@ The final orbitals are built as a function of the last-layer features
 \(\mathbf{h}^{L\alpha}_j\), plus some additional ``envelope'' factors
 that handle the long-range decay and cusp conditions. For each
 determinant index \(k\), spin \(\alpha\), orbital index \(i\), and
-electron \(j\) we define \[
+electron \(j\) we define 
+\[
 \begin{aligned}
 \phi^{k\alpha}_i\big(\mathbf{r}^\alpha_j; \{\mathbf{r}^\alpha_{/j}\}; \{\mathbf{r}^{\bar{\alpha}}\}\big)
 &= \left(\mathbf{w}^{k\alpha}_i \cdot \mathbf{h}^{L\alpha}_j + g^{k\alpha}_i\right) \\
-&\quad\times \sum_{m} \pi^{k\alpha}_{im}
+\times & \sum_{m} \pi^{k\alpha}_{im}
 \exp\Big(
 - \big|\mathbf{\Sigma}_{im}^{k\alpha} \big(\mathbf{r}^{\alpha}_j - \mathbf{R}_m\big)\big|
-\Big).
+\Big)
 \end{aligned}
-\] Here: - \(\mathbf{w}^{k\alpha}_i\) and \(g^{k\alpha}_i\) are
+\] 
+Here: - \(\mathbf{w}^{k\alpha}_i\) and \(g^{k\alpha}_i\) are
 learnable linear parameters for the ``MLP part'' of the orbital, - the
 sum over \(m\) is an ``envelope'' over nuclei (or centers), -
 \(\pi^{k\alpha}_{im}\) and \(\mathbf{\Sigma}^{k\alpha}_{im}\) are
@@ -2359,7 +1181,6 @@ The dependence on all other electrons is hidden inside
 positions \(\{\mathbf{r}^\uparrow\},\{\mathbf{r}^\downarrow\}\) through
 the deep network.
 
-\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
 
 \subsubsection{Assembling the spin-separated
 determinants}\label{assembling-the-spin-separated-determinants-1}
@@ -2378,16 +1199,13 @@ positions of electrons \textbf{with that spin}: \[
 = \det\left[\phi^{k\alpha}_i(\mathbf{r}^\alpha_j; \{\mathbf{r}^\alpha_{/j}\}; \{\mathbf{r}^{\bar{\alpha}}\})\right].
 \]
 
-For the full wavefunction, we combine spin-up and spin-down blocks: \[
-\begin{aligned}
+For the full wavefunction, we combine spin-up and spin-down blocks:
+\begin{align}
 \psi(\mathbf{r}^\uparrow_1,\ldots,\mathbf{r}^\uparrow_{n^\uparrow},
      \mathbf{r}^\downarrow_1,\ldots,\mathbf{r}^\downarrow_{n^\downarrow})
-= \sum_{k} \omega_k \;&
-\det\left[\phi^{k \uparrow}_i(\mathbf{r}^\uparrow_j; \{\mathbf{r}^\uparrow_{/j}\}; \{\mathbf{r}^\downarrow\})\right] \\
-&\times
-\det\left[\phi^{k \downarrow}_i(\mathbf{r}^\downarrow_j; \{\mathbf{r}^\downarrow_{/j}\}; \{\mathbf{r}^\uparrow\})\right].
-\end{aligned}
-\] We have don't explained why we can write the determinant as that
+=\ \sum_{k} \omega_k det[D]det[D]
+\end{align}
+We have don't explained why we can write the determinant as that
 product. In electronic structure, when we separate spin and spatial
 parts using spin-orbitals, the full Slater determinant over all
 electrons factorizes into the product of: one determinant involving only
@@ -2397,11 +1215,7 @@ electrons.
 Each of these determinants is antisymmetric under exchange of two
 electrons \textbf{with the same spin}. The overall wavefunction
 constructed as the product of a spin-up determinant and a spin-down
-determinant is antisymmetric under exchange of any two electrons (when
-you take into account the spin labels). FermiNet keeps this structure
-and lets each block be represented by a powerful neural network ansatz
-for the orbitals.
-
+determinant is antisymmetric under exchange of any two electrons (when you take into account the spin labels). FermiNet keeps this structure and lets each block be represented by a powerful neural network ansatz for the orbitals.
 Up to this point the building blocks are just MLP layers (with residual
 connections and special feature mixing), but the careful indexing -
 \((i,\alpha)\) for ``which electron/spin'', - \(j\) for summation over
@@ -2409,15 +1223,19 @@ electrons, - \(\ell\) for layers, - \(k\) for determinant index, is what
 guarantees that the final object has the correct permutation symmetry
 and antisymmetry required for a fermionic wavefunction.
 
-!{[}{[}ferminet.png\textbar280x315{]}{]}
+\begin{figure*}[htbp]
+    \centering
+    \includegraphics[width=0.5\textwidth]{img/ferminet.png}
+    \caption{Architecture of FermiNet .Image source Dfau et al}
+    \label{fig:placeholder}
+\end{figure*}
 
-(Architecture of Fermite Source )
+\subsection{Applying Attention to Fermi Net
+(Psiformer-style)}\label{applying-attention-to-fermi-net-psiformer-style}
 
-\subsection{Jastrow Factor for Psi
+\subsubsection{Jastrow Factor for Psi
 Former}\label{jastrow-factor-for-psi-former}
-
-{[}{[}Psi Former Ansatz{]}{]}.
-@vonglehn2023selfattentionansatzabinitioquantum
+[cite self attention]
 
 The Psiformer wavefunction has the usual Slater--Jastrow structure \[
 \Psi_{\theta}(\mathbf{x})
@@ -2442,18 +1260,20 @@ x_i = (\mathbf{r}_i,\sigma_i), \qquad \mathbf{r}_i \in \mathbb{R}^3,\;\sigma_i \
 
 In Psiformer, the Jastrow factor is \emph{very} simple: it has only two
 learnable parameters, one for parallel-spin pairs and one for
-antiparallel-spin pairs: \[
+antiparallel-spin pairs: 
+
+\begin{align}
 \mathcal{J}_{\theta}(\mathbf{x})
 =
 \sum_{i<j;\,\sigma_{i}=\sigma_{j}}
 -\frac{1}{4}\frac{\alpha^{2}_{\mathrm{par}}}{\alpha_{\mathrm{par}}+\lvert \mathbf{r}_{i}-\mathbf{r}_{j} \rvert }
-\;+\;
++ \\
 \sum_{i,j;\,\sigma_{i}\neq \sigma_{j}}
 -\frac{1}{2}\frac{\alpha^{2}_{\mathrm{anti}}}{\alpha_{\mathrm{anti}}+\lvert \mathbf{r}_{i}-\mathbf{r}_{j} \rvert }.
-\]
+\end{align}
 
 \begin{itemize}
-\tightlist
+
 \item
   \(\alpha_{\mathrm{par}}\) controls the strength of the Jastrow for
   \textbf{same-spin} electron pairs.
@@ -2468,10 +1288,6 @@ conditions. The neural network itself (the Psiformer) only sees
 explicit \(|\mathbf{r}_i-\mathbf{r}_j|\) dependence lives in
 \(\mathcal{J}_\theta\).
 
-\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
-
-\subsection{Applying Attention to Fermi Net
-(Psiformer-style)}\label{applying-attention-to-fermi-net-psiformer-style}
 
 Conceptually, Psiformer is ``FermiNet with the two-electron stream
 replaced by self-attention'', we can see it clearly doing.
@@ -2487,7 +1303,9 @@ replaced by self-attention'', we can see it clearly doing.
   only via the Jastrow.
 \end{itemize}
 
-We now explain the indices and equations carefully. \#\#\# Indices
+We now explain the indices and equations carefully.  
+
+\textbf{Indices}
 
 We will use:
 
@@ -2510,8 +1328,10 @@ We will use:
   each layer \(\ell\), each electron \(i\) carries a feature (hidden
   state) \[
   \mathbf{h}_i^{\ell} \in \mathbb{R}^{d}.
-  \] \#\#\# Input features and initial hidden states
+  \]
 \end{itemize}
+
+Input features and initial hidden states
 
 Psiformer only uses \textbf{electron--nuclear} features (plus spin) as
 input to the attention stack. For each electron \(i\): 1. Let
@@ -2531,7 +1351,9 @@ layer \[
 \mathbf{h}_{i}^{0} = \mathbf{W}^{0}\,\mathbf{f}_{i}^{0},
 \] where \(\mathbf{W}^0 \in \mathbb{R}^{d \times d_{\text{in}}}\) is
 learned. So: - index \(i\) is ``which electron'', - superscript \(0\)
-means ``before any attention layers.'' \#\#\# One self-attention layer
+means ``before any attention layers.'' 
+
+\textbf{One self-attention layer}
 
 At layer \(\ell\), we have all electron hidden states \[
 \mathbf{h}_1^{\ell},\dots,\mathbf{h}_N^{\ell}.
@@ -2718,94 +1540,32 @@ other electrons in a flexible, learned way, while the determinant over
 \(i,j\) and the Jastrow over \(i,j\) enforce fermionic antisymmetry and
 cusp conditions.
 
-!{[}{[}psiformer.png\textbar271x339{]}{]}
-
-(Architecture of Psi Former, Source: Pfau et all)
+\begin{figure*}[htbp]
+    \centering
+    \includegraphics[width=0.5\textwidth]{img/psiformer.png}
+    \caption{Architecture of Psi Former, Source: Pfau et all}
+    \label{fig:placeholder}
+\end{figure*}
 
 \section{Methodology}\label{methodology}
-
 To implement the code, the choose of the library is important. The three
 options to implement this kind of matter are JAX, Tensor Flow and
-pytorch, each one with his advantages and disadvantages. \#\#
-Environment
+pytorch, each one with his advantages and disadvantages.
 
-For this project we are going to be using Pytorch due his user-friendly
-and support. Python, and several libraries as transformers from hugging
-face, a library who implements KFCA and like guide the implement of
-Fermi Net by google deepmind which is made it on TensorFlow
+\subsection{Environment}
 
-Project manager with UV. \#\# Training
+For this project we are going to be using Pytorch due his user-friendly and support. Python, and several libraries as transformers from hugging face, a library who implements KFCA and like guide the implement of Fermi Net by google deepmind which is made it on TensorFlow.
 
-Due the high computational power needed we are going to using GPUS and
-of course CUDA. Is clear that we are going to use virtual GPUS, for that
-matter we have two option or well use a GPU via SSH or directly using
-services like Azure , Colab, or anothers matters. For simplicity we are
-going to use Colab services. The election of the GPU is not trivial. use
-TPUS are not a bad idea. \#\# References
+Project manager with UV. 
 
-Bahdanau, D., Cho, K., \& Bengio, Y. (2014). Neural machine translation
-by jointly learning to align and translate. \emph{arXiv Preprint
-arXiv:1409.0473}.
+\subsection{Training}
 
-Dosovitskiy, A., Beyer, L., Kolesnikov, A., Weissenborn, D., Zhai, X.,
-Unterthiner, T., Dehghani, M., Minderer, M., Heigold, G., Gelly, S.,
-Uszkoreit, J., \& Houlsby, N. (2021). \emph{An image is worth 16x16
-words: Transformers for image recognition at scale}.
-\url{https://arxiv.org/abs/2010.11929}
-
-Jumper, J., Evans, R., Pritzel, A., Green, T., Figurnov, M.,
-Ronneberger, O., Tunyasuvunakool, K., Bates, R., Žı́dek, A., Potapenko,
-A., \& others. (2021). Highly accurate protein structure prediction with
-AlphaFold. \emph{Nature}, \emph{596}(7873), 583--589.
-
-Luo, D., \& Clark, B. K. (2019). Backflow transformations via neural
-networks for quantum many-body wave functions. \emph{Physical Review
-Letters}, \emph{122}(22).
-\url{https://doi.org/10.1103/physrevlett.122.226401}
-
-Pfau, D., Spencer, J. S., Matthews, A. G. D. G., \& Foulkes, W. M. C.
-(2020). Ab initio solution of the many-electron Schrödinger equation
-with deep neural networks. \emph{Physical Review Research}, \emph{2}(3).
-\url{https://doi.org/10.1103/physrevresearch.2.033429}
-
-Qiao, Z., Welborn, M., Anandkumar, A., Manby, F. R., \& Miller, T. F.
-(2020). OrbNet: Deep learning for quantum chemistry using
-symmetry-adapted atomic-orbital features. \emph{The Journal of Chemical
-Physics}, \emph{153}(12). \url{https://doi.org/10.1063/5.0021955}
-
-Raissi, M., Perdikaris, P., \& Karniadakis, G. E. (2019).
-Physics-informed neural networks: A deep learning framework for solving
-forward and inverse problems involving nonlinear partial differential
-equations. \emph{Journal of Computational Physics}, \emph{378},
-686--707. \url{https://doi.org/10.1016/j.jcp.2018.10.045}
-
-Shang, H., Guo, C., Wu, Y., Li, Z., \& Yang, J. (2025). Solving the
-many-electron Schrödinger equation with a transformer-based framework.
-\emph{Nature Communications}, \emph{16}(1), 8464.
-\url{https://doi.org/10.1038/s41467-025-63219-2}
-
-Vaswani, A., Shazeer, N., Parmar, N., Uszkoreit, J., Jones, L., Gomez,
-A. N., Kaiser, L., \& Polosukhin, I. (2017). Attention is all you need.
-\emph{Advances in Neural Information Processing Systems (NeurIPS)},
-\emph{30}.
-
-von Glehn, I., Spencer, J. S., \& Pfau, D. (2023). \emph{A
-self-attention ansatz for ab-initio quantum chemistry}.
-\url{https://arxiv.org/abs/2211.13672}
-
-\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
-
-\section{Excerpt}\label{excerpt}
-
-Transformers are monsters finding relations between what you give them.
-Is tempting use them for emulate the relations between electrons and
-protons. How you can first encode the information of the electron's
-positions and second the attraction and repulsion between the particles?
+Due the high computational power needed we are going to using GPUS mention by the authors. Several weeks to train molecules
+and of course CUDA. Is clear that we are going to use virtual GPUS, for that matter we have two option or well use a GPU via SSH or directly using services like Azure , Colab, or anothers matters. For simplicity we are going to use Colab services or RunPod. The election of the GPU is not trivial. use TPUS are not a bad idea.
 
 
-
-
-
+\bibliographystyle{unsrt}
+\bibliography{references} 
 
 
 \end{document}

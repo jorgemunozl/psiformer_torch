@@ -1,6 +1,6 @@
 ---
 date: 2025-10-23 19:32
-modified: 2025-11-19 18:26
+modified: 2025-11-20 15:02
 ---
 # Development of a Transformed based architecture to solve the Time Independent Many Electron Schrodinger Equation
 
@@ -443,9 +443,7 @@ $$
 $$
 
 This gives the key structural form used by KFAC.
-
 #### Fisher block for a single layer
-
 The Fisher block associated with the parameters $W_\ell$ is
 $$
 \mathcal{F}_\ell
