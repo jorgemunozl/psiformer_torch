@@ -10,6 +10,7 @@
 \usepackage{microtype}      % microtypography
 \usepackage{xcolor}         % colors
 \usepackage{amsmath}
+\usepackage{natbib}
 \usepackage{authblk}
 \usepackage{hyperref}
 \usepackage{cleveref}   % smart refs: \cref
@@ -35,7 +36,7 @@
   \maketitle
 
   \begin{abstract}
-    With accurate solutions to the many-electron Schrodinger equation all
+With accurate solutions to the many-electron Schrodinger equation all
 the chemistry could be derived from first principles, but analytical treatment is intractable due the intrinsic strong electron-electron correlations, anti symmetry and cusp behavior. Recently, due to its high flexibility deep learning approaches had been applied for this problem, neural wave functions models such as FermiNet and PauliNet have advanced accuracy, yet computational cost and error typically grows steeply with system size, limiting applicability to
 larger molecules. They also lack of strong architectures designed to
 capture long-range electronic correlations with scalable attention. In
@@ -51,8 +52,8 @@ attention and optimizer choices inspired by recent transformer advances.
 ]
 
 \section{Introduction}
-
-The electronic structure problem remains challenging: the wave functions which fully describes the system lives in a \(3N\)-dimensional space where \(N\) is the number of electrons, each particle lives on the 3 dimensional space, molecules of interest for laboratory applications has around 10 atoms. Additionally, it must satisfy specific properties due to physical laws and live on the complex space.
+The electronic structure problem remains challenging: the wave functions which fully describes the system lives in a \(3N\)-dimensional space,\(N\) the number of electrons, each one lives on the 3 dimensional space.
+Additionally, it must satisfy specific properties due to physical laws and live on the complex space.
 
 Although the governing laws have been known for almost a century \cite{Schrodinger1926_undulatory}, obtaining practical approximations to the quantum many-body wavefunction remains difficult. Established approaches such as density-functional theory \cite{KohnSham1965}, Born Oppenheimer \cite{BornOppenheimer1927}, and structured variational ansätze \cite{McMillan1965GroundStateHe4} trade generality for tractability by
 imposing specific functional forms or approximations to correlation.
@@ -68,7 +69,7 @@ Transformers offer an appealing direction. Self-attention provides
 direct, many-to-many interactions among tokens in a single layer, is highly parallelizable, and has empirically favorable scaling behavior in other domains (Natural Language Processing \cite{Vaswani2017}. For electronic structure, where any electron can interact with any other and electron indices are exchangeable, attention aligns naturally with the physics: it enables global coupling without imposing an arbitrary ordering. The challenge is
 to embed the right \textbf{inductive biases} (distance awareness, spin structure, cusp handling) and to maintain \textbf{fermionic antisymmetry} while keeping computational cost under control.
 
-I develop \textbf{Psiformer} \cite{vonglehn2023selfattentionansatzabinitioquantum}, a transformer-based variational ansatz for
+I develop \textbf{Psiformer}, a transformer-based variational ansatz for
 many-electron systems \cite{vonglehn2023selfattentionansatzabinitioquantum}. Psiformer uses self-attention to construct rich
 per-electron features informed by electron--electron and
 electron--nucleus descriptors, then imposes antisymmetry explicitly via
@@ -76,24 +77,23 @@ determinant-based heads. Physics-aware priors (e.g., distance/radial
 encodings and cusp-motivated embeddings) are incorporated to reduce
 sample complexity and stabilize training. The optimization is formulated within \textbf{Variational Monte Carlo (VMC)} by minimizing the variational energy.
 
-\textbf{Contributions.} 
+\textbf{Contributions.}
 
 \begin{itemize}
-    \item A transformer-based neural wavefunction (\textbf{Psiformer}) \cite{vonglehn2023selfattentionansatzabinitioquantum} implemented on Pytorch \cite{Paszke2019PyTorch} that separates correlation modeling (attention) from fermionic symmetry (determinant heads) while embedding Coulomb-aware priors. 
+    \item A transformer-based neural wavefunction (\textbf{Psiformer}) \cite{vonglehn2023selfattentionansatzabinitioquantum} implemented on Pytorch \cite{Paszke2019PyTorch} that separates correlation modeling (attention) from fermionic symmetry (determinant heads) while embedding Coulomb-aware priors.
     \item A VMC training recipe with practical choices for stability (feature design, and optional natural-gradient preconditioning).
 \end{itemize}
 
-The objectives are the follow: 
+The objectives are the follow:
 
 \section{Objectives}
 \begin{itemize}
 \item
-  Obtain a model which is able to approximate the ground state energy for certain atoms and molecules.
+  Obtain a model which is able to approximate the ground state energy for specific atoms and molecules.
 \item
-  Compare our model with another state of the art methods to solve the
-  many electrons Schrodinger equation.
+  Compare our model against other state of the art methods to solve the many electrons Schrodinger equation.
 \item
-  Look for future improvements when try to tackle larger molecules. 
+  Look for future improvements when try to tackle larger molecules.
 \end{itemize}
 
 \section{Overview}
@@ -107,11 +107,7 @@ specific problem, \cref{psi-former-model}  introduce \textbf{Psi Former} a trans
 
 In this section, we develop the physical and mathematical foundation needed to understand the problem we study. We begin with the Schrödinger wave equation, which is central to non-relativistic quantum mechanics, later
 
-\subsection{The wave function}
-
-The Schrödinger equation describes how the quantum state of a physical system evolves in time. It arises from combining wave-particle duality (de Broglie hypothesis) with classical energy conservation, translated into operator form.
-
-The concepts presented in this section provides the physical and mathematical background for our specific problem.
+\subsection{The wave function and the governing physical laws}
 
 \subsubsection{The Schrodinger Equation}
 
@@ -127,15 +123,17 @@ time \(t\) \cite{Bohr1928Nature}.
 
 Guided by de Broglie's discover \cite{deBroglie1924thesis} of the wave particle duality and a very smart intuition Schrodinger proposed the time dependent equation (TDSE):
 \[ i\hbar \frac{\partial \psi}{\partial t}=\hat{H}\psi \] Where \(i\) is
-the complex unit, \(\hbar\) is the Reduced Planck Constant [cite] approximate to \(1.054571817\dots \times 10^{-34} J\cdot s\) and \(\hat{H}\) is a Hermitian linear operator called the
+the complex unit, \(\hbar\) is the Reduced Planck Constant  approximate to \(1.054571817\dots \times 10^{-34} J\cdot s\) and \(\hat{H}\) is a Hermitian linear operator called the
 \textbf{Hamiltonian} which represents the total energy of the system,
 for a single non relativistic (low energy) particle of mass \(m\) in a
 scalar potential \(V(\mathbf{r},t)\). \[
 \hat{H}=\frac{\hat{\mathbf{p}}^{2}}{2m}+V(\mathbf{r},t)
 \] Where \(\mathbf{\hat{p}}\) is the Momentum Operator and in the
-\textbf{Position representation} it takes the form of: \[
+\textbf{Position representation} it takes the form of \cite{Zettili2009}
+\[
 \mathbf{\hat{p}}=-i\hbar \nabla
-\] Where \(\nabla\) is the Laplacian operator, thus the TDSE is
+\]
+Where \(\nabla\) is the Laplacian operator, thus the TDSE is
 explicitly: \[
 i\hbar\,\frac{\partial \psi}{\partial t}
 =
@@ -146,7 +144,8 @@ product of two functions \(R\) and \(T\), where \(R\) depends uniquely
 on the spatial term \((\mathbf{\vec{r}})\) and \(T\) uniquely on the
 temporal \((t)\), this is: \[
 \psi(\mathbf{\vec{r}},t)=R(\mathbf{\vec{r}})T(t)
-\] Plugin this form on equation \textbf{number}, you can derive that: \[
+\] Plugin this form on equation \textbf{number}, you can derive that \cite{Zettili2009}:
+\[
 T(t)=e^{ -iEt/\hbar }
 \] Where \(E\),the energy of the system, is constant. You also obtain
 that the spatial part is conditioned by: \[
@@ -189,7 +188,7 @@ length is the \textbf{Bohr radius} \(a_{0}\),\\
 and the unit of energy is the \textbf{Hartree} \(E_{h}\): \[
 E_{h} = \frac{e^{2}}{4\pi\varepsilon_{0} a_{0}}
 \] Under atomic units, \(e = 1\),
-\(4\pi\varepsilon_{0} = 1\),\(\hbar = 1\), and \(m_{e} = 1\).\\
+\(4\pi\varepsilon_{0} = 1\),\(\hbar = 1\), and \(m_{e} = 1\) \cite{IUPAC_GoldBook_AtomicUnits}.\\
 Thus, the potential energy of a system with \(N_{e}\) electron and
 \(N_{n}\) nucleus can be written compactly as: \[
 V = -\sum_{i=1}^{N_{e}}\sum_{I=1}^{N_{n}}  \frac{Z_I}{\lvert \mathbf{r}_i - \mathbf{R}_I \rvert}
@@ -228,7 +227,7 @@ Slater determinant \cite{Slater1929TheoryComplexSpectra}, which involves one-par
 with a single input) . An interchange of any pair of particles
 corresponds to an interchange of two columns of the determinant; this
 interchange introduces a change in the sign of the determinant. For even
-permutations we have \((-1)^{P}=1\), and for odd permutations we have \((-1)^{P}=-1\). 
+permutations we have \((-1)^{P}=1\), and for odd permutations we have \((-1)^{P}=-1\).
 
 \begin{equation}
 \Psi(\mathbf x_1,\ldots,\mathbf x_N)
@@ -244,7 +243,7 @@ Where \(\phi_k\) are orthonormal (by construction) spin orbitals. This is, for i
 \((N=2)\): \[
 \Psi(\mathbf x_1,\mathbf x_2)
 \propto\Big[\phi_a(\mathbf x_1)\phi_b(\mathbf x_2)-\phi_a(\mathbf x_2)\phi_b(\mathbf x_1)\Big].
-\]  
+\]
 
 Kato Cusp Conditions
 
@@ -285,7 +284,7 @@ difference is a factor of more than 1000. Consequently, the electrons
 are moving and responding to forces very quickly, and the nuclei are
 not, then we fix the nucleus, \(\mathbf{R}_{I}\) becomes a constant,
 thus the kinetic term for nucleus becomes zero. And the potential energy
-for the repulsion between nucleus becomes a constant. 
+for the repulsion between nucleus becomes a constant.
 
 \begin{align}
 \hat H_{\mathrm{el}} =
@@ -302,22 +301,22 @@ solution guided by intuition, this normally depend on certain number of
 parameters, then the problem becomes on optimize this \textbf{Ansatz}.
 
 Another important matter are the complex numbers, we should to work with
-them, no! Why is that? 
+them, no! Why is that?
 
 \subsubsection{Rayleigh Quotient}
 We need a way to measure how well our Ansatz \(\psi_{\theta}\) is doing, if our ansatz is bad then don't reflect the truly form of the system, Deep learning approaches use data sets to train their ansatz (model initialized on randoms parameters) in this case we don't need any external but physical principles. Lets first introduce the \textbf{Rayleigh quotient}. If
-\(A\) is an operator and \(x\) is a state, the number: 
+\(A\) is an operator and \(x\) is a state, the number:
 \[
 R_{A}(x)=\frac{ \langle x |A   |x\rangle}{\bra{x}x\rangle }
-\] 
+\]
 is the \textbf{expectation value} of that operator in that state. The
 important for us is that if \(\psi\) is a wave function and \(\hat{H}\)
-the \textbf{Hamiltonian}, then the Rayleigh quotient: 
+the \textbf{Hamiltonian}, then the Rayleigh quotient:
 \[
 R_{\hat{H}}(\psi)=\frac{\braket{ \psi | \hat{H}| \psi}}{\braket{ \psi | \psi } }
 \] is the average (expected) energy of the system when it is in the state \(\psi\) \cite{Ritz1909Variational}.
 
-\subsubsection{Variational Principle} 
+\subsubsection{Variational Principle}
 
 The Variational Principle states that the expectation value
 for the binding energy obtained using an approximate wave function and
@@ -325,14 +324,14 @@ the exact Hamiltonian operator will be higher than or equal to the true
 energy for the system. This idea is really powerful. When implemented it
 permits us to find the best approximate wavefunction from a given
 wavefunction that contains one or more adjustable parameters, called a
-trial wavefunction \cite{foulkes2001quantum, } . A mathematical statement of the variational
+trial wavefunction \cite{foulkes2001quantum} . A mathematical statement of the variational
 principle is. \[
 R_{\hat{H}}(\psi_{\text{ansatz}})\geq R_{\hat{H}}(\psi_{\text{true}})
 \] The true ground-state wave function \(\psi_{\text{true}}\) is the one
 that minimizes the rayleigh quotient. \[
 \psi_{0}=\underset{\psi}{\text{argmin}}( R_{\hat{H}}(\psi))
 \] So if we minimize the rayleigh quotient of our ansatz we are going to
-be more near of the true wave function. 
+be more near of the true wave function.
 
 
 \subsubsection{Variational Monte Carlo}
@@ -364,16 +363,16 @@ probability distribution. This is \[
 E_{L}(\mathbf{R}_{k})=\frac{\hat{H}\psi(\mathbf{R}_{k})}{\psi(\mathbf{R}_{k})}=-\frac{1}{2}\frac{\nabla^{2}\psi(\mathbf{R_{k}})}{\psi(\mathbf{R}_{k})}+V(\mathbf{R}_{k})
 \] Calculus tell us that for a any derivable function \(f\). \[
 \frac{\nabla^{2}f}{f}=[\nabla^{2}\log f+(\nabla f)^{2}]
-\] 
-In practice is more numerically stable work using that form, thus: 
+\]
+In practice is more numerically stable work using that form, thus:
 \begin{align}
-&E_{L}(\mathbf{R}_{k})= \\& -\frac{1}{2}\sum_{i=1}^{N} \sum_{j=1}^{3} \left[ \frac{\partial ^{2} \log \lvert \Psi(x) \rvert }{\partial r_{ij}^{2}}+\left( \frac{\partial \log \lvert \Psi(x) \rvert }{\partial r_{ij}} \right)^{2} \right]+V(\mathbf{R_{k}})    
+&E_{L}(\mathbf{R}_{k})= \\& -\frac{1}{2}\sum_{i=1}^{N} \sum_{j=1}^{3} \left[ \frac{\partial ^{2} \log \lvert \Psi(x) \rvert }{\partial r_{ij}^{2}}+\left( \frac{\partial \log \lvert \Psi(x) \rvert }{\partial r_{ij}} \right)^{2} \right]+V(\mathbf{R_{k}})
 \end{align}
 The gradient of the energy respect to the parameters by a
-parameterized wave functions is: 
+parameterized wave functions is:
 \[
 \nabla _{\theta}\mathcal{L}=2\mathbb{E}_{x\sim \Psi^{2}}[(E_{L}(x)-\mathbb{E}_{x'\sim\Psi^{2}}[E_{L}(x')])\nabla \log \lvert \Psi(x) \rvert ]
-\] 
+\]
 
 \subsubsection{Metropolis Hastings Algorithm}
 To obtain samples from the probability distribution \(p_{\theta}\) we are going to use the Metropolis Hasting algorithm (MH) \cite{Metropolis1953Equation} which is a Markov Chain Monte Carlo (MCMC) method used to obtain a sequence of random samples from a probability distribution. The
@@ -382,8 +381,6 @@ is that MH don't suffer of the \textit{Curse of Dimensionality} this is, it rema
 use this method. The algorithm works like follow:
 
 \begin{enumerate}
-\def\labelenumi{\arabic{enumi}.}
-\tightlist
 \item
   Take a initial configuration \(\mathbf{X}_{0}\in E\) arbitrary:
 \item
@@ -415,10 +412,10 @@ use this method. The algorithm works like follow:
   From \(\mathbf{X}_{N_{\text{eq}}}\) generate \(M\) samples until reach
   the sample \(\mathbf{X}_{N_{\text{eq}}+M+1}\). In each sample
   generates \(E_{L}(\mathbf{R}_{k})\) then average to obtain
-  \(\mathbb{E}(E_{L})\) and with it and the derivative from equation
-  number {[}number{]} we are able to begin the back propagation step.
-  
-\subsection{Deep Learning Fundamentals} 
+  \(\mathbb{E}(E_{L})\) and with it and the derivative from equation  we are able to begin the back propagation step.
+\end{enumerate}
+
+\subsection{Deep Learning Fundamentals}
 
 This subsection introduces the core concepts of Deep Learning that are going to be applied in this work.
 
@@ -477,10 +474,10 @@ Taylor expansion of the KL gives \[
 \mathrm{KL}\big(p_\theta \,\|\, p_{\theta+\Delta\theta}\big)
 = \tfrac12\,\Delta\theta^\top \mathcal{F}(\theta)\,\Delta\theta + \mathcal{O}(\|\Delta\theta\|^3),
 \] where \(\mathcal{F}(\theta)\) is the Fisher Information Matrix (FIM) \cite{Fisher1922Foundations}.
-To define it, introduce the \textbf{score function} 
+To define it, introduce the \textbf{score function}
 \[
 s_\theta(x) = \nabla_\theta \log p(x\mid \theta) \in \mathbb{R}^d
-\] 
+\]
 then the FIM is:
 \[
 \mathcal{F}(\theta)
@@ -578,9 +575,9 @@ pass at layer \(\ell\) is
 
 In KFAC, when we talk about \(\mathbf{a}_\ell\) for the Fisher block of
 \(W_\ell\), we always mean ``the vector that \(W_\ell\) multiplies on
-the right''. 
+the right''.
 
-\textbf{Backward definition of \(\mathbf{e}_\ell\)} 
+\textbf{Backward definition of \(\mathbf{e}_\ell\)}
 
 Let the loss for a single sample be \(\mathcal{L}(\theta)\) (for example,
 negative log-likelihood or negative log of the wave-function
@@ -601,7 +598,7 @@ product. - For hidden layers \(\ell < L\): \[
 \(\mathcal{L}\) is often chosen as \(-\log p(X\mid\theta)\), so up to a
 sign we can also think of \(\mathbf{e}_\ell\) as \[
 \mathbf{e}_\ell = \frac{\partial \log p(X\mid\theta)}{\partial \mathbf{h}_\ell}.
-\]  
+\]
 
 \textbf{Gradient w.r.t. \(W_\ell\) and the form \(\mathbf{a}_\ell \otimes \mathbf{e}_\ell\)}
 
@@ -673,9 +670,9 @@ expensive, because its dimension is \[
 \item
   \textbf{Kronecker factorization within each layer.}\\
   Inside a layer, KFAC assumes that the correlation between activations
-  and errors factorizes: 
+  and errors factorizes:
 
-  \begin{align}  
+  \begin{align}
   \mathcal{F}_\ell
   =& \mathbb{E}_{p(\mathbf{X})}\!\big[
   (\mathbf{a}_\ell \otimes \mathbf{e}_\ell)
@@ -690,7 +687,7 @@ expensive, because its dimension is \[
   \;\otimes\;
   \mathbb{E}_{p(\mathbf{X})}[\mathbf{e}_\ell\mathbf{e}_\ell^{\mathsf T}]
   \end{align}
-  
+
 \end{enumerate}
 
 Define the \emph{activation covariance} and \emph{error covariance}: \[
@@ -727,7 +724,7 @@ In summary, KFAC replaces the intractable inverse \[
 \begin{align}
 \mathcal{F}_{\ell}^{-1} = & \; \mathbb{E}_{p(\mathbf{X})}\big[(\mathbf{a}_\ell\otimes \mathbf{e}_\ell)
 (\mathbf{a}_\ell\otimes \mathbf{e}_\ell)^{\mathsf T}\big]^{-1}
-\\ \approx & \;  
+\\ \approx & \;
 \mathbb{E}_{p(\mathbf{X})}[\mathbf{a}_\ell\mathbf{a}_\ell^{\mathsf T}]^{-1}
 \otimes
 \mathbb{E}_{p(\mathbf{X})}[\mathbf{e}_\ell\mathbf{e}_\ell^{\mathsf T}]^{-1}
@@ -768,7 +765,7 @@ dot--product) attention mechanism computes:
 \item
   \textbf{Weighted sum of values} \[
   \mathbf{o} \;=\; \sum_{j=1}^{T} \alpha_j \mathbf{v}_j.
-  \] 
+  \]
 \end{enumerate}
 
 Intuitively, the query \(\mathbf{q}\) asks: \emph{``which elements
@@ -781,7 +778,7 @@ Consider a sequence of input embeddings \[
 \mathbf{x}_1, \dots, \mathbf{x}_T \in \mathbb{R}^{d},
 \] and stack them into a matrix \[
 \mathbf{X} \in \mathbb{R}^{T \times d}, \quad
-\mathbf{X} = 
+\mathbf{X} =
 \begin{bmatrix}
 \mathbf{x}_1^\top \\
 \vdots \\
@@ -792,7 +789,7 @@ introduce three learnable matrices: \[
 \mathbf{W}^Q \in \mathbb{R}^{d \times d_h}, \quad
 \mathbf{W}^K \in \mathbb{R}^{d \times d_h}, \quad
 \mathbf{W}^V \in \mathbb{R}^{d \times d_h}.
-\] We then compute queries, keys, and values: 
+\] We then compute queries, keys, and values:
 \begin{align}
     \mathbf{Q} = \mathbf{X} \mathbf{W}^Q \in \mathbb{R}^{T \times d_h}\\
     \mathbf{K} = \mathbf{X} \mathbf{W}^K \in \mathbb{R}^{T \times d_h}\\
@@ -827,7 +824,7 @@ Head \(i\) computes: \[
 \in \mathbb{R}^{T \times d_h}.
 \] The outputs of all heads are concatenated along the feature dimension
 and then linearly mixed: \[
-\mathbf{U} 
+\mathbf{U}
 = \left[ \text{head}_1(\mathbf{X}) \,;\, \dots \,;\, \text{head}_{n_h}(\mathbf{X}) \right]
 \in \mathbb{R}^{T \times (n_h d_h)},
 \] \[
@@ -835,12 +832,12 @@ and then linearly mixed: \[
 \mathbf{W}^O \in \mathbb{R}^{(n_h d_h) \times d}.
 \] If we focus on one time step \(t\) and head \(i\), we can write the
 per-head output as \[
-\mathbf{o}_{t,i} = \sum_{j=1}^{T} 
+\mathbf{o}_{t,i} = \sum_{j=1}^{T}
 \text{Softmax}_j\!\left( \frac{\mathbf{q}_{t,i}^\top \mathbf{k}_{j,i}}{\sqrt{d_h}} \right)\mathbf{v}_{j,i},
 \] and the final vector at time \(t\) after concatenation and output
 projection as \[
 \mathbf{u}_t =
-\mathbf{W}^{O} 
+\mathbf{W}^{O}
 \begin{bmatrix}
 \mathbf{o}_{t,1} \\
 \vdots \\
@@ -852,7 +849,7 @@ focus on short-range relations, another on long-range ones, another on
 some specific pattern (e.g.~symmetry, local structure), and so on.
 
 \subsubsection{Transformer Architecture}\label{transformer-architecture}
-The \textbf{Transformer} was introduced 
+The \textbf{Transformer} was introduced
 with the slogan \emph{``Attention Is All You Need.''} \cite{Vaswani2017}. Its core building block is a \textbf{layer} that combines: 1. \textbf{Multi-head self-attention}\\
 2. \textbf{Position-wise feed-forward network (FFN)} Both sublayers use
 \textbf{residual connections} and \textbf{layer normalization}. For an
@@ -1056,7 +1053,7 @@ features: \[
 \]
 
 Now we \emph{concatenate} all this information into a single feature
-vector for electron \((i,\alpha)\): 
+vector for electron \((i,\alpha)\):
 \begin{align}
 &\big(
 \mathbf{h}^{\ell\alpha}_i,
@@ -1103,7 +1100,7 @@ The final orbitals are built as a function of the last-layer features
 \(\mathbf{h}^{L\alpha}_j\), plus some additional ``envelope'' factors
 that handle the long-range decay and cusp conditions. For each
 determinant index \(k\), spin \(\alpha\), orbital index \(i\), and
-electron \(j\) we define 
+electron \(j\) we define
 \[
 \begin{aligned}
 \phi^{k\alpha}_i\big(\mathbf{r}^\alpha_j; \{\mathbf{r}^\alpha_{/j}\}; \{\mathbf{r}^{\bar{\alpha}}\}\big)
@@ -1113,7 +1110,7 @@ electron \(j\) we define
 - \big|\mathbf{\Sigma}_{im}^{k\alpha} \big(\mathbf{r}^{\alpha}_j - \mathbf{R}_m\big)\big|
 \Big)
 \end{aligned}
-\] 
+\]
 Here: - \(\mathbf{w}^{k\alpha}_i\) and \(g^{k\alpha}_i\) are
 learnable linear parameters for the ``MLP part'' of the orbital, - the
 sum over \(m\) is an ``envelope'' over nuclei (or centers), -
@@ -1199,7 +1196,6 @@ x_i = (\mathbf{r}_i,\sigma_i), \qquad \mathbf{r}_i \in \mathbb{R}^3,\;\sigma_i \
 \]
 
 \begin{itemize}
-\tightlist
 \item
   \(\mathcal{J}_\theta:(\mathbb{R}^{3}\times \{\uparrow,\downarrow\})^{N}\to \mathbb{R}\)
   is the \textbf{Jastrow factor}, encoding (here) only
@@ -1211,7 +1207,7 @@ x_i = (\mathbf{r}_i,\sigma_i), \qquad \mathbf{r}_i \in \mathbb{R}^3,\;\sigma_i \
 
 In Psiformer, the Jastrow factor is \emph{very} simple: it has only two
 learnable parameters, one for parallel-spin pairs and one for
-antiparallel-spin pairs: 
+antiparallel-spin pairs:
 
 \begin{align}
 \mathcal{J}_{\theta}(\mathbf{x})
@@ -1244,7 +1240,6 @@ Conceptually, Psiformer is ``FermiNet with the two-electron stream
 replaced by self-attention'', we can see it clearly doing.
 
 \begin{itemize}
-\tightlist
 \item
   FermiNet: separate one-electron and two-electron feature streams, then
   mix.
@@ -1254,14 +1249,13 @@ replaced by self-attention'', we can see it clearly doing.
   only via the Jastrow.
 \end{itemize}
 
-We now explain the indices and equations carefully.  
+We now explain the indices and equations carefully.
 
 \textbf{Indices}
 
 We will use:
 
 \begin{itemize}
-\tightlist
 \item
   \(i,j = 1,\dots,N\): electron indices.
 \item
@@ -1302,7 +1296,7 @@ layer \[
 \mathbf{h}_{i}^{0} = \mathbf{W}^{0}\,\mathbf{f}_{i}^{0},
 \] where \(\mathbf{W}^0 \in \mathbb{R}^{d \times d_{\text{in}}}\) is
 learned. So: - index \(i\) is ``which electron'', - superscript \(0\)
-means ``before any attention layers.'' 
+means ``before any attention layers.''
 
 \textbf{One self-attention layer}
 
@@ -1313,7 +1307,6 @@ At layer \(\ell\), we have all electron hidden states \[
 For each \textbf{head} \(h\) and electron \(i\), we compute:
 
 \begin{itemize}
-\tightlist
 \item
   Query: \[
   \mathbf{q}^{\ell h}_i = \mathbf{W}^{\ell h}_q \mathbf{h}^{\ell}_i
@@ -1346,7 +1339,6 @@ is \[
 \]
 
 \begin{itemize}
-\tightlist
 \item
   \(j\) runs over ``all other electrons,'' so electron \(i\) ``looks''
   at all others via attention.
@@ -1392,7 +1384,6 @@ So a full Psiformer layer \(\ell\) is:
 
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}
-\tightlist
 \item
   Self-attention: \(\{\mathbf{h}_i^\ell\} \to \{\mathbf{A}^\ell_i\}\).
 \item
@@ -1450,7 +1441,7 @@ The final spin-orbital entries are \[
 \]
 
 Collecting these into the matrix \[
-\boldsymbol{\Phi}^k(\mathbf{x}) = 
+\boldsymbol{\Phi}^k(\mathbf{x}) =
 \big[\Phi^{k}_{ij}\big]_{i,j=1}^N,
 \] we form the determinant \[
 \det[\boldsymbol{\Phi}^k(\mathbf{x})]
@@ -1468,7 +1459,6 @@ Collecting these into the matrix \[
 So the story in terms of indices is:
 
 \begin{itemize}
-\tightlist
 \item
   \(i\) = which \textbf{orbital} (row of the determinant).
 \item
@@ -1495,7 +1485,7 @@ cusp conditions.
     \centering
     \includegraphics[width=0.5\textwidth]{img/psiformer.png}
     \caption{Architecture of Psi Former, Source: Pfau et all}
-    \label{fig:placeholder}
+    \label{fig:placeholdesdr}
 \end{figure*}
 
 \section{Methodology}\label{methodology}
@@ -1507,16 +1497,17 @@ pytorch, each one with his advantages and disadvantages.
 
 For this project we are going to be using Pytorch due his user-friendly and support. Python, and several libraries as transformers from hugging face, a library who implements KFCA and like guide the implement of Fermi Net by google deepmind which is made it on TensorFlow.
 
-Project manager with UV. 
+Project manager with UV.
 
 \subsection{Training}
 
 Due the high computational power needed we are going to using GPUS mention by the authors. Several weeks to train molecules
+
 and of course CUDA. Is clear that we are going to use virtual GPUS, for that matter we have two option or well use a GPU via SSH or directly using services like Azure , Colab, or anothers matters. For simplicity we are going to use Colab services or RunPod. The election of the GPU is not trivial. use TPUS are not a bad idea.
 
 
 \bibliographystyle{unsrt}
-\bibliography{references} 
+\bibliography{refs1}
 
 
 \end{document}
