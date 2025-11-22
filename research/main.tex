@@ -75,7 +75,7 @@ per-electron features informed by electron--electron and
 electron--nucleus descriptors, then imposes antisymmetry explicitly via
 determinant-based heads. Physics-aware priors (e.g., distance/radial
 encodings and cusp-motivated embeddings) are incorporated to reduce
-sample complexity and stabilize training. The optimization is formulated within \textbf{Variational Monte Carlo (VMC)} by minimizing the variational energy.
+sample complexity and stabilize training. The optimization is formulated within \textbf{Variational Monte Carlo (VMC)} \cite{McMillan1965GroundStateHe4} by minimizing the variational energy.
 
 \textbf{Contributions.}
 
@@ -122,107 +122,132 @@ quantity \(\lvert \psi (\mathbf{r},t)\rvert^{2}\) is the
 time \(t\) \cite{Bohr1928Nature}.
 
 Guided by de Broglie's discover \cite{deBroglie1924thesis} of the wave particle duality and a very smart intuition Schrodinger proposed the time dependent equation (TDSE):
-\[ i\hbar \frac{\partial \psi}{\partial t}=\hat{H}\psi \] Where \(i\) is
-the complex unit, \(\hbar\) is the Reduced Planck Constant  approximate to \(1.054571817\dots \times 10^{-34} J\cdot s\) and \(\hat{H}\) is a Hermitian linear operator called the
-\textbf{Hamiltonian} which represents the total energy of the system,
-for a single non relativistic (low energy) particle of mass \(m\) in a
-scalar potential \(V(\mathbf{r},t)\). \[
+
+\begin{equation}
+i\hbar \frac{\partial \psi}{\partial t}=\hat{H}\psi
+ \label{tise}
+\end{equation}
+
+Where \(i\) is the complex unit, \(\hbar\) is the reduced Planck constant  approximate to \(1.054571817\dots \times 10^{-34} J\cdot s\) and \(\hat{H}\) is a hermitian linear operator called the \textbf{Hamiltonian} which represents the total energy of the system,
+for a single non relativistic (low energy) particle of mass \(m\) in a scalar potential \(V(\mathbf{r},t)\), it takes the form:
+
+\begin{equation}
 \hat{H}=\frac{\hat{\mathbf{p}}^{2}}{2m}+V(\mathbf{r},t)
-\] Where \(\mathbf{\hat{p}}\) is the Momentum Operator and in the
-\textbf{Position representation} it takes the form of \cite{Zettili2009}
-\[
+  \label{eq:hamil}
+\end{equation}
+
+Where \(\mathbf{\hat{p}}\) is the momentum operator and in the \textbf{position representation} it takes the form of \cite{Zettili2009}:
+
+\begin{equation}
 \mathbf{\hat{p}}=-i\hbar \nabla
-\]
+  \label{p}
+\end{equation}
 Where \(\nabla\) is the Laplacian operator, thus the TDSE is
-explicitly: \[
-i\hbar\,\frac{\partial \psi}{\partial t}
-=
-\left[-\frac{\hbar^{2}}{2m}\nabla^{2}+V(\mathbf r,t)\right]\psi
-\] The \textbf{time independent form} (TISE) could be derived from
-equation ,when the wave function \(\psi\) could be written like the
+explicitly:
+
+\begin{equation}
+ i\hbar\,\frac{\partial \psi}{\partial t} = \left[-\frac{\hbar^{2}}{2m}\nabla^{2}+V(\mathbf r,t)\right]\psi
+  \label{eq:ex}
+\end{equation}
+
+The \textbf{time independent form} (TISE) could be derived from equation ,when the wave function \(\psi\) could be written like the
 product of two functions \(R\) and \(T\), where \(R\) depends uniquely
-on the spatial term \((\mathbf{\vec{r}})\) and \(T\) uniquely on the
-temporal \((t)\), this is: \[
-\psi(\mathbf{\vec{r}},t)=R(\mathbf{\vec{r}})T(t)
-\] Plugin this form on equation \textbf{number}, you can derive that \cite{Zettili2009}:
+on the spatial term \((\mathbf{{r}})\) and \(T\) uniquely on the temporal \((t)\), this is:
+
+\begin{equation}
+\psi(\mathbf{{r}},t)=R(\mathbf{{r}})T(t)
+\end{equation}
+
+Plugin this form on equation \ref{tise}, you can derive that \cite{Zettili2009}:
 \[
 T(t)=e^{ -iEt/\hbar }
-\] Where \(E\),the energy of the system, is constant. You also obtain
-that the spatial part is conditioned by: \[
-\hat{H}R(\mathbf{\vec{r}})=ER(\mathbf{\vec{r}})
-\] We are going to represent the spatial function \(R\) as \(\psi\). And
+\] Where \(E\), the energy of the system, is a constant. You also obtain that the spatial part is conditioned by:
+
+\begin{equation}
+\hat{H}R(\mathbf{{r}})=ER(\mathbf{{r}})
+  \label{eq:}
+\end{equation}
+
+ We are going to represent the spatial function \(R\) as \(\psi\). And
 in this work we are going to only focus in the TDSE, when we treat with
 constant energy, the electron are almost always found near the lowest
 energy state, known as the ground state. Solutions with higher energy known as excited states are relevant to photochemistry , but in this work we will restrict our attention to ground states. \subsubsection{The many electron Schrodinger Equation}
 
-When we are considering more than one single particle we consider the spin \((\sigma)\) and the interaction between particles. Thus in its time-independent form the Schrodinger equation can be written as an eigen value problem:
+When we are considering more than one single particle we consider the spin \((\sigma)\) and the interaction between particles. Thus, in its time-independent form the Schrodinger equation can be written as an eigen value problem:
 
-\[ \hat{H}\psi(\mathbf{x}_{0},\dots ,\mathbf{x}_{n})=E\psi(\mathbf{x}_{1},\dots ,\mathbf{x}_{n}) \]
-Where \(\mathbf{x}_{i}=\{ \mathbf{r}_{i},\sigma \}\),
-\(\mathbf{r}_{i}\in \mathbb{R}^{3}\) is the position of each particle
+\begin{equation}
+\hat{H}\psi(\mathbf{x}_{0},\dots ,\mathbf{x}_{n})=E\psi(\mathbf{x}_{1},\dots ,\mathbf{x}_{n})
+  \label{eq:tilin}
+\end{equation}
+Where \(\mathbf{x}_{i}=\{ \mathbf{r}_{i},\sigma \}\), \(\mathbf{r}_{i}\in \mathbb{R}^{3}\) is the position of each electron
 and \(\sigma \in \{ \uparrow.\downarrow \}\) is the so called spin. It's
 possible model the potential energy of a many body system (e.g atoms,
-molecules), we first have to consider the repulsion between each
-electrons: \[
-V_{ij}
-= \frac{e^{2}}{4\pi\varepsilon_{0}}
-  \frac{1}{\lvert \mathbf{r}_{i}-\mathbf{r}_{j} \rvert}
-\] Here: - \(e = 1.602\,176\,634\times 10^{-19}\ \mathrm{C}\) is the
-elementary charge, -
-\(\varepsilon_{0} = 8.854\,187\,8128\times 10^{-12}\ \mathrm{F\,m^{-1}}\)
-is the \textbf{electrical permittivity of vacuum}, - \(\mathbf{r}_i\) is
-the position vector of electron \(i\) in the chosen reference frame. The
-attraction between the proton \(I\) and the electron \(i\) is given by:
-\[
+molecules), we first have to consider the potential given the repulsion between electrons:
+\begin{equation}
+V_{ij} = \frac{e^{2}}{4\pi\varepsilon_{0}} \frac{1}{\lvert \mathbf{r}_{i}-\mathbf{r}_{j} \rvert}
+  \label{eq:}
+\end{equation}
+
+Here \(e = 1.602\,176\,634\times 10^{-19}\ \mathrm{C}\) is the elementary charge, \(\varepsilon_{0} = 8.854\,187\,8128\times 10^{-12}\ \mathrm{F\,m^{-1}}\) is the electrical permittivity of vacuum, $\mathbf{r}_i$ is the position vector of electron \(i\) in the chosen reference frame. The potential given the attraction between the proton $I$ and the electron $i$ is given by:
+\begin{equation}
 V_{iI} = -\frac{1}{4\pi\varepsilon_{0}} \frac{eZ_{I}}{\lvert \mathbf{r}_{i} - \mathbf{R}_{I} \rvert}
-\] Where \(Z_I\) is the atomic number of nucleus \(I\) (for instance, in
+  \label{eq:asd}
+\end{equation}
+Where \(Z_I\) is the atomic number of nucleus \(I\) (for instance, in
 a Helium atom \(Z = 2\)) and \(\mathbf{R}_I\) is the position of that
 nucleus from a chosen reference frame.\\
 The reference frame is usually taken at the \textbf{center of mass} or
-at the \textbf{center of the molecule}. The repulsion between the nuclei
-\(I\) and \(J\) (protons) is: \[
-V_{IJ} = \frac{1}{4\pi\varepsilon_{0}} \frac{Z_{I}Z_{J}}{\lvert \mathbf{R}_{I} - \mathbf{R}_{J} \rvert}
-\] To avoid writing these constants every time, quantum chemistry
-commonly uses \textbf{atomic units (a.u.)}. In this system, the unit of
-length is the \textbf{Bohr radius} \(a_{0}\),\\
-and the unit of energy is the \textbf{Hartree} \(E_{h}\): \[
-E_{h} = \frac{e^{2}}{4\pi\varepsilon_{0} a_{0}}
-\] Under atomic units, \(e = 1\),
-\(4\pi\varepsilon_{0} = 1\),\(\hbar = 1\), and \(m_{e} = 1\) \cite{IUPAC_GoldBook_AtomicUnits}.\\
-Thus, the potential energy of a system with \(N_{e}\) electron and
-\(N_{n}\) nucleus can be written compactly as: \[
-V = -\sum_{i=1}^{N_{e}}\sum_{I=1}^{N_{n}}  \frac{Z_I}{\lvert \mathbf{r}_i - \mathbf{R}_I \rvert}
-+ \sum_{i>j} \frac{1}{\lvert \mathbf{r}_i - \mathbf{r}_j \rvert}
-+ \sum_{I>J} \frac{Z_I Z_J}{\lvert \mathbf{R}_I - \mathbf{R}_J \rvert}
-\]
+at the \textbf{center of the molecule}. The potential given the repulsion between the nuclei
+\(I\) and \(J\) (protons) is:
 
-where: - \(i, j\) index electrons. - \(I, J\) index nuclei. - The first
-term represents \textbf{electron--nucleus attraction}. - The second term
-is \textbf{electron--electron repulsion}. - The third term is
-\textbf{nucleus--nucleus repulsion}. For the kinetic term we need to
-consider two expressions: \(\nabla_i^2\) acts on the \textbf{electron}
-coordinates \(\mathbf r_i\) (fast, light particles) and \(\nabla_I^2\)
+\begin{equation}
+V_{IJ} = \frac{1}{4\pi\varepsilon_{0}} \frac{Z_{I}Z_{J}}{\lvert \mathbf{R}_{I} - \mathbf{R}_{J} \rvert}
+  \label{eq:sdasd}
+\end{equation}
+
+To avoid writing these constants every time, quantum chemistry commonly uses \textbf{atomic units (a.u.)}. In this system, the unit of length is the \textbf{Bohr radius} \(a_{0}\),\\
+and the unit of energy is the \textbf{Hartree} \(E_{h}\) \cite{IUPAC_GoldBook_AtomicUnits}:
+
+\begin{equation}
+E_{h} = \frac{e^{2}}{4\pi\varepsilon_{0} a_{0}}
+  \label{eq:so slightl}
+\end{equation}
+
+Under atomic units, \(e = 1\),
+\(4\pi\varepsilon_{0} = 1\),\(\hbar = 1\), and \(m_{e} = 1\) .
+Thus, the potential energy of a system with \(N_{e}\) electron and
+\(N_{n}\) nucleus can be written compactly as:
+\begin{equation}
+  V = -\sum_{i=1}^{N_{e}}\sum_{I=1}^{N_{n}}  \frac{Z_I}{\lvert \mathbf{r}_i - \mathbf{R}_I \rvert} + \sum_{i>j} \frac{1}{\lvert \mathbf{r}_i - \mathbf{r}_j \rvert} + \sum_{I>J} \frac{Z_I Z_J}{\lvert \mathbf{R}_I - \mathbf{R}_J \rvert}
+\end{equation}
+
+where \(i, j\) are index electrons, \(I, J\) are index nuclei.The first term represents \textbf{electron--nucleus attraction}, the second term is \textbf{electron--electron repulsion}, the third term is \textbf{nucleus--nucleus repulsion}.
+For the kinetic term on the Hamiltonian we need to
+consider two expressions: \(\nabla_i^2\) acts on the \textbf{electron} coordinates \(\mathbf r_i\) (fast, light particles) and \(\nabla_I^2\)
 acts on the \textbf{nuclear} coordinates \(\mathbf R_I\) (slow, heavy
-particles). Let \(N\) electrons at \(\mathbf r_i\) and \(M\) nuclei at
+particles). Let \(N\) electrons at \(\mathbf r_i\) and \(M\) nucleous at
 \(\mathbf R_I\) with charges \(Z_I\) and masses \(M_I\) (in units of
 \(m_e\)) then the \textbf{Hamiltonian} can be written as:
-
 \begin{align}
-\hat H &= -\sum_{i=1}^{N}\frac{1}{2}\nabla_i^{2} -\sum_{I=1}^{M}\frac{1}{2M_I}\nabla_{I}^{2} -\sum_{i=1}^{N}\sum_{I=1}^{M}\frac{Z_I}{|\mathbf r_i-\mathbf R_I|}\\
+\hat H &= -\sum_{i=1}^{N}\frac{1}{2}\nabla_i^{2} -\sum_{I=1}^{M}\frac{1}{2M_I}\nabla_{I}^{2} -\sum_{i=1}^{N}\sum_{I=1}^{M}\frac{Z_I}{|\mathbf r_i-\mathbf R_I|} \notag\\
 +&\sum_{1\le i<j\le N}\frac{1}{|\mathbf r_i-\mathbf r_j|}+\sum_{1\le I<J\le M}\frac{Z_I Z_J}{|\mathbf R_I-\mathbf R_J|}
 \end{align}
 
 \subsubsection{Conditions of the solution}
 
-As with any differential equation, where one is searching one solution is important to consider initial conditions (IC) and boundary conditions (BC), here we have to fulfill certain conditions that comes from
-physical laws.
+As with any differential equation, where one is searching one solution, is important to consider initial conditions (IC) and boundary conditions (BC), here we have to fulfill certain conditions that comes from physical laws.
 
-Bosons (e.g., photons) follow \textbf{Bose--Einstein} statistics, whereas fermions (e.g., electrons, protons) follow \textbf{Fermi Dirac} statistics \cite{Fermi1926Quantelung, Dirac1926TheoryQM}, because at the microscopic level identical particles are
-indistinguishable then the wave function should be equal but Pauli
+Bosons (e.g., photons) follow \textbf{Bose--Einstein} statistics \cite{Bose1924, Einstein1924Gas}, whereas fermions (e.g., electrons, protons) follow \textbf{Fermi Dirac} statistics \cite{Fermi1926Quantelung, Dirac1926TheoryQM}, because at the microscopic level identical particles are
+indistinguishable then the wave function should be equal  but Pauli
 Exclusion \cite{Pauli1925Exclusion} don't like that , the many-particle wave function must be \textbf{anti symmetric} under the exchange of any two fermions. This
-implies: \[
+implies:
+\begin{equation}
 \psi(\dots,\mathbf{x}_{i},\dots,\mathbf{x}_{j},\dots)=-\psi(\dots ,\mathbf{x}_{j},\dots ,\mathbf{x}_{i},\dots)
-\] We can enforce \textbf{antisymmetry} using a \(N\times N\)
+\label{eq:every}
+\end{equation}
+
+
+We can enforce \textbf{antisymmetry} using a \(N\times N\)
 Slater determinant \cite{Slater1929TheoryComplexSpectra}, which involves one-particle states only (a wave function
 with a single input) . An interchange of any pair of particles
 corresponds to an interchange of two columns of the determinant; this
@@ -240,56 +265,52 @@ permutations we have \((-1)^{P}=1\), and for odd permutations we have \((-1)^{P}
 \end{vmatrix}
 \end{equation}
 Where \(\phi_k\) are orthonormal (by construction) spin orbitals. This is, for instance
-\((N=2)\): \[
-\Psi(\mathbf x_1,\mathbf x_2)
-\propto\Big[\phi_a(\mathbf x_1)\phi_b(\mathbf x_2)-\phi_a(\mathbf x_2)\phi_b(\mathbf x_1)\Big].
-\]
+\((N=2)\):
+\begin{equation}
+\Psi(\mathbf x_1,\mathbf x_2) \propto\Big[\phi_a(\mathbf x_1)\phi_b(\mathbf x_2)-\phi_a(\mathbf x_2)\phi_b(\mathbf x_1)\Big].
+  \label{eq:sdg}
+\end{equation}
 
-Kato Cusp Conditions
-
-The potential energy becomes infinite, when particles overlap, which
+The potential energy becomes infinite, when two particles overlap, which
 places strict constraints on the form of the wave function at these
-points, knows as the \textbf{Kato Cusp Conditions} \cite{Kato1957EigenfunctionsManyParticle}. The cusp conditions states that the wave function must be non-differentiable at these points, and give exact values for the average derivatives at the cusps. This can be obtained if we multiply to the ansatz by multiplying
-by a Jastrow factor \(\mathcal{J}\)which satisfies these conditions
-analytically \cite{Jastrow1955ManyBodyProblem}.
-
+points, these constraints are known as the \textbf{Kato Cusp Conditions} \cite{Kato1957EigenfunctionsManyParticle}. The cusp conditions states that the wave function must be non-differentiable at these points, and give exact values for the average derivatives at the cusps. More precisely the cusp are:
 Electron-nucleus cusp (electron with charge
 \(-1\), nucleus charge \(+Z\), reduced mass \(\mu \approx 1\))
 \[\lim_{ riI \to 0 } \left( \frac{\partial \psi}{\partial r_{iI}} \right)=-Z\psi(r_{iI}=0)
-\] - Electron-electron cusp, opposite spins (charges \(-1\), reduced
+\]Electron-electron cusp, opposite spins (charges \(-1\), reduced
 mass \(\mu=\frac{1}{2}\)) \[
 \lim_{ r_{ij}\to 0 } \left( \frac{\partial \psi}{\partial r_{ij}} \right)=\frac{1}{2}\psi(r_{ij}=0)
 \] Where \(r_{iI}(r_{ij})\) is an electron-nuclear (electron-electron)
 distance, \(Z_{I}\) is the nuclear charge of the \(I\text{-th}\)
 nucleous and ave implies a spherical averaging over all directions.
 
+This conditions can be obtained if we multiply to the ansatz by multiplying by a Jastrow factor \(\mathcal{J}\)which satisfies these conditions analytically \cite{Jastrow1955ManyBodyProblem}.
+
 So that is the problem we need to find a \(\psi\) such that it satisfies all those conditions.
 
 \subsubsection{Approximations to the problem}
 
 Is clear that find analytical solutions is practically impossible, so what people have been doing is first apply good approximations.
-
 \textbf{Born Oppenheimer approximation} \cite{BornOppenheimer1927} makes it possible to separate the motion of the nuclei and the motion of the electrons, neglects the
 motion of the atomic nuclei when describing the electrons in a molecule.
 The physical basis for the Born-Oppenheimer approximation is the fact
 that the mass of an atomic nucleus in a molecule is much larger than the
-mass of an electron (more than 1000 times). Because of this difference,
+mass of an electron (more than 1000 times) \cite{PDG2024}. Because of this difference,
 the nuclei move much more slowly than the electrons. In addition, due to
 their opposite charges, there is a mutual attractive force of: acting on
 an atomic nucleus and an electron. This force causes both particles to
 be accelerated. Since the magnitude of the acceleration is inversely
-proportional to the mass, \(a = f/m\), the acceleration of the electrons
+proportional to the mass, \(a = f/m\) \cite{Newton1687}, the acceleration of the electrons
 is large and the acceleration of the atomic nuclei is small; the
 difference is a factor of more than 1000. Consequently, the electrons
 are moving and responding to forces very quickly, and the nuclei are
 not, then we fix the nucleus, \(\mathbf{R}_{I}\) becomes a constant,
 thus the kinetic term for nucleus becomes zero. And the potential energy
 for the repulsion between nucleus becomes a constant.
-
 \begin{align}
 \hat H_{\mathrm{el}} =
 -\sum_{i=1}^{N}\frac{1}{2}\nabla_i^{2}
--\sum_{i=1}^{N}\sum_{I=1}^{M}\frac{Z_I}{|\mathbf r_i-\mathbf R_I|}\\
+-\sum_{i=1}^{N}\sum_{I=1}^{M}\frac{Z_I}{|\mathbf r_i-\mathbf R_I|} \notag\\
 +\sum_{1\le i<j\le N}\frac{1}{|\mathbf r_i-\mathbf r_j|}
 + \sum_{I<J}\frac{Z_I Z_J}{|\mathbf R_I-\mathbf R_J|}
 \end{align}
@@ -300,79 +321,120 @@ approach to the problem is use an \textbf{Ansatz}, which is a guess
 solution guided by intuition, this normally depend on certain number of
 parameters, then the problem becomes on optimize this \textbf{Ansatz}.
 
-Another important matter are the complex numbers, we should to work with
-them, no! Why is that?
-
 \subsubsection{Rayleigh Quotient}
-We need a way to measure how well our Ansatz \(\psi_{\theta}\) is doing, if our ansatz is bad then don't reflect the truly form of the system, Deep learning approaches use data sets to train their ansatz (model initialized on randoms parameters) in this case we don't need any external but physical principles. Lets first introduce the \textbf{Rayleigh quotient}. If
+We need a way to measure how well our ansatz \(\psi_{\theta}\) is doing, if our ansatz is "bad" then don't reflect the truly form of the system, most deep learning approaches use data sets to train their ansatz (model initialized on randoms parameters) in this case we don't need any external but just physical principles. Lets first introduce the \textbf{Rayleigh quotient}. If
 \(A\) is an operator and \(x\) is a state, the number:
-\[
+\begin{equation}
 R_{A}(x)=\frac{ \langle x |A   |x\rangle}{\bra{x}x\rangle }
-\]
+  \label{eq:eso}
+\end{equation}
 is the \textbf{expectation value} of that operator in that state. The
 important for us is that if \(\psi\) is a wave function and \(\hat{H}\)
 the \textbf{Hamiltonian}, then the Rayleigh quotient:
-\[
+\begin{equation}
 R_{\hat{H}}(\psi)=\frac{\braket{ \psi | \hat{H}| \psi}}{\braket{ \psi | \psi } }
-\] is the average (expected) energy of the system when it is in the state \(\psi\) \cite{Ritz1909Variational}.
+\label{eq:}
+\end{equation}
+
+is the average (expected) energy of the system when it is in the state \(\psi\) \cite{Ritz1909Variational}.
 
 \subsubsection{Variational Principle}
 
-The Variational Principle states that the expectation value
+The variational principle for electronic systems states that the expectation value
 for the binding energy obtained using an approximate wave function and
 the exact Hamiltonian operator will be higher than or equal to the true
-energy for the system. This idea is really powerful. When implemented it
+energy for the system \cite{GoldsteinCM}. This idea is really powerful. When implemented it
 permits us to find the best approximate wavefunction from a given
 wavefunction that contains one or more adjustable parameters, called a
 trial wavefunction \cite{foulkes2001quantum} . A mathematical statement of the variational
-principle is. \[
+principle is.
+
+\begin{equation}
 R_{\hat{H}}(\psi_{\text{ansatz}})\geq R_{\hat{H}}(\psi_{\text{true}})
-\] The true ground-state wave function \(\psi_{\text{true}}\) is the one
-that minimizes the rayleigh quotient. \[
+\end{equation}
+
+The true ground-state wave function \(\psi_{\text{true}}\) is the one
+that minimizes the rayleigh quotient.
+
+\begin{equation}
 \psi_{0}=\underset{\psi}{\text{argmin}}( R_{\hat{H}}(\psi))
-\] So if we minimize the rayleigh quotient of our ansatz we are going to
+\end{equation}
+
+
+So if we minimize the rayleigh quotient of our ansatz we are going to
 be more near of the true wave function.
 
 
 \subsubsection{Variational Monte Carlo}
 
 To the process that we are going to use for optimize our ansatz is called Variational Monte Carlo (VMC)\cite{McMillan1965GroundStateHe4,bajdich2006pfaffian}. Now we can see to the rayleigh
-quotient as a loss function \(\mathcal{L}\) with the form of. \[
-\mathcal{L}(\Psi_{\theta})=\frac{\bra{\Psi_{\theta}} \hat{H}\ket{\Psi_{\theta}} }{\braket{ \Psi_{\theta} | \Psi _{\theta}} }=\frac{\int d\mathbf{r}\Psi ^{*}(\mathbf{r})\hat{H}\Psi(\mathbf{r})}{\int d\mathbf{r}\Psi ^{*}(\mathbf{r})\Psi(\mathbf{r})}
-\] Evaluate that integral is hard, another smart approach is the follow,
+quotient as a loss function \(\mathcal{L}\) with the form of.
+
+\begin{equation}
+  \mathcal{L}(\Psi_{\theta})=\frac{\bra{\Psi_{\theta}} \hat{H}\ket{\Psi_{\theta}} }{\braket{ \Psi_{\theta} | \Psi _{\theta}} }=\frac{\int d\mathbf{r}\Psi ^{*}(\mathbf{r})\hat{H}\Psi(\mathbf{r})}{\int d\mathbf{r}\Psi ^{*}(\mathbf{r})\Psi(\mathbf{r})}
+\end{equation}
+
+Evaluate that integral is hard, another smart approach is the follow,
 define a probability distribution \(p_{\theta}\) with the follow form:
-\[
+
+\begin{equation}
 p_{\theta}(x)=\frac{\lvert \Psi_{\theta} (x)\rvert ^{2}}{\int dx'\Psi^{2}_{\theta}(x')}
-\] Realize that for compute \(p_{\theta}(x)\) for a specific \(x\) is
+\end{equation}
+
+Realize that for compute \(p_{\theta}(x)\) for a specific \(x\) is
 complicated due the integral that appears, this is going to be important
-later. Defining the local energy \(E_{L}\) with: \[
+later. Defining the local energy \(E_{L}\) with:
+
+\begin{equation}
 E_{L}(x)=\Psi ^{-1}_{\theta}(x)\hat{H}\Psi_{\theta}(x)
-\] Then the loss becomes: \[
+\end{equation}
+
+Then the loss becomes:
+\begin{equation}
 \mathcal{L}(\Psi_{\theta})=\int \frac{ \hat{H}\Psi_{\theta}(x)}{\Psi_{\theta}(x)}p_{\theta}(x)dx
-\] Which is the expected value of the local energy: \[
+\end{equation}
+
+Which is the expected value of the local energy:
+
+\begin{equation}
 \mathcal{L}(\Psi_{\theta})=\mathbb{E}_{x\sim p_{\theta}}[E_{L}(x)]
-\] To optimize our wave function we know by deep learning that we need
+\end{equation}
+
+
+To optimize our wave function we know by deep learning that we need
 evaluate that expectation and obtain the derivative for back
 propagation, how we make that? We are going to use the the Monte Carlo
-estimator \cite{MetropolisUlam1949}: \[
+estimator \cite{MetropolisUlam1949}:
+\begin{equation}
 \mathcal{L}_{\theta}=\mathbb{E}_{x\sim p_{\theta}}[E_{L}(x)]\approx \frac{1}{M}\sum_{i=1}^{M} E_{L}(\mathbf{R}_{k})
-\] Whit \(\mathbf{R}_{k}\) are samples from the \(p_{\theta}\)
+\end{equation}
+
+Whit \(\mathbf{R}_{k}\) are samples from the \(p_{\theta}\)
 probability distribution. This is \[
 \mathbf{R}_{1},\dots,\mathbf{R}_{M}\sim p_{\theta}(\mathbf{R})
-\] We obtain \(E_{L}\) using: \[
+\] We obtain \(E_{L}\) using:
+
+\begin{equation}
 E_{L}(\mathbf{R}_{k})=\frac{\hat{H}\psi(\mathbf{R}_{k})}{\psi(\mathbf{R}_{k})}=-\frac{1}{2}\frac{\nabla^{2}\psi(\mathbf{R_{k}})}{\psi(\mathbf{R}_{k})}+V(\mathbf{R}_{k})
-\] Calculus tell us that for a any derivable function \(f\). \[
-\frac{\nabla^{2}f}{f}=[\nabla^{2}\log f+(\nabla f)^{2}]
-\]
+\end{equation}
+
+Calculus tell us that for a any derivable function \(f\).
+
+\begin{equation}
+  \frac{\nabla^{2}f}{f}=[\nabla^{2}\log f+(\nabla f)^{2}]
+\end{equation}
+
 In practice is more numerically stable work using that form, thus:
 \begin{align}
-&E_{L}(\mathbf{R}_{k})= \\& -\frac{1}{2}\sum_{i=1}^{N} \sum_{j=1}^{3} \left[ \frac{\partial ^{2} \log \lvert \Psi(x) \rvert }{\partial r_{ij}^{2}}+\left( \frac{\partial \log \lvert \Psi(x) \rvert }{\partial r_{ij}} \right)^{2} \right]+V(\mathbf{R_{k}})
+&E_{L}(\mathbf{R}_{k})= \notag\\& -\frac{1}{2}\sum_{i=1}^{N} \sum_{j=1}^{3} \left[ \frac{\partial ^{2} \log \lvert \Psi(x) \rvert }{\partial r_{ij}^{2}}+\left( \frac{\partial \log \lvert \Psi(x) \rvert }{\partial r_{ij}} \right)^{2} \right]+V(\mathbf{R_{k}})
 \end{align}
+
 The gradient of the energy respect to the parameters by a
 parameterized wave functions is:
-\[
+
+\begin{equation}
 \nabla _{\theta}\mathcal{L}=2\mathbb{E}_{x\sim \Psi^{2}}[(E_{L}(x)-\mathbb{E}_{x'\sim\Psi^{2}}[E_{L}(x')])\nabla \log \lvert \Psi(x) \rvert ]
-\]
+\end{equation}
 
 \subsubsection{Metropolis Hastings Algorithm}
 To obtain samples from the probability distribution \(p_{\theta}\) we are going to use the Metropolis Hasting algorithm (MH) \cite{Metropolis1953Equation} which is a Markov Chain Monte Carlo (MCMC) method used to obtain a sequence of random samples from a probability distribution. The
