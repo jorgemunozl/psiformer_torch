@@ -284,7 +284,7 @@ Electron-nucleus cusp (electron with charge
 
 
 Electron-electron cusp, opposite spins (charges \(-1\), reduced
-mass \(\mu=\frac{1}{2}\)) 
+mass \(\mu=\frac{1}{2}\))
 
 \begin{equation}
 \lim_{ r_{ij}\to 0 } \left( \frac{\partial \psi}{\partial r_{ij}} \right)=\frac{1}{2}\psi(r_{ij}=0)
@@ -386,9 +386,9 @@ quotient as a loss function \(\mathcal{L}\) with the form of.
 
 Evaluate that integral is hard, another smart approach is the follow,
 define a probability distribution \(p_{\theta}\) with the follow form:
-
 \begin{equation}
 p_{\theta}(x)=\frac{\lvert \Psi_{\theta} (x)\rvert ^{2}}{\int dx'\Psi^{2}_{\theta}(x')}
+\label{eq:prop}
 \end{equation}
 
 Realize that for compute \(p_{\theta}(x)\) for a specific \(x\) is
@@ -410,28 +410,20 @@ Which is the expected value of the local energy:
 \mathcal{L}(\Psi_{\theta})=\mathbb{E}_{x\sim p_{\theta}}[E_{L}(x)]
 \end{equation}
 
-
-To optimize our wave function we know by deep learning that we need
-evaluate that expectation and obtain the derivative for back
-propagation, how we make that? We are going to use the the Monte Carlo estimator \cite{MetropolisUlam1949}: \begin{equation}
-\mathcal{L}_{\theta}=\mathbb{E}_{x\sim p_{\theta}}[E_{L}(x)]\approx \frac{1}{M}\sum_{i=1}^{M} E_{L}(\mathbf{R}_{k})
+To optimize our wave function we need to compute the expectation and obtain its derivative for back propagation. We are going to use the Monte Carlo estimator for it. \cite{MetropolisUlam1949}:
+\begin{equation} \mathcal{L}_{\theta}=\mathbb{E}_{x\sim p_{\theta}}[E_{L}(x)]\approx \frac{1}{M}\sum_{i=1}^{M} E_{L}(\mathbf{R}_{k})
 \end{equation}
-
-Whit \(\mathbf{R}_{k}\) are samples from the \(p_{\theta}\)
-probability distribution. This is \[
+Whit \(\mathbf{R}_{k}\) are samples from the \(p_{\theta}\) probability distribution. This is \[
 \mathbf{R}_{1},\dots,\mathbf{R}_{M}\sim p_{\theta}(\mathbf{R})
-\] We obtain \(E_{L}\) using:
-
+\]
+We obtain \(E_{L}(R_k)\) using:
 \begin{equation}
 E_{L}(\mathbf{R}_{k})=\frac{\hat{H}\psi(\mathbf{R}_{k})}{\psi(\mathbf{R}_{k})}=-\frac{1}{2}\frac{\nabla^{2}\psi(\mathbf{R_{k}})}{\psi(\mathbf{R}_{k})}+V(\mathbf{R}_{k})
 \end{equation}
-
 Calculus tell us that for a any derivable function \(f\).
-
 \begin{equation}
   \frac{\nabla^{2}f}{f}=[\nabla^{2}\log f+(\nabla f)^{2}]
 \end{equation}
-
 In practice is more numerically stable work using that form, thus:
 \begin{align}
 &E_{L}(\mathbf{R}_{k})= \notag\\& -\frac{1}{2}\sum_{i=1}^{N} \sum_{j=1}^{3} \left[ \frac{\partial ^{2} \log \lvert \Psi(x) \rvert }{\partial r_{ij}^{2}}+\left( \frac{\partial \log \lvert \Psi(x) \rvert }{\partial r_{ij}} \right)^{2} \right]+V(\mathbf{R_{k}})
@@ -456,13 +448,12 @@ is that MH don't suffer of the \textit{Curse of Dimensionality} \cite{donohocurs
   \textbf{proposal kernel}. In our case we are going to sample from symmetric gaussian.
 \item
   Compute the quantity:
-
-\begin{equation}
+\begin{equation*}
   A(\mathbf{X_{0}}, \mathbf{X}')=\text{min}\left( 1,\frac{\rho(\mathbf{X}')}{\rho(\mathbf{X}_{0})} \frac{q(\mathbf{X}'-\mathbf{X}_{0})}{q(\mathbf{X}_{0}-\mathbf{X}')}\right)
-\end{equation}
+\end{equation*}
 
 Where \(\rho\) is the target distribution (the one we want sample). In
-  the case where \(q\), the proposal kernel is symmetric, this simplifies to: 
+  the case where \(q\), the proposal kernel is symmetric, this simplifies to:
 
 \begin{equation}
   A(\mathbf{X}_{0},\mathbf{X}')=\text{min}\left( 1,\frac{\rho(\mathbf{X})}{\rho(\mathbf{X}_{0})} \right)
@@ -480,7 +471,7 @@ Note that in our case \(\rho\) is equal to \(p_{\theta}\), we said that compute 
   \(\mathbf{X_{1}}=\mathbf{X}'\), otherwise try another \(\mathbf{X}'\).
 \item
   Repeat until obtain \(N_{eq}\) accepted samples, for a large $N_{\text{eq}}$ the changes between samples stabilizes
- (we reach a stationary distribution), this phase is called \textbf{burn in}. 
+ (we reach a stationary distribution), this phase is called \textbf{burn in}.
 \item
   From \(\mathbf{X}_{N_{\text{eq}}}\) generate another \(M\) samples until obtain
   the sample \(\mathbf{X}_{N_{\text{eq}}+M+1}\). In each sample generates \(E_{L}(\mathbf{R}_{k})\) then average to obtain \(\mathbb{E}(E_{L})\).
@@ -499,7 +490,7 @@ A multi layer perceptron (MLP) is a nonlinear mapping from a input patern $\math
   output layer, and the intermediates hidden layers. In each layer we
   find a arbitrary number of neurons although is a good practice always choose number which are powers of two and an affine map
   \(\mathbf{z}^{(l)},l\in \{ L,L-1,\dots,2 \}\) (\(l=1\) is the input
-  layer) of the follow form. 
+  layer) of the follow form.
 
 \begin{equation}
 \mathbf{z}^{(l)}=\mathbf{W}^{(l)}\mathbf{a}^{(l-1)}+\mathbf{b}^{(l)}
@@ -508,97 +499,76 @@ Where \(\mathbf{W}^{(l)}\) called weight matrix and \(\mathbf{b}^{(l)}\) the bia
 \begin{equation}
 f^{(l)}=\sigma ^{(l)}\circ \mathbf{z}^{(l)}
 \end{equation}
-Where \(\circ\) means function composition. A MLP is the composition of all the layers. 
+Where \(\circ\) means function composition. A MLP is the composition of all the layers.
 \begin{equation}
   \mathcal{F}=f^{(L)}\circ f^{(L-1)}\circ\dots \circ f^{(1)}
 \end{equation}
-We call parameters to the set of all the weights and bias of each layer. And represented it with the symbol \(\theta\).
+We call parameters to the set of all the weights and bias of each layer, it's represented it with the symbol \(\theta\).
   \[\{ \mathbf{W}^{(l)},\mathbf{b}^{(l)}\}_{l=2}^{L}=\theta\] You
   typically train a MLP, using a training data set, a loss function (e.g
-  Mean Square Error, Mean Absolute Error, Cross entropy) and an
-  optimizer (e.g GD, SGD, ADAM). Additionally you can use regularization
-  techniques such as dropout to improve the generalization of the Net.
-
+  Mean Square Error, Mean Absolute Error, Cross entropy) and an optimizer (e.g GD, SGD, ADAM). Additionally you can use regularization techniques such as dropout to improve the generalization of the Net. \cite{kingma2017adammethodstochasticoptimization, goodfellowDeepLearning2016, nielsenNeuralNetworksDeep2015, bishop}
 \subsubsection{Natural gradient Descent}\label{natural-gradient-descent}
 
-As we mentioned, there are many ways to update the parameters of a
-neural network: Gradient Descent, Stochastic Gradient Descent,
-Adaptive Moment Estimation (ADAM), etc. All of them
+As mentioned above, there are many ways to update the parameters. All of them
 implicitly assume that the parameter space
 \(\Theta \subset \mathbb{R}^d\) is equipped with the standard Euclidean
 metric, so that ``length'' and ``steepest descent'' are measured with
 respect to \(\|\Delta\theta\|_2\).
 
-In our case the loss \(\mathcal{L}(\theta)\) depends on a probability
-distribution \(p_\theta\), not just on \(\theta\) directly. For example,
-in variational Monte Carlo we take \[
-p_\theta(x)
-= \frac{|\psi_\theta(x)|^2}{\displaystyle \int |\psi_\theta(x')|^2\,dx'} ,
-\] so \(\theta\) parametrizes an entire family of probability densities
+In our case the loss \(\mathcal{L}(\theta)\) depends on a probability distribution \(p_\theta\), not just on \(\theta\) directly. For example, in variational Monte Carlo we work with equation \cref{eq:prop} where \(\theta\) parametrizes an entire family of probability densities
 over configurations \(x\). It is therefore more natural to measure
 distances between \emph{distributions} \(p_\theta\) and
 \(p_{\theta+\Delta\theta}\), rather than between the parameter vectors
 themselves.
 
 A canonical way to measure the distance between nearby probability
-distributions is the Kullback--Leibler (KL) divergence \[
-\mathrm{KL}\big(p_\theta \,\|\, p_{\theta+\Delta\theta}\big)
-= \mathbb{E}_{x\sim p_\theta}\!\left[\log\frac{p_\theta(x)}{p_{\theta+\Delta\theta}(x)}\right].
-\] For small steps \(\Delta\theta\) one can show that a second--order
+distributions is the Kullback--Leibler (KL) divergence \cite{KullbackLeibler1951}.
+\begin{equation}
+\mathrm{KL}\big(p_\theta \,\|\, p_{\theta+\Delta\theta}\big) = \mathbb{E}_{x\sim p_\theta}\!\left[\log\frac{p_\theta(x)}{p_{\theta+\Delta\theta}(x)}\right]
+\end{equation}
+For small steps \(\Delta\theta\) one can show that a second--order
 Taylor expansion of the KL gives \[
 \mathrm{KL}\big(p_\theta \,\|\, p_{\theta+\Delta\theta}\big)
 = \tfrac12\,\Delta\theta^\top \mathcal{F}(\theta)\,\Delta\theta + \mathcal{O}(\|\Delta\theta\|^3),
 \] where \(\mathcal{F}(\theta)\) is the Fisher Information Matrix (FIM) \cite{Fisher1922Foundations}.
 To define it, introduce the \textbf{score function}
-\[
-s_\theta(x) = \nabla_\theta \log p(x\mid \theta) \in \mathbb{R}^d
+_\theta(x) = \nabla_\theta \log p(x\mid \theta) \in \mathbb{R}^d
 \]
 then the FIM is:
-\[
-\mathcal{F}(\theta)
-= \mathbb{E}_{x\sim p(\cdot\mid\theta)}\!\big[\,s_\theta(x)\,s_\theta(x)^{\mathsf T}\big].
-\]
-
-The set of distributions \[
+\begin{equation}
+\mathcal{F}(\theta) = \mathbb{E}_{x\sim p(\cdot\mid\theta)}\!\big[\,s_\theta(x)\,s_\theta(x)^{\mathsf T}\big].
+\end{equation}
+The set of distributions:
+\begin{equation}
 \mathcal{M} = \{\, p_\theta(z)\;|\; \theta \in \Theta \subset \mathbb{R}^d \,\}
-\] can be viewed as a differentiable manifold, and
+\end{equation}
+can be viewed as a differentiable manifold, and
 \(\mathcal{F}(\theta)\) defines a Riemannian metric on its tangent
 space. Concretely, for tangent vectors \(u,v \in \mathbb{R}^d\) at
-\(\theta\) we define the inner product \[
-\langle u,v \rangle_\theta
-= u^{\mathsf T}\,\mathcal{F}(\theta)\,v.
-\] This metric says: two parameter directions are ``close'' if they
-induce similar infinitesimal changes in the \emph{distribution}
-\(p_\theta\).
+\(\theta\) we define the inner product:
+\begin{equation}
+\langle u,v \rangle_\theta = u^{\mathsf T}\,\mathcal{F}(\theta)\,v.
+\end{equation}
+This metric says: two parameter directions are ``close'' if they induce similar infinitesimal changes in the \emph{distribution} \(p_\theta\).
+To obtain the steepest descent direction with this non-Euclidean metric where a variation \(\Delta\theta\) that decreases \(\mathcal{L}(\theta)\) the fastest, among all directions with fixed ``length'' \(\|\Delta\theta\|_\theta^2 = \Delta\theta^\top \mathcal{F}(\theta)\,\Delta\theta\) is necessary resolve a constrained optimization problem. That direction is called \textbf{natural gradient} direction and it takes the form of \cite{Amari1998NaturalGW}:
 
-Now ask the usual steepest--descent question, but with this
-non-Euclidean metric:
-
-Find the direction \(\Delta\theta\) that decreases
-\(\mathcal{L}(\theta)\) the fastest, among all directions with fixed
-``length''
-\(\|\Delta\theta\|_\theta^2 = \Delta\theta^\top \mathcal{F}(\theta)\,\Delta\theta\).
-
-Solving this constrained optimization problem (e.g.~with Lagrange
-multipliers) yields the \textbf{natural gradient} direction \cite{Amari1998NaturalGW}
-\[
+\begin{equation}
 \Delta\theta_{\text{nat}} \;\propto\; -\,\mathcal{F}(\theta)^{-1}\,\nabla_\theta \mathcal{L}(\theta).
-\]
-Thus the natural gradient descent update is \[
-\Delta\theta_{\text{nat}}
-= -\,\eta\,\mathcal{F}(\theta)^{-1}\,\nabla_\theta \mathcal{L}(\theta),
-\] where \(\eta>0\) is a step size. Compared with the usual gradient
+\end{equation}
+Thus the natural gradient descent update is:
+\begin{equation}
+\Delta\theta_{\text{nat}} = -\,\eta\,\mathcal{F}(\theta)^{-1}\,\nabla_\theta \mathcal{L}(\theta)
+\end{equation}
+where \(\eta>0\) is a step size. Compared with the usual gradient
 \(\nabla_\theta \mathcal{L}\), the factor \(\mathcal{F}^{-1}\)
 ``preconditions'' the gradient by the local geometry of the model's
 probability distribution: directions that barely change \(p_\theta\) are
 amplified, directions that change it a lot are damped.
-
 Natural gradient descent is therefore meaningful exactly in the
 situation we care about: when the loss depends on the parameters
 \emph{through} a probability model \(p_\theta\) (e.g.~likelihood,
 cross-entropy, KL, variational objectives, variational Monte Carlo
-energy, etc.).
-
+energy, etc.) \cite{Amari1998NaturalGW}.
 \subsubsection{Kronecker Factored Approximate Curvature}\label{kronecker-factored-approximate-curvature}
 
 Directly computing and inverting the full Fisher matrix
@@ -606,106 +576,71 @@ Directly computing and inverting the full Fisher matrix
 \(\theta\) can have millions of components. Kronecker Factored
 Approximate Curvature (KFAC) \cite{MartensGrosse2015KFAC} is an efficient approximation that makes
 natural gradient updates practical for layered networks.
-
 We sketch the construction for a fully connected layer \(\ell\) with
 weight matrix \(W_\ell\) and (for simplicity) no bias. Bias terms can be
-included by augmenting the activations with a constant \(1\); we comment
-on this below.
+included by augmenting the activations with a constant \(1\); we comment on this below.
 
-\textbf{Forward definition of \(\mathbf{a}_\ell\)}
+We begin with the forward definitions. Let \(\mathbf{a}_\ell\) be the \textbf{input (activation) to layer \(\ell\)}. This is the column vector of activations coming into layer \(\ell\). For the first hidden layer, \(\mathbf{a}_1\) is just the (possibly preprocessed) input. For deeper layers it is the nonlinearity output from the previous layer.
 
-Consider a standard MLP. For a single input sample \(x\), the forward
-pass at layer \(\ell\) is
+The \textbf{pre-activation at layer \(\ell\)} is simply the quantity:
+\begin{equation}
+\mathbf{h}_\ell = W_\ell \,\mathbf{a}_\ell
+\end{equation}
 
-\begin{itemize}
-\item
-  \textbf{Input (activation) to layer \(\ell\)}: \[
-  \mathbf{a}_\ell \in \mathbb{R}^{n_\ell}
-  \] This is the column vector of activations coming into layer
-  \(\ell\). For the first hidden layer, \(\mathbf{a}_1\) is just the
-  (possibly preprocessed) input. For deeper layers it is the
-  nonlinearity output from the previous layer.
-\item
-  \textbf{Pre-activation at layer \(\ell\)}: \[
-  \mathbf{h}_\ell = W_\ell \,\mathbf{a}_\ell,
-  \] where \(W_\ell \in \mathbb{R}^{m_\ell \times n_\ell}\).
-\item
-  \textbf{Output activation of layer \(\ell\)}: \[
-  \tilde{\mathbf{a}}_\ell = \phi(\mathbf{h}_\ell),
-  \] where \(\phi\) is applied element-wise. In many notations
-  \(\tilde{\mathbf{a}}_\ell\) would become the input to the next layer,
-  but to keep notation consistent with the Fisher block for \(W_\ell\),
-  we explicitly distinguish:
+And the \textbf{output activation of layer \(\ell\)}:
 
-  \begin{itemize}
+\begin{equation}
+\tilde{\mathbf{a}}_\ell = \phi(\mathbf{h}_\ell)
+\end{equation}
 
-  \item
-    \(\mathbf{a}_\ell\): input to \(W_\ell\),
-  \item
-    \(\mathbf{h}_\ell\): pre-activation,
-  \item
-    \(\tilde{\mathbf{a}}_\ell\): output activation of layer \(\ell\).
-  \end{itemize}
-\end{itemize}
+where \(\phi\) is applied element-wise. In many notations
+  \(\tilde{\mathbf{a}}_\ell\) would become the input to the next layer, but to keep notation consistent with the Fisher block for \(W_\ell\).
 
-In KFAC, when we talk about \(\mathbf{a}_\ell\) for the Fisher block of
-\(W_\ell\), we always mean ``the vector that \(W_\ell\) multiplies on
-the right''.
-
-\textbf{Backward definition of \(\mathbf{e}_\ell\)}
-
-Let the loss for a single sample be \(\mathcal{L}(\theta)\) (for example,
+Now with the backward definitions.Let the loss for a single sample be \(\mathcal{L}(\theta)\) (for example,
 negative log-likelihood or negative log of the wave-function
 probability). Define the \textbf{backward sensitivity} (or error signal)
-at layer \(\ell\) as \[
-\mathbf{e}_\ell
-= \frac{\partial \mathcal{L}}{\partial \mathbf{h}_\ell} \in \mathbb{R}^{m_\ell}.
-\] This is computed via backpropagation: - At the output layer \(L\): \[
-  \mathbf{e}_L
-  = \frac{\partial \mathcal{L}}{\partial \mathbf{h}_L}
-  = \left(\frac{\partial \mathcal{L}}{\partial \tilde{\mathbf{a}}_L}\right) \odot \phi'(\mathbf{h}_L),
-  \] where \(\odot\) is the element-wise product or also Hadamard
-product. - For hidden layers \(\ell < L\): \[
-  \mathbf{e}_\ell
-  = \frac{\partial \mathcal{L}}{\partial \mathbf{h}_\ell}
-  = \left(W_{\ell+1}^{\mathsf T} \mathbf{e}_{\ell+1}\right) \odot \phi'(\mathbf{h}_\ell).
-\] In the context of natural gradient for probabilistic models,
+at layer \(\ell\) as
+
+\begin{equation}
+\mathbf{e}_\ell = \frac{\partial \mathcal{L}}{\partial \mathbf{h}_\ell} \in \mathbb{R}^{m_\ell}
+\end{equation}
+
+This is computed via backpropagation. At the output layer \(L\):
+
+\begin{equation}
+\mathbf{e}_L = \frac{\partial \mathcal{L}}{\partial \mathbf{h}_L} = \left(\frac{\partial \mathcal{L}}{\partial \tilde{\mathbf{a}}_L}\right) \odot \phi'(\mathbf{h}_L)
+\end{equation}
+where \(\odot\) is the element-wise product or also Hadamard
+product. For hidden layers \(\ell < L\):
+\begin{equation}
+\mathbf{e}_\ell = \frac{\partial \mathcal{L}}{\partial \mathbf{h}_\ell} = \left(W_{\ell+1}^{\mathsf T} \mathbf{e}_{\ell+1}\right) \odot \phi'(\mathbf{h}_\ell)
+\end{equation}
+
+  In the context of natural gradient for probabilistic models,
 \(\mathcal{L}\) is often chosen as \(-\log p(X\mid\theta)\), so up to a
 sign we can also think of \(\mathbf{e}_\ell\) as \[
 \mathbf{e}_\ell = \frac{\partial \log p(X\mid\theta)}{\partial \mathbf{h}_\ell}.
 \]
-
-\textbf{Gradient w.r.t. \(W_\ell\) and the form \(\mathbf{a}_\ell \otimes \mathbf{e}_\ell\)}
-
-
-For a single sample, using the chain rule, \[
-\frac{\partial \mathcal{L}}{\partial W_\ell}
-= \frac{\partial \mathcal{L}}{\partial \mathbf{h}_\ell}
-  \frac{\partial \mathbf{h}_\ell}{\partial W_\ell}
-= \mathbf{e}_\ell\, \mathbf{a}_\ell^{\mathsf T}.
-\]
-
+For a single sample, using the chain rule,
+\begin{equation}
+\frac{\partial \mathcal{L}}{\partial W_\ell} = \frac{\partial \mathcal{L}}{\partial \mathbf{h}_\ell} \frac{\partial \mathbf{h}_\ell}{\partial W_\ell} = \mathbf{e}_\ell\, \mathbf{a}_\ell^{\mathsf T}
+\end{equation}
 If instead of \(\mathcal{L}\) we use \(\log p(X\mid\theta)\) (as in the
-Fisher definition), we get \[
-\frac{\partial \log p(X\mid\theta)}{\partial W_\ell}
-= \mathbf{e}_\ell\, \mathbf{a}_\ell^{\mathsf T},
-\] with
-\(\mathbf{e}_\ell = \partial \log p / \partial \mathbf{h}_\ell\).
-
-Now vectorize the gradient. Using the standard identity \[
+Fisher definition), we get:
+\begin{equation*}
+\frac{\partial \log p(X\mid\theta)}{\partial W_\ell} = \mathbf{e}_\ell\, \mathbf{a}_\ell^{\mathsf T},
+\end{equation*}
+with \(\mathbf{e}_\ell = \partial \log p / \partial \mathbf{h}_\ell\). Now vectorize the gradient. Using the standard identity:
+\begin{equation*}
 \mathrm{vec}(uv^{\mathsf T}) = v \otimes u,
-\] with \(u = \mathbf{e}_\ell\) and \(v = \mathbf{a}_\ell\), we obtain
-\[
+\end{equation*}
+with \(u = \mathbf{e}_\ell\) and \(v = \mathbf{a}_\ell\), we obtain \[
 \frac{\partial \log p(X\mid\theta)}{\partial \mathrm{vec}(W_\ell)}
 = \mathrm{vec}\!\left(\frac{\partial \log p}{\partial W_\ell}\right)
 = \mathrm{vec}(\mathbf{e}_\ell\,\mathbf{a}_\ell^{\mathsf T})
 = \mathbf{a}_\ell \otimes \mathbf{e}_\ell.
 \]
-
 This gives the key structural form used by KFAC.
-
-\textbf{Fisher block for a single layer}
-
 The Fisher block associated with the parameters \(W_\ell\) is \[
 \mathcal{F}_\ell
 = \mathbb{E}_{p(\mathbf{X})}\!\left[
@@ -713,28 +648,22 @@ The Fisher block associated with the parameters \(W_\ell\) is \[
 \frac{\partial \log p(X\mid\theta)}{\partial \mathrm{vec}(W_\ell)}^{\mathsf T}
 \right].
 \]
-
-Plugging in the expression above, \[
-\mathcal{F}_\ell
-= \mathbb{E}_{p(\mathbf{X})}\!\big[
-(\mathbf{a}_\ell \otimes \mathbf{e}_\ell)
-(\mathbf{a}_\ell \otimes \mathbf{e}_\ell)^{\mathsf T}
-\big].
-\]
+Plugging in the expression above,
+\begin{equation}
+\mathcal{F}_\ell = \mathbb{E}_{p(\mathbf{X})}\!\big[ (\mathbf{a}_\ell \otimes \mathbf{e}_\ell) (\mathbf{a}_\ell \otimes \mathbf{e}_\ell)^{\mathsf T} \big].
+\end{equation}
 
 Here \(p(\mathbf{X})\) denotes the distribution over inputs and labels
 (or configurations, in the VMC case). In practice this expectation is
 approximated by averaging over a mini-batch of samples \(X\) and the
 corresponding forward/backward passes that produce \(\mathbf{a}_\ell\)
 and \(\mathbf{e}_\ell\).
-
 Computing and inverting \(\mathcal{F}_\ell\) directly is still
 expensive, because its dimension is \[
 (\text{dim}(\mathbf{a}_\ell)\,\text{dim}(\mathbf{e}_\ell))
 \times
 (\text{dim}(\mathbf{a}_\ell)\,\text{dim}(\mathbf{e}_\ell)).
 \] KFAC makes two key approximations to make this tractable.
-
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}
 \item
@@ -746,25 +675,22 @@ expensive, because its dimension is \[
   \textbf{Kronecker factorization within each layer.}\\
   Inside a layer, KFAC assumes that the correlation between activations
   and errors factorizes:
-
   \begin{align}
   \mathcal{F}_\ell
   =& \mathbb{E}_{p(\mathbf{X})}\!\big[
   (\mathbf{a}_\ell \otimes \mathbf{e}_\ell)
   (\mathbf{a}_\ell \otimes \mathbf{e}_\ell)^{\mathsf T}
   \big]
-  \\=& \mathbb{E}_{p(\mathbf{X})}\!\big[
+ \notag \\=& \mathbb{E}_{p(\mathbf{X})}\!\big[
   (\mathbf{a}_\ell\mathbf{a}_\ell^{\mathsf T}) \otimes
   (\mathbf{e}_\ell\mathbf{e}_\ell^{\mathsf T})
   \big]
-  \\\approx &
+  \notag \\\approx &
   \mathbb{E}_{p(\mathbf{X})}[\mathbf{a}_\ell\mathbf{a}_\ell^{\mathsf T}]
   \;\otimes\;
   \mathbb{E}_{p(\mathbf{X})}[\mathbf{e}_\ell\mathbf{e}_\ell^{\mathsf T}]
   \end{align}
-
 \end{enumerate}
-
 Define the \emph{activation covariance} and \emph{error covariance}: \[
 A_\ell = \mathbb{E}_{p(\mathbf{X})}[\mathbf{a}_\ell\mathbf{a}_\ell^{\mathsf T}],
 \qquad
@@ -786,12 +712,10 @@ The crucial property of the Kronecker product is that \[
 = A_\ell^{-1} \otimes S_\ell^{-1},
 \] so the inverse of the (huge) layer--Fisher block can be obtained by
 inverting the much smaller matrices \(A_\ell\) and \(S_\ell\). Thus the
-natural gradient update for the weights of layer \(\ell\) becomes \[
-\Delta\theta_{\text{nat},\ell}
-\approx -\,\eta\,\big(A_\ell^{-1} \otimes S_\ell^{-1}\big)\,
-\nabla_{\mathrm{vec}(W_\ell)} \mathcal{L}.
-\]
-
+natural gradient update for the weights of layer \(\ell\) becomes
+\begin{equation}
+\Delta\theta_{\text{nat},\ell} \approx -\,\eta\,\big(A_\ell^{-1} \otimes S_\ell^{-1}\big)\, \nabla_{\mathrm{vec}(W_\ell)} \mathcal{L}.
+\end{equation}
 In summary, KFAC replaces the intractable inverse \[
 \mathbb{E}_{p(\mathbf{X})}\big[ (\mathbf{a}_\ell\otimes \mathbf{e}_\ell)
 (\mathbf{a}_\ell\otimes \mathbf{e}_\ell)^{\mathsf T} \big]^{-1}
@@ -799,7 +723,7 @@ In summary, KFAC replaces the intractable inverse \[
 \begin{align}
 \mathcal{F}_{\ell}^{-1} = & \; \mathbb{E}_{p(\mathbf{X})}\big[(\mathbf{a}_\ell\otimes \mathbf{e}_\ell)
 (\mathbf{a}_\ell\otimes \mathbf{e}_\ell)^{\mathsf T}\big]^{-1}
-\\ \approx & \;
+\notag \\ \approx & \;
 \mathbb{E}_{p(\mathbf{X})}[\mathbf{a}_\ell\mathbf{a}_\ell^{\mathsf T}]^{-1}
 \otimes
 \mathbb{E}_{p(\mathbf{X})}[\mathbf{e}_\ell\mathbf{e}_\ell^{\mathsf T}]^{-1}
@@ -813,8 +737,6 @@ biases into \(W_\ell\), or (ii) maintain separate smaller KFAC factors
 for biases; both approaches preserve the same Kronecker structure.
 
 \subsubsection{Self-Attention and Multi-Head Self-Attention}\label{self-attention-and-multi-head-self-attention}
-
-\textbf{Attention Mechanisms}
 The idea of an \emph{attention mechanism} was introduced in neural
 machine translation by Bahdanau et al. @bahdanau2014neural Instead of
 compressing an entire input sequence into a single fixed-size vector,
@@ -864,17 +786,18 @@ introduce three learnable matrices: \[
 \mathbf{W}^Q \in \mathbb{R}^{d \times d_h}, \quad
 \mathbf{W}^K \in \mathbb{R}^{d \times d_h}, \quad
 \mathbf{W}^V \in \mathbb{R}^{d \times d_h}.
-\] We then compute queries, keys, and values:
+\]
+We then compute queries, keys, and values:
 \begin{align}
-    \mathbf{Q} = \mathbf{X} \mathbf{W}^Q \in \mathbb{R}^{T \times d_h}\\
-    \mathbf{K} = \mathbf{X} \mathbf{W}^K \in \mathbb{R}^{T \times d_h}\\
-    \mathbf{V} = \mathbf{X} \mathbf{W}^V \in \mathbb{R}^{T \times d_h}
+\mathbf{Q} = \mathbf{X} \mathbf{W}^Q \in \mathbb{R}^{T \times d_h} \notag \\
+    \mathbf{K} = \mathbf{X} \mathbf{W}^K \in \mathbb{R}^{T \times d_h} \notag \\
+    \mathbf{V} = \mathbf{X} \mathbf{W}^V \in \mathbb{R}^{T \times d_h} \notag
 \end{align}
-
-The \textbf{scaled dot-product self-attention} for this head is: \[
-\text{Attention}(\mathbf{Q}, \mathbf{K}, \mathbf{V})
-= \text{Softmax}\!\left( \frac{\mathbf{Q}\mathbf{K}^\top}{\sqrt{d_h}} \right) \mathbf{V},
-\] where the softmax is applied row-wise. Element-wise, the output at
+The \textbf{scaled dot-product self-attention} for this head is:
+\begin{equation}
+\text{Attention}(\mathbf{Q}, \mathbf{K}, \mathbf{V}) = \text{Softmax}\!\left( \frac{\mathbf{Q}\mathbf{K}^\top}{\sqrt{d_h}} \right) \mathbf{V}
+\end{equation}
+where the softmax is applied row-wise. Element-wise, the output at
 position \(t\) is \[
 \mathbf{o}_t = \sum_{j=1}^{T} \alpha_{tj} \mathbf{v}_j \; \text{with} \
 \alpha_{tj} = \frac{\exp\!\left( \mathbf{q}_t^\top \mathbf{k}_j / \sqrt{d_h} \right)}{\sum_{m=1}^{T} \exp\!\left( \mathbf{q}_t^\top \mathbf{k}_m / \sqrt{d_h} \right)}.
@@ -882,17 +805,12 @@ position \(t\) is \[
 ``looks at'' every other position \(j\) and decides how much to care
 about it}. \
 
-\textbf{Multi-Head Self-Attention}
-
 A single head can only look at interactions in one ``representation
-subspace'' of dimension \(d_h\).\\
-\textbf{Multi-head attention} uses several heads in parallel, each with
-its own projection matrices, so that different types of relationships
-can be captured simultaneously. Let \(n_h\) be the number of heads. For
+subspace'' of dimension \(d_h\).
+\textbf{Multi-head attention} uses several heads in parallel, each with its own projection matrices, so that different types of relationships can be captured simultaneously. Let \(n_h\) be the number of heads. For
 head \(i = 1, \dots, n_h\) we have \[
 \mathbf{W}_i^Q,\, \mathbf{W}_i^K,\, \mathbf{W}_i^V \in \mathbb{R}^{d \times d_h}.
 \]
-
 Head \(i\) computes: \[
 \text{head}_i(\mathbf{X})
 = \text{Attention}(\mathbf{X}\mathbf{W}_i^Q,\, \mathbf{X}\mathbf{W}_i^K,\, \mathbf{X}\mathbf{W}_i^V)
@@ -922,19 +840,19 @@ projection as \[
 \textbf{several different ``channels'' of interaction}: one head might
 focus on short-range relations, another on long-range ones, another on
 some specific pattern (e.g.~symmetry, local structure), and so on.
-
 \subsubsection{Transformer Architecture}\label{transformer-architecture}
 The \textbf{Transformer} was introduced
-with the slogan \emph{``Attention Is All You Need.''} \cite{Vaswani2017}. Its core building block is a \textbf{layer} that combines: 1. \textbf{Multi-head self-attention}\\
-2. \textbf{Position-wise feed-forward network (FFN)} Both sublayers use
-\textbf{residual connections} and \textbf{layer normalization}. For an
-input sequence \(\mathbf{X} \in \mathbb{R}^{T \times d}\) (already
-including positional information), one Transformer layer performs: 3.
-\textbf{Multi-head self-attention sublayer} \[
+with the slogan \emph{``Attention Is All You Need.''} \cite{Vaswani2017}.
+Its core building block is a \textbf{layer} that combines {multi-head self-attention} and {position-wise feed-forward network (FFN)} (Both sublayers use \textbf{residual connections} and \textbf{layer normalization}).
+
+For an input sequence \(\mathbf{X} \in \mathbb{R}^{T \times d}\) (already
+including positional information), one Transformer layer performs:
+ \[
    \mathbf{H} = \text{MHA}(\mathbf{X}), \qquad
    \mathbf{X}^{(1)} = \text{LayerNorm}\!\left( \mathbf{X} + \mathbf{H} \right).
-\] 4. \textbf{Feed-forward sublayer} (applied independently at each
-position) \[
+\]
+The {feed-forward sublayer} makes: (applied independently at each position)
+\[
    \text{FFN}(\mathbf{x}) = \sigma\!\left( \mathbf{x}\mathbf{W}_1 + \mathbf{b}_1 \right)\mathbf{W}_2 + \mathbf{b}_2,
 \] typically with \(\sigma\) a nonlinearity such as ReLU or GELU and an
 intermediate width \(d_{\text{ff}} > d\). At the sequence level:\\
@@ -955,7 +873,7 @@ positional encodings.
 \subsubsection{Why Transformers Instead of RNNs or
 LSTMs?}\label{why-transformers-instead-of-rnns-or-lstms}
 
-Recurrent Neural Networks (RNNs) [cite] and Long Short-Term Memory (LSTM) [cite] networks process the sequence \textbf{sequentially} this is each new state depends on the previous one. This has two important consequences:
+Recurrent Neural Networks (RNNs) \cite{elman1990finding} and Long Short-Term Memory (LSTM) \cite{hochreiter1997long} networks process the sequence \textbf{sequentially} this is each new state depends on the previous one. This has two important consequences:
 1. Information must flow through many time steps, which can lead to vanishing or exploding gradients and makes it hard to model very
 long-range interactions. 2. Poor parallelization because each step
 depends on the previous one, you cannot compute all time steps in
@@ -963,68 +881,30 @@ parallel. Training and inference are inherently sequential. Transformers
 address both issues: - Global interactions in one step, self-attention
 allows every position to directly interact with every other position in
 a \emph{single} layer, which is ideal when we care about
-\emph{all-to-all} correlations (as in many-electron systems, where each
+\emph{all-to-all} correlations \cite{Vaswani2017} (as in many-electron systems, where each
 electron ``feels'' all the others). - Full parallelism over sequence
 length. Given \(\mathbf{X}\), the matrices \(\mathbf{Q}\),
 \(\mathbf{K}\), \(\mathbf{V}\) and the attention outputs for all time
 steps are computed via matrix multiplications. This is extremely
-efficient on modern accelerators (GPUs/TPUs). For a many-electron
+efficient on modern accelerators (GPUs/TPUs) \cite{kaplan2020scalinglawsneurallanguage}. For a many-electron
 Schrödinger equation, the wave function depends on the joint
 configuration of all particles. A Transformer-based ansatz naturally
 provides a way for each electron's representation to \textbf{look at all
 other electrons} and the nuclei, capturing complex correlation patterns
 through attention, while remaining highly parallelizable.
 
-A very important work for us is FermiNet (Pfau et al.~2020). It uses
-deep neural networks to represent \textbf{orbitals} and then combines
-them into a sum of Slater determinants. At the top level, the ansatz is
-a linear combination of \(K\) determinant products \[
-\psi(\mathbf{x}_1,\dots,\mathbf{x}_n)
-= \sum_{k=1}^K \omega_k \,\det[\Phi^{k}],
-\] where \(\omega_k\) are learnable coefficients and \(\Phi^k\) is a
-matrix of single-particle orbitals. For a system without explicit spin
-separation one can write \[
-\det[\Phi^k] =
-\begin{vmatrix}
-\phi_{1}^{k}(\mathbf{x}_{1})  & \dots  &  \phi_{1}^{k}(\mathbf{x}_{n}) \\
-\vdots   &  & \vdots  \\
-\phi_{n}^{k}(\mathbf{x}_{1}) & \dots & \phi_{n}^{k}(\mathbf{x}_{n})
-\end{vmatrix}
-= \det[\phi_i^k(\mathbf{x}_j)].
-\] Here \(\phi_i^k\) is the \(i\)-th orbital in determinant \(k\), and
-we evaluate it on the coordinates of electron \(j\).
-
-However, in FermiNet we are dealing with electrons with spin, so things
-are slightly more structured, and the orbitals depend on \textbf{all}
-electron coordinates, not only on the one being ``plugged in''. That is
-why we write the orbitals as \[
-\phi^{k\alpha}_i\big(\mathbf{r}^\alpha_j;\{\mathbf{r}^\alpha_{/j}\};\{\mathbf{r}^{\bar{\alpha}}\}\big),
-\] where: - \(\alpha \in \{\uparrow,\downarrow\}\) is the spin sector, -
-\(\mathbf{r}^\alpha_j\) is the position of electron \(j\) with spin
-\(\alpha\), - \(\{\mathbf{r}^\alpha_{/j}\}\) denotes the positions of
-all \textbf{other} electrons with spin \(\alpha\), -
-\(\{\mathbf{r}^{\bar{\alpha}}\}\) denotes the positions of electrons
-with the opposite spin.
-
-So the orbital evaluated on electron \(j\) ``knows'' about all other
-electrons. The indices: - \(i\) = orbital index (row of the
-determinant), - \(j\) = electron index (column of the determinant), -
-\(\alpha,\beta\) = spin labels (\(\uparrow\) or \(\downarrow\)), - \(k\)
-= determinant index in the sum.
-
-
-
 \section{Psi Former Model}\label{psi-former-model}
 
 \subsection{Fermi Net}\label{fermi-net}
 
-A very important work for us is FermiNet (Pfau et al.~2020). It uses
+A very important work for us is FermiNet \cite{Pfau_2020}. It uses
 deep neural networks to represent \textbf{orbitals} and then combines
 them into a sum of Slater determinants. At the top level, the ansatz is
-a linear combination of \(K\) determinant products \[
-\psi(\mathbf{x}_1,\dots,\mathbf{x}_n)
-= \sum_{k=1}^K \omega_k \,\det[\Phi^{k}],
-\] where \(\omega_k\) are learnable coefficients and \(\Phi^k\) is a
+a linear combination of \(K\) determinant products
+\begin{equation}
+\psi(\mathbf{x}_1,\dots,\mathbf{x}_n) = \sum_{k=1}^K \omega_k \,\det[\Phi^{k}],
+\end{equation}
+where \(\omega_k\) are learnable coefficients and \(\Phi^k\) is a
 matrix of single-particle orbitals. For a system without explicit spin
 separation one can write \[
 \det[\Phi^k] =
@@ -1050,23 +930,15 @@ all \textbf{other} electrons with spin \(\alpha\), -
 with the opposite spin.
 
 So the orbital evaluated on electron \(j\) ``knows'' about all other
-electrons. The indices: - \(i\) = orbital index (row of the
-determinant), - \(j\) = electron index (column of the determinant), -
-\(\alpha,\beta\) = spin labels (\(\uparrow\) or \(\downarrow\)), - \(k\)
-= determinant index in the sum.
-
+electrons. The index \(i\) correspond to orbital index (row of the determinant), \(j\) to electron index (column of the determinant), \(\alpha,\beta\) to spin labels (\(\uparrow\) or \(\downarrow\)) and \(k\) to determinant index in the sum.
 \subsubsection{Input coordinates and
 features}\label{input-coordinates-and-features-1}
-
-We denote by -
-\(\mathbf{r}^\uparrow_1,\dots,\mathbf{r}^\uparrow_{n^\uparrow}\) the
-coordinates of spin-up electrons, -
+We denote by \(\mathbf{r}^\uparrow_1,\dots,\mathbf{r}^\uparrow_{n^\uparrow}\) the
+coordinates of spin-up electrons,
 \(\mathbf{r}^\downarrow_1,\dots,\mathbf{r}^\downarrow_{n^\downarrow}\)
-the coordinates of spin-down electrons, - \(\mathbf{R}_I\) the positions
+the coordinates of spin-down electrons, \(\mathbf{R}_I\) the positions
 of nuclei, \(I=1,\dots,N_\text{nuc}\).
-
 The network builds two types of features:
-
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}
 \item
@@ -1097,7 +969,7 @@ The network builds two types of features:
 
 The superscript \(0\) indicates that these are the features at layer
 \(\ell=0\) (input to the deep network). At deeper layers we will keep
-updating - \(\mathbf{h}^{\ell\alpha}_i\) (single-electron features), -
+updating  \(\mathbf{h}^{\ell\alpha}_i\) (single-electron features),
 \(\mathbf{h}^{\ell\alpha\beta}_{ij}\) (pairwise features), for
 \(\ell = 0,1,\dots,L-1\).
 
@@ -1137,16 +1009,16 @@ vector for electron \((i,\alpha)\):
 \frac{1}{n^\uparrow}\sum_{j=1}^{n^\uparrow}\mathbf{h}^{\ell\alpha\uparrow}_{ij},
 \frac{1}{n^\downarrow}\sum_{j=1}^{n^\downarrow}\mathbf{h}^{\ell\alpha\downarrow}_{ij}
 \big)
-\\=&
+\notag\\=&
 \big(\mathbf{h}^{\ell\alpha}_i, \mathbf{g}^{\ell\uparrow}, \mathbf{g}^{\ell\downarrow},
-\mathbf{g}^{\ell\alpha\uparrow}_i, \mathbf{g}^{\ell\alpha\downarrow}_i \big)  = \mathbf{f}^{\ell\alpha}_i.
+\mathbf{g}^{\ell\alpha\uparrow}_i, \mathbf{g}^{\ell\alpha\downarrow}_i \big)  = \mathbf{f}^{\ell\alpha}_i \notag
 \end{align}
 
 
 This \(\mathbf{f}^{\ell\alpha}_i\) is what enters the
 \textbf{single-electron MLP} at layer \(\ell\). The update is \[
 \mathbf{h}^{\ell+1,\alpha}_i
-= \tanh\big(\mathbf{V}^\ell \mathbf{f}^{\ell\alpha}_i + \mathbf{b}^\ell\big) + \mathbf{h}^{\ell\alpha}_i,
+= \tanh\big(\mathbf{V}^\ell \mathbf{f}^{\ell\alpha}_i + \mathbf{b}^\ell\big) + \mathbf{h}^{\ell\alpha}_i
 \] where \(\mathbf{V}^\ell\) and \(\mathbf{b}^\ell\) are learnable
 weights and biases, shared between electrons (for the given spin
 sector). The residual connection \(+\mathbf{h}^{\ell\alpha}_i\)
@@ -1163,9 +1035,9 @@ again shared over all pairs \((i,j,\alpha,\beta)\).
 By repeating these updates for \(\ell = 0,\dots,L-1\), we eventually
 obtain \textbf{final single-electron features} \[
 \mathbf{h}^{L\alpha}_j \quad \text{for each electron } j \text{ of spin } \alpha.
-\] Notice how the indices work: - \(\ell\) runs over layers and
-disappears at the end, - \(i\) or \(j\) always refer to a specific
-electron within a spin sector, - \(\alpha,\beta\) tell you which spin
+\] Notice how the indices work:  \(\ell\) runs over layers and
+disappears at the end, \(i\) or \(j\) always refer to a specific
+electron within a spin sector, \(\alpha,\beta\) tell you which spin
 sector that electron belongs to.
 
 \subsubsection{From final features to
@@ -1186,16 +1058,16 @@ electron \(j\) we define
 \Big)
 \end{aligned}
 \]
-Here: - \(\mathbf{w}^{k\alpha}_i\) and \(g^{k\alpha}_i\) are
-learnable linear parameters for the ``MLP part'' of the orbital, - the
-sum over \(m\) is an ``envelope'' over nuclei (or centers), -
+Here  \(\mathbf{w}^{k\alpha}_i\) and \(g^{k\alpha}_i\) are
+learnable linear parameters for the ``MLP part'' of the orbital, the
+sum over \(m\) is an ``envelope'' over nuclei (or centers),
 \(\pi^{k\alpha}_{im}\) and \(\mathbf{\Sigma}^{k\alpha}_{im}\) are
 learnable coefficients and matrices controlling the exponential decay
 around nucleus \(m\).
 
-All these parameters depend on the indices: - \(k\) selects which
-determinant in the sum, - \(i\) selects which orbital (row in the
-determinant), - \(\alpha\) selects the spin sector, - \(m\) selects
+All these parameters depend on the indices: \(k\) selects which
+determinant in the sum, \(i\) selects which orbital (row in the
+determinant), \(\alpha\) selects the spin sector, \(m\) selects
 which nuclear center in the envelope.
 
 The dependence on all other electrons is hidden inside
@@ -1211,7 +1083,7 @@ For each determinant index \(k\) and spin sector
 \(\alpha\in\{\uparrow,\downarrow\}\), we build a matrix \[
 D^{k\alpha}_{ij}
 = \phi^{k\alpha}_i\big( \mathbf{r}^\alpha_j; \{\mathbf{r}^\alpha_{/j}\}; \{\mathbf{r}^{\bar{\alpha}}\}\big),
-\] with: - rows indexed by the orbital label \(i = 1,\dots,n^\alpha\), -
+\] with rows indexed by the orbital label \(i = 1,\dots,n^\alpha\),
 columns indexed by the electron label \(j = 1,\dots,n^\alpha\) (with
 that spin).
 
@@ -1225,7 +1097,7 @@ For the full wavefunction, we combine spin-up and spin-down blocks:
 \begin{align}
 \psi(\mathbf{r}^\uparrow_1,\ldots,\mathbf{r}^\uparrow_{n^\uparrow},
      \mathbf{r}^\downarrow_1,\ldots,\mathbf{r}^\downarrow_{n^\downarrow})
-=\ \sum_{k} \omega_k det[D]det[D]
+=\ \sum_{k} \omega_k [{D}^{k\downarrow}][{D}^{k\uparrow}]
 \end{align}
 We have don't explained why we can write the determinant as that
 product. In electronic structure, when we separate spin and spatial
@@ -1239,9 +1111,9 @@ electrons \textbf{with the same spin}. The overall wavefunction
 constructed as the product of a spin-up determinant and a spin-down
 determinant is antisymmetric under exchange of any two electrons (when you take into account the spin labels). FermiNet keeps this structure and lets each block be represented by a powerful neural network ansatz for the orbitals.
 Up to this point the building blocks are just MLP layers (with residual
-connections and special feature mixing), but the careful indexing -
-\((i,\alpha)\) for ``which electron/spin'', - \(j\) for summation over
-electrons, - \(\ell\) for layers, - \(k\) for determinant index, is what
+connections and special feature mixing), but the careful indexing,
+\((i,\alpha)\) for ``which electron/spin'', \(j\) for summation over
+electrons, \(\ell\) for layers, \(k\) for determinant index, is what
 guarantees that the final object has the correct permutation symmetry
 and antisymmetry required for a fermionic wavefunction.
 
@@ -1257,52 +1129,30 @@ and antisymmetry required for a fermionic wavefunction.
 
 \subsubsection{Jastrow Factor for Psi
 Former}\label{jastrow-factor-for-psi-former}
-[cite self attention]
+The Psiformer wavefunction has the usual Slater-Jastrow ansatz  \cite{foulkes2001quantum}:
 
-The Psiformer wavefunction has the usual Slater-Jastrow Ansatz  \cite{foulkes2001quantum}:
-\[
-\Psi_{\theta}(\mathbf{x})
-=
-\exp\big(\mathcal{J}_{\theta}(\mathbf{x})\big)\,
-\sum_{k=1}^{N_{\det}}\det[\boldsymbol{\Phi}^{k}_{\theta}(\mathbf{x})],
-\] where \(\mathbf{x} = (x_1,\dots,x_N)\) is the collection of all \(N\)
-electron states \[
-x_i = (\mathbf{r}_i,\sigma_i), \qquad \mathbf{r}_i \in \mathbb{R}^3,\;\sigma_i \in \{\uparrow,\downarrow\}.
-\]
-
-\begin{itemize}
-\item
-  \(\mathcal{J}_\theta:(\mathbb{R}^{3}\times \{\uparrow,\downarrow\})^{N}\to \mathbb{R}\)
+\begin{equation}
+\Psi_{\theta}(\mathbf{x}) = \exp\big(\mathcal{J}_{\theta}(\mathbf{x})\big)\sum_{k=1}^{N_{\det}}\det[\boldsymbol{\Phi}^{k}_{\theta}(\mathbf{x})]
+\end{equation}
+where \(\mathbf{x} = (x_1,\dots,x_N)\) is the collection of all \(N\)
+electron states $x_i = (\mathbf{r}_i,\sigma_i), \mathbf{r}_i \in \mathbb{R}^3,\;\sigma_i \in \{\uparrow,\downarrow\}$,
+\(\mathcal{J}_\theta:(\mathbb{R}^{3}\times \{\uparrow,\downarrow\})^{N}\to \mathbb{R}\)
   is the \textbf{Jastrow factor}, encoding (here) only
-  electron--electron cusp information.
-\item
-  \(\boldsymbol{\Phi}^k_\theta\) is the matrix of (spin-)orbitals for
-  determinant \(k\).
-\end{itemize}
-
+  electron--electron cusp information. And \(\boldsymbol{\Phi}^k_\theta\) is the matrix of (spin-)orbitals for determinant \(k\).
 In Psiformer, the Jastrow factor is \emph{very} simple: it has only two
 learnable parameters, one for parallel-spin pairs and one for
 antiparallel-spin pairs:
-
 \begin{align}
 \mathcal{J}_{\theta}(\mathbf{x})
 =
 \sum_{i<j;\,\sigma_{i}=\sigma_{j}}
 -\frac{1}{4}\frac{\alpha^{2}_{\mathrm{par}}}{\alpha_{\mathrm{par}}+\lvert \mathbf{r}_{i}-\mathbf{r}_{j} \rvert }
-+ \\
++ \notag \\
 \sum_{i,j;\,\sigma_{i}\neq \sigma_{j}}
 -\frac{1}{2}\frac{\alpha^{2}_{\mathrm{anti}}}{\alpha_{\mathrm{anti}}+\lvert \mathbf{r}_{i}-\mathbf{r}_{j} \rvert }.
 \end{align}
-
-\begin{itemize}
-
-\item
-  \(\alpha_{\mathrm{par}}\) controls the strength of the Jastrow for
-  \textbf{same-spin} electron pairs.
-\item
-  \(\alpha_{\mathrm{anti}}\) does the same for \textbf{opposite-spin}
+Where \(\alpha_{\mathrm{par}}\) controls the strength of the Jastrow for \textbf{same-spin} electron pairs and \(\alpha_{\mathrm{anti}}\) does the same for \textbf{opposite-spin}
   pairs.
-\end{itemize}
 
 This Jastrow is responsible for enforcing the electron--electron cusp
 conditions. The neural network itself (the Psiformer) only sees
@@ -1312,57 +1162,16 @@ explicit \(|\mathbf{r}_i-\mathbf{r}_j|\) dependence lives in
 
 
 Conceptually, Psiformer is ``FermiNet with the two-electron stream
-replaced by self-attention'', we can see it clearly doing.
-
-\begin{itemize}
-\item
-  FermiNet: separate one-electron and two-electron feature streams, then
-  mix.
-\item
-  Psiformer: a \textbf{single stream} of self-attention layers on
-  electron--nuclear features only; electron--electron features enter
-  only via the Jastrow.
-\end{itemize}
-
-We now explain the indices and equations carefully.
-
-\textbf{Indices}
-
-We will use:
-
-\begin{itemize}
-\item
-  \(i,j = 1,\dots,N\): electron indices.
-\item
-  \(I = 1,\dots,N_{\text{nuc}}\): nucleus index.
-\item
-  \(\sigma_i \in \{\uparrow,\downarrow\}\): spin of electron \(i\).
-\item
-  \(\ell = 0,\dots,L-1\): layer index in the Psiformer.
-\item
-  \(h = 1,\dots,H\): attention head index.
-\item
-  \(k = 1,\dots,N_{\det}\): determinant index.
-\item
-  \(d\): hidden dimension of the per-electron feature vectors. So at
-  each layer \(\ell\), each electron \(i\) carries a feature (hidden
-  state) \[
-  \mathbf{h}_i^{\ell} \in \mathbb{R}^{d}.
-  \]
-\end{itemize}
-
-Input features and initial hidden states
-
-Psiformer only uses \textbf{electron--nuclear} features (plus spin) as
+replaced by self-attention''. It only uses \textbf{electron--nuclear} features (plus spin) as
 input to the attention stack. For each electron \(i\): 1. Let
 \(\mathbf{R}_I\) be nuclear positions. 2. Build raw features by
-concatenating for all \(I\): - some function of
-\(\mathbf{r}_i - \mathbf{R}_I\) (relative position), -
-\(|\mathbf{r}_i - \mathbf{R}_I|\) (distance), - and the spin as a scalar
+concatenating for all \(I\):  some function of
+\(\mathbf{r}_i  \mathbf{R}_I\) (relative position), 
+\(|\mathbf{r}_i - \mathbf{R}_I|\) (distance),  and the spin as a scalar
 (e.g.~\(\sigma_i = +1\) for \(\uparrow\), \(-1\) for \(\downarrow\)).
 
 In the paper they rescale the electron--nucleus vectors so that large
-distances grow only logarithmically, but at the level of notation we can
+distances grow only logarithmically \cite{vonglehn2023selfattentionansatzabinitioquantum}, but at the level of notation we can
 just write \[
 \mathbf{f}_i^{0} \in \mathbb{R}^{d_{\text{in}}}
 \quad\text{(electron–nucleus features + spin)}.
@@ -1370,10 +1179,8 @@ just write \[
 layer \[
 \mathbf{h}_{i}^{0} = \mathbf{W}^{0}\,\mathbf{f}_{i}^{0},
 \] where \(\mathbf{W}^0 \in \mathbb{R}^{d \times d_{\text{in}}}\) is
-learned. So: - index \(i\) is ``which electron'', - superscript \(0\)
+learned. So:  index \(i\) is ``which electron'',  superscript \(0\)
 means ``before any attention layers.''
-
-\textbf{One self-attention layer}
 
 At layer \(\ell\), we have all electron hidden states \[
 \mathbf{h}_1^{\ell},\dots,\mathbf{h}_N^{\ell}.
