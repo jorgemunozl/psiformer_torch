@@ -36,90 +36,51 @@
 
   \begin{abstract}
     With accurate solutions to the many-electron Schrodinger equation all
-the chemistry could be derived from first principles, but analytical
-treatment is intractable due the intrinsic strong electron-electron
-correlations, anti symmetry and cusp behavior. Recently, due to its high
-flexibility deep learning approaches had been applied for this problem,
-neural wave function models such as FermiNet and PauliNet are two good
-examples, these have advanced accuracy, yet computational cost and error
-typically grows steeply with system size, limiting applicability to
+the chemistry could be derived from first principles, but analytical treatment is intractable due the intrinsic strong electron-electron correlations, anti symmetry and cusp behavior. Recently, due to its high flexibility deep learning approaches had been applied for this problem, neural wave functions models such as FermiNet and PauliNet have advanced accuracy, yet computational cost and error typically grows steeply with system size, limiting applicability to
 larger molecules. They also lack of strong architectures designed to
 capture long-range electronic correlations with scalable attention. In
 this work I develop the Psiformer a transformer-based ansatz that
 couples scalable attention with physics-aware structure. Training is
 formulated within Variational Monte Carlo (VMC), evaluation will be do
-it by comparing against another traditional methods, I also outline
-design questions for further improvement, including sparsified/global
+it by comparing ground state energy against another traditional methods, I also outline design questions for further improvement, including sparsified/global
 attention and optimizer choices inspired by recent transformer advances.
-  \end{abstract}
+\end{abstract}
 
-  \vspace{1em} % a bit of vertical space before the columns start
+\vspace{1em} % a bit of vertical space before the columns start
 \end{@twocolumnfalse}
 ]
 
-
 \section{Introduction}
 
-The electronic structure problem remains challenging: the wave functions
-which describes fully the systems lives in a \(3N\)-dimensional space
-(\(N\) number of electrons, each one lives on the 3 dimensional space,
-interesting molecules have around 10 electrons), additionally it must
-satisfy certain properties due to physical laws plus that the solutions
-lives on the complex space.
+The electronic structure problem remains challenging: the wave functions which fully describes the system lives in a \(3N\)-dimensional space where \(N\) is the number of electrons, each particle lives on the 3 dimensional space, molecules of interest for laboratory applications has around 10 atoms. Additionally, it must satisfy specific properties due to physical laws and live on the complex space.
 
-Although the governing laws have been known for a century---see Schrödinger's formulation of wave mechanics \cite{Schrodinger1926_undulatory} obtaining practical approximations to the quantum many-body
-wavefunction remains difficult. Established approaches such as
-density-functional theory , the Born--Oppenheimer separation \cite{BornOppenheimer1927}, and
-structured variational ansätze trade generality for tractability by
+Although the governing laws have been known for almost a century \cite{Schrodinger1926_undulatory}, obtaining practical approximations to the quantum many-body wavefunction remains difficult. Established approaches such as density-functional theory \cite{KohnSham1965}, Born Oppenheimer \cite{BornOppenheimer1927}, and structured variational ansätze \cite{McMillan1965GroundStateHe4} trade generality for tractability by
 imposing specific functional forms or approximations to correlation.
-These choices are effective within their regimes but can struggle for
-strongly correlated systems or scale poorly with electron count. This is
-where modern learning-based methods enter: instead of fixing the
-functional form, we learn it, while enforcing essential physics
-(antisymmetry, cusp behavior, permutation symmetry).
+These choices are effective within their regimes but can struggle for strongly correlated systems or scale poorly with electron count cite. This is where modern learning-based methods enter: instead of fixing the functional form, we learn it, while enforcing essential physics (antisymmetry, cusp behavior, permutation symmetry), here is where deep learning methods shines. This field has reshaped several scientific domains, from protein structure prediction \cite{jumper2021highly} to vision modeling \cite{dosovitskiy2021imageworth16x16words} and PDE surrogates \cite{RAISSI2019686}.
+Motivated by these successes, the community has explored neural approaches for quantum many-body problems ,seeking accurate and scalable approximations to the many-electron wavefunction \cite{Luo_2019,Qiao_2020}.
 
-Deep learning has reshaped several scientific domains, from protein
-structure prediction \cite{jumper2021highly} to vision modeling \cite{dosovitskiy2021imageworth16x16words} and PDE surrogates \cite{RAISSI2019686}.
-Motivated by these successes, the community has explored neural
-approaches for quantum many-body problems , seeking accurate and scalable
-approximations to the many-electron wavefunction.
-
-Thus neural wavefunction models have emerged as a promising alternative.
-Architectures such as \textbf{FermiNet} \cite{Pfau_2020} and \textbf{PauliNet} \cite{} combine flexible function approximators with determinant structures to respect
-antisymmetry, improving variational expressivity. However, two practical
-limitations persist. First, error or compute cost often scales
-unfavorably with the number of electrons, restricting applicability to
+Thus, neural wavefunction models have emerged as a promising alternative. Architectures such as \textbf{FermiNet} \cite{Pfau_2020} and \textbf{PauliNet} \cite{Hermann_2020} combine flexible function approximators with determinant structures to respect antisymmetry, improving variational expressivity. However, two practical limitations persist. First, error or compute cost often scales unfavorably with the number of electrons, restricting applicability to
 larger molecules. Second, mechanisms for \textbf{long-range electronic
-correlation}---central to Coulomb and exchange effects---are typically
-implicit or expensive to capture, leading to optimization difficulty and
+correlation} central to Coulomb and exchange effects are typically implicit or expensive to capture, leading to optimization difficulty and
 brittle generalization.
 
 Transformers offer an appealing direction. Self-attention provides
-direct, many-to-many interactions among tokens in a single layer, is
-highly parallelizable, and has empirically favorable scaling behavior in
-other domains (Natural Language Processing) . For electronic structure,
-where any electron can interact with any other and electron indices are
-exchangeable, attention aligns naturally with the physics: it enables
-global coupling without imposing an arbitrary ordering. The challenge is
-to embed the right \textbf{inductive biases} (distance awareness, spin
-structure, cusp handling) and to maintain \textbf{fermionic
-antisymmetry} while keeping computational cost under control.
+direct, many-to-many interactions among tokens in a single layer, is highly parallelizable, and has empirically favorable scaling behavior in other domains (Natural Language Processing \cite{Vaswani2017}. For electronic structure, where any electron can interact with any other and electron indices are exchangeable, attention aligns naturally with the physics: it enables global coupling without imposing an arbitrary ordering. The challenge is
+to embed the right \textbf{inductive biases} (distance awareness, spin structure, cusp handling) and to maintain \textbf{fermionic antisymmetry} while keeping computational cost under control.
 
-I develop \textbf{Psiformer}, a transformer-based variational ansatz for
-many-electron systems. Psiformer uses self-attention to construct rich
+I develop \textbf{Psiformer} \cite{vonglehn2023selfattentionansatzabinitioquantum}, a transformer-based variational ansatz for
+many-electron systems \cite{vonglehn2023selfattentionansatzabinitioquantum}. Psiformer uses self-attention to construct rich
 per-electron features informed by electron--electron and
 electron--nucleus descriptors, then imposes antisymmetry explicitly via
 determinant-based heads. Physics-aware priors (e.g., distance/radial
 encodings and cusp-motivated embeddings) are incorporated to reduce
-sample complexity and stabilize training. The optimization is formulated
-within \textbf{Variational Monte Carlo (VMC)} by minimizing the
-variational energy.
+sample complexity and stabilize training. The optimization is formulated within \textbf{Variational Monte Carlo (VMC)} by minimizing the variational energy.
 
 \textbf{Contributions.} 
 
 \begin{itemize}
-    \item A transformer-based neural wavefunction (\textbf{Psiformer}) that separates correlation modeling (attention) from fermionic symmetry (determinant heads) while embedding Coulomb-aware priors. 
-    \item A VMC training recipe with practical choices for stability (feature design, damping, and optional natural-gradient preconditioning).
+    \item A transformer-based neural wavefunction (\textbf{Psiformer}) \cite{vonglehn2023selfattentionansatzabinitioquantum} implemented on Pytorch \cite{Paszke2019PyTorch} that separates correlation modeling (attention) from fermionic symmetry (determinant heads) while embedding Coulomb-aware priors. 
+    \item A VMC training recipe with practical choices for stability (feature design, and optional natural-gradient preconditioning).
 \end{itemize}
 
 The objectives are the follow: 
@@ -127,50 +88,44 @@ The objectives are the follow:
 \section{Objectives}
 \begin{itemize}
 \item
-  Obtain a model which is able to approximate the ground state state
-  energy of the carbon atom.
+  Obtain a model which is able to approximate the ground state energy for certain atoms and molecules.
 \item
   Compare our model with another state of the art methods to solve the
-  many electrons Schrodinger equation respect the ground state energy.
+  many electrons Schrodinger equation.
 \item
   Look for future improvements when try to tackle larger molecules. 
 \end{itemize}
 
 \section{Overview}
 
-This work is structured as follow: The theoretical framework \cref{sec:theo} introduces
-the foundations of quantum many-body theory, the structure of the
+This work is structured as follow: The theoretical framework \cref{sec:theo} introduces the foundations of quantum many-body theory, the structure of the
 Schrodinger equation for many-bodies like also foundational concepts of
 Deep Learning that are going to be used in the development of this
-specific problem.
-
-Section  introduce \textbf{Psi Former} a transformer based
-architecture built upon \textbf{Fermi Net}. Section  talk
-about the Methodology which is going to be used to implement this work.
+specific problem, \cref{psi-former-model}  introduce \textbf{Psi Former} a transformer based architecture built upon \textbf{Fermi Net}, \cref{methodology} specify the specific tools and environments used to implement this work.
 
 \section{Theoretical Framework}\label{sec:theo}
 
-The concepts presented in this section provides the physical and
-mathematical background for our specific problem, introduces the physics
-of the wave function like also the necessary deep learning concepts.
+In this section, we develop the physical and mathematical foundation needed to understand the problem we study. We begin with the Schrödinger wave equation, which is central to non-relativistic quantum mechanics, later
 
-\subsection{The physics law behind the solution}
+\subsection{The wave function}
 
-All the physics and methods related necessary. 
+The Schrödinger equation describes how the quantum state of a physical system evolves in time. It arises from combining wave-particle duality (de Broglie hypothesis) with classical energy conservation, translated into operator form.
+
+The concepts presented in this section provides the physical and mathematical background for our specific problem.
 
 \subsubsection{The Schrodinger Equation}
 
 The Schrodinger equation was presented in a series of publications made
-it by Erwin Schrodinger in the year 1926. There we search the complex
+it by Erwin Schrodinger in the year 1926 \cite{Schrodinger1926_undulatory}. There we search the complex
 function \(\psi\) which lives on a Hilbert space \(\mathcal{H}\) called
 \textbf{wave function}, for a non relativistic spinless single particle
 this function depends on the position of the particle
 \(\mathbf{\vec{r}}\) and time \(t\) \((\psi(\mathbf{\vec{r}},t))\), the
 quantity \(\lvert \psi (\mathbf{r},t)\rvert^{2}\) is the
 \textbf{probability density} to find the particle near \(\mathbf{r}\) at
-time \(t\).
+time \(t\) \cite{Bohr1928Nature}.
 
-Guided by de Broglie's discover [cite] of the wave particle duality and a very smart intuition Schrodinger proposed the time dependent equation (TDSE):
+Guided by de Broglie's discover \cite{deBroglie1924thesis} of the wave particle duality and a very smart intuition Schrodinger proposed the time dependent equation (TDSE):
 \[ i\hbar \frac{\partial \psi}{\partial t}=\hat{H}\psi \] Where \(i\) is
 the complex unit, \(\hbar\) is the Reduced Planck Constant [cite] approximate to \(1.054571817\dots \times 10^{-34} J\cdot s\) and \(\hat{H}\) is a Hermitian linear operator called the
 \textbf{Hamiltonian} which represents the total energy of the system,
@@ -265,12 +220,11 @@ physical laws.
 
 Bosons (e.g., photons) follow \textbf{Bose--Einstein} statistics, whereas fermions (e.g., electrons, protons) follow \textbf{Fermi Dirac} statistics \cite{Fermi1926Quantelung, Dirac1926TheoryQM}, because at the microscopic level identical particles are
 indistinguishable then the wave function should be equal but Pauli
-Exclusion don't like that , the many-particle wave function must be
-\textbf{anti symmetric} under the exchange of any two fermions. This
+Exclusion \cite{Pauli1925Exclusion} don't like that , the many-particle wave function must be \textbf{anti symmetric} under the exchange of any two fermions. This
 implies: \[
 \psi(\dots,\mathbf{x}_{i},\dots,\mathbf{x}_{j},\dots)=-\psi(\dots ,\mathbf{x}_{j},\dots ,\mathbf{x}_{i},\dots)
 \] We can enforce \textbf{antisymmetry} using a \(N\times N\)
-determinant, which involves one-particle states only (a wave function
+Slater determinant \cite{Slater1929TheoryComplexSpectra}, which involves one-particle states only (a wave function
 with a single input) . An interchange of any pair of particles
 corresponds to an interchange of two columns of the determinant; this
 interchange introduces a change in the sign of the determinant. For even
@@ -286,8 +240,7 @@ permutations we have \((-1)^{P}=1\), and for odd permutations we have \((-1)^{P}
 \phi_1(\mathbf x_N) & \phi_2(\mathbf x_N) & \cdots & \phi_N(\mathbf x_N)
 \end{vmatrix}
 \end{equation}
-Where \(\phi_k\) are orthonormal (by construction)
-spin-orbital\textbar spin orbitals. This is, for instance
+Where \(\phi_k\) are orthonormal (by construction) spin orbitals. This is, for instance
 \((N=2)\): \[
 \Psi(\mathbf x_1,\mathbf x_2)
 \propto\Big[\phi_a(\mathbf x_1)\phi_b(\mathbf x_2)-\phi_a(\mathbf x_2)\phi_b(\mathbf x_1)\Big].
@@ -362,7 +315,7 @@ important for us is that if \(\psi\) is a wave function and \(\hat{H}\)
 the \textbf{Hamiltonian}, then the Rayleigh quotient: 
 \[
 R_{\hat{H}}(\psi)=\frac{\braket{ \psi | \hat{H}| \psi}}{\braket{ \psi | \psi } }
-\] is the average (expected) energy of the system when it is in the state \(\psi\).
+\] is the average (expected) energy of the system when it is in the state \(\psi\) \cite{Ritz1909Variational}.
 
 \subsubsection{Variational Principle} 
 
@@ -372,7 +325,7 @@ the exact Hamiltonian operator will be higher than or equal to the true
 energy for the system. This idea is really powerful. When implemented it
 permits us to find the best approximate wavefunction from a given
 wavefunction that contains one or more adjustable parameters, called a
-trial wavefunction. A mathematical statement of the variational
+trial wavefunction \cite{foulkes2001quantum, } . A mathematical statement of the variational
 principle is. \[
 R_{\hat{H}}(\psi_{\text{ansatz}})\geq R_{\hat{H}}(\psi_{\text{true}})
 \] The true ground-state wave function \(\psi_{\text{true}}\) is the one
@@ -384,7 +337,7 @@ be more near of the true wave function.
 
 \subsubsection{Variational Monte Carlo}
 
-To the process that we are going to use for optimize our ansatz is called Variational Monte Carlo (VMC)\cite{McMillan1965GroundStateHe4}. Now we can see to the rayleigh
+To the process that we are going to use for optimize our ansatz is called Variational Monte Carlo (VMC)\cite{McMillan1965GroundStateHe4,bajdich2006pfaffian}. Now we can see to the rayleigh
 quotient as a loss function \(\mathcal{L}\) with the form of. \[
 \mathcal{L}(\Psi_{\theta})=\frac{\bra{\Psi_{\theta}} \hat{H}\ket{\Psi_{\theta}} }{\braket{ \Psi_{\theta} | \Psi _{\theta}} }=\frac{\int d\mathbf{r}\Psi ^{*}(\mathbf{r})\hat{H}\Psi(\mathbf{r})}{\int d\mathbf{r}\Psi ^{*}(\mathbf{r})\Psi(\mathbf{r})}
 \] Evaluate that integral is hard, another smart approach is the follow,
@@ -402,7 +355,7 @@ E_{L}(x)=\Psi ^{-1}_{\theta}(x)\hat{H}\Psi_{\theta}(x)
 \] To optimize our wave function we know by deep learning that we need
 evaluate that expectation and obtain the derivative for back
 propagation, how we make that? We are going to use the the Monte Carlo
-estimatior: \[
+estimator \cite{MetropolisUlam1949}: \[
 \mathcal{L}_{\theta}=\mathbb{E}_{x\sim p_{\theta}}[E_{L}(x)]\approx \frac{1}{M}\sum_{i=1}^{M} E_{L}(\mathbf{R}_{k})
 \] Whit \(\mathbf{R}_{k}\) are samples from the \(p_{\theta}\)
 probability distribution. This is \[
@@ -470,7 +423,7 @@ use this method. The algorithm works like follow:
 This subsection introduces the core concepts of Deep Learning that are going to be applied in this work.
 
 \subsubsection{Multi Layer Perceptron}
-A multi layer perceptron (MLP) is a nonlinear function \(\mathcal{F}:\mathbb{R}^{\text{in}}\to \mathbb{R}^{\text{out}}\).
+A multi layer perceptron (MLP) is a nonlinear function \(\mathcal{F}:\mathbb{R}^{\text{in}}\to \mathbb{R}^{\text{out}}\) \cite{RumelhartHintonWilliams1986}
 , it actually is the composition of
   \(L\) layers, the first layer is called the input layer, the last
   output layer and the intermediates hidden layers. In each layer we
@@ -920,7 +873,7 @@ intermediate width \(d_{\text{ff}} > d\). At the sequence level:\\
 each layer, every position can interact with every other position
 through self-attention.
 
-In the original formulation, \textbf{positional encodings} (sinusoidal
+In the original formulation \cite{Vaswani2017}, \textbf{positional encodings} (sinusoidal
 or learned) are added to the embeddings so that the model can
 distinguish different positions in the sequence: \[
 \mathbf{X}_0 = \mathbf{E} + \mathbf{P},
@@ -930,11 +883,8 @@ positional encodings.
 \subsubsection{Why Transformers Instead of RNNs or
 LSTMs?}\label{why-transformers-instead-of-rnns-or-lstms}
 
-Recurrent Neural Networks (RNNs) and Long Short-Term Memory (LSTM)
-networks process the sequence \textbf{sequentially} this is each new
-state depends on the previous one. This has two important consequences:
-1. Information must flow through many time steps, which can lead to
-vanishing or exploding gradients and makes it hard to model very
+Recurrent Neural Networks (RNNs) [cite] and Long Short-Term Memory (LSTM) [cite] networks process the sequence \textbf{sequentially} this is each new state depends on the previous one. This has two important consequences:
+1. Information must flow through many time steps, which can lead to vanishing or exploding gradients and makes it hard to model very
 long-range interactions. 2. Poor parallelization because each step
 depends on the previous one, you cannot compute all time steps in
 parallel. Training and inference are inherently sequential. Transformers
@@ -1237,7 +1187,8 @@ and antisymmetry required for a fermionic wavefunction.
 Former}\label{jastrow-factor-for-psi-former}
 [cite self attention]
 
-The Psiformer wavefunction has the usual Slater--Jastrow structure \[
+The Psiformer wavefunction has the usual Slater-Jastrow Ansatz  \cite{foulkes2001quantum}:
+\[
 \Psi_{\theta}(\mathbf{x})
 =
 \exp\big(\mathcal{J}_{\theta}(\mathbf{x})\big)\,
