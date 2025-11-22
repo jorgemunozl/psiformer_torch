@@ -273,14 +273,24 @@ Where \(\phi_k\) are orthonormal (by construction) spin orbitals. This is, for i
 
 The potential energy becomes infinite, when two particles overlap, which
 places strict constraints on the form of the wave function at these
-points, these constraints are known as the \textbf{Kato Cusp Conditions} \cite{Kato1957EigenfunctionsManyParticle}. The cusp conditions states that the wave function must be non-differentiable at these points, and give exact values for the average derivatives at the cusps. More precisely the cusp are:
+points, these constraints are known as the \textbf{Kato Cusp Conditions} \cite{Kato1957EigenfunctionsManyParticle}. The cusp conditions states that the wave function must be non-differentiable at these points, and give exact values for the average derivatives at the cusps. More precisely the cusp result of the Kato Theorem are:
 Electron-nucleus cusp (electron with charge
 \(-1\), nucleus charge \(+Z\), reduced mass \(\mu \approx 1\))
-\[\lim_{ riI \to 0 } \left( \frac{\partial \psi}{\partial r_{iI}} \right)=-Z\psi(r_{iI}=0)
-\]Electron-electron cusp, opposite spins (charges \(-1\), reduced
-mass \(\mu=\frac{1}{2}\)) \[
+
+
+\begin{equation}
+\lim_{ riI \to 0 } \left( \frac{\partial \psi}{\partial r_{iI}} \right)=-Z\psi(r_{iI}=0)
+\end{equation}
+
+
+Electron-electron cusp, opposite spins (charges \(-1\), reduced
+mass \(\mu=\frac{1}{2}\)) 
+
+\begin{equation}
 \lim_{ r_{ij}\to 0 } \left( \frac{\partial \psi}{\partial r_{ij}} \right)=\frac{1}{2}\psi(r_{ij}=0)
-\] Where \(r_{iI}(r_{ij})\) is an electron-nuclear (electron-electron)
+\end{equation}
+
+Where \(r_{iI}(r_{ij})\) is an electron-nuclear (electron-electron)
 distance, \(Z_{I}\) is the nuclear charge of the \(I\text{-th}\)
 nucleous and ave implies a spherical averaging over all directions.
 
@@ -403,9 +413,7 @@ Which is the expected value of the local energy:
 
 To optimize our wave function we know by deep learning that we need
 evaluate that expectation and obtain the derivative for back
-propagation, how we make that? We are going to use the the Monte Carlo
-estimator \cite{MetropolisUlam1949}:
-\begin{equation}
+propagation, how we make that? We are going to use the the Monte Carlo estimator \cite{MetropolisUlam1949}: \begin{equation}
 \mathcal{L}_{\theta}=\mathbb{E}_{x\sim p_{\theta}}[E_{L}(x)]\approx \frac{1}{M}\sum_{i=1}^{M} E_{L}(\mathbf{R}_{k})
 \end{equation}
 
@@ -428,78 +436,83 @@ In practice is more numerically stable work using that form, thus:
 \begin{align}
 &E_{L}(\mathbf{R}_{k})= \notag\\& -\frac{1}{2}\sum_{i=1}^{N} \sum_{j=1}^{3} \left[ \frac{\partial ^{2} \log \lvert \Psi(x) \rvert }{\partial r_{ij}^{2}}+\left( \frac{\partial \log \lvert \Psi(x) \rvert }{\partial r_{ij}} \right)^{2} \right]+V(\mathbf{R_{k}})
 \end{align}
-
 The gradient of the energy respect to the parameters by a
 parameterized wave functions is:
-
 \begin{equation}
 \nabla _{\theta}\mathcal{L}=2\mathbb{E}_{x\sim \Psi^{2}}[(E_{L}(x)-\mathbb{E}_{x'\sim\Psi^{2}}[E_{L}(x')])\nabla \log \lvert \Psi(x) \rvert ]
+\label{eq:loss}
 \end{equation}
-
 \subsubsection{Metropolis Hastings Algorithm}
 To obtain samples from the probability distribution \(p_{\theta}\) we are going to use the Metropolis Hasting algorithm (MH) \cite{Metropolis1953Equation} which is a Markov Chain Monte Carlo (MCMC) method used to obtain a sequence of random samples from a probability distribution. The
 reason to use this method over another well knows methods (e.g.~example)
-is that MH don't suffer of the \textit{Curse of Dimensionality} this is, it remains strong while increase the dimension of the problem, and since we are going to be working on dimension around ten is efficient
-use this method. The algorithm works like follow:
+is that MH don't suffer of the \textit{Curse of Dimensionality} \cite{donohocurse} this is, the computationally cost don't explode while increasing the dimension of the problem, and since we are going to be working on high dimensions is good option use this method. The algorithm works like follow:
 
 \begin{enumerate}
 \item
-  Take a initial configuration \(\mathbf{X}_{0}\in E\) arbitrary:
+  Take a initial configuration \(\mathbf{X}_{0}\in E\) arbitrary.
 \item
   Propose \(\mathbf{X}'=\mathbf{X}_{0}+\eta\) ,where
   \(\eta \sim q(\eta)\), \(q\) is a probability density on \(E\) called
-  \textbf{proposal kernel}. In our case we are going to a symmetric Gaussian.
+  \textbf{proposal kernel}. In our case we are going to sample from symmetric gaussian.
 \item
-  Compute the quantity: \[
+  Compute the quantity:
+
+\begin{equation}
   A(\mathbf{X_{0}}, \mathbf{X}')=\text{min}\left( 1,\frac{\rho(\mathbf{X}')}{\rho(\mathbf{X}_{0})} \frac{q(\mathbf{X}'-\mathbf{X}_{0})}{q(\mathbf{X}_{0}-\mathbf{X}')}\right)
-  \] Where \(\rho\) is the target distribution where we want sample, In
-  the case where \(q\) is symmetric, this simplifies to: \[
+\end{equation}
+
+Where \(\rho\) is the target distribution (the one we want sample). In
+  the case where \(q\), the proposal kernel is symmetric, this simplifies to: 
+
+\begin{equation}
   A(\mathbf{X}_{0},\mathbf{X}')=\text{min}\left( 1,\frac{\rho(\mathbf{X})}{\rho(\mathbf{X}_{0})} \right)
-  \] Note that in our case \(\rho\) is equal to \(p_{\theta}\), we said
-  that compute the integral factor remains a challenge, but in this case
-  we have it. \[
-  \frac{p_{\theta}(\mathbf{X}')}{p_{\theta}(\mathbf{X}_{0})}=\frac{\lvert \psi_{\theta}(\mathbf{X}') \rvert ^{2}/\int \lvert \psi_{\theta} \rvert ^{2}dx}{\lvert \psi_{\theta}(\mathbf{X}_{0}) \rvert ^{2}/\int \lvert \psi_{\theta} \rvert ^{2}dx}=\frac{\lvert \psi_{\theta}(\mathbf{X'}) \rvert ^{2}}{\lvert \psi_{\theta}(\mathbf{X}_{0}) \rvert ^{2}}
-  \]
+\end{equation}
+
+Note that in our case \(\rho\) is equal to \(p_{\theta}\), we said that compute the integral factor is a challenge, but in this case it doesn't matter because:
+\begin{equation}
+\frac{p_{\theta}(\mathbf{X}')}{p_{\theta}(\mathbf{X}_{0})}=\frac{\lvert \psi_{\theta}(\mathbf{X}') \rvert ^{2}/\int \lvert \psi_{\theta} \rvert ^{2}dx}{\lvert \psi_{\theta}(\mathbf{X}_{0}) \rvert ^{2}/\int \lvert \psi_{\theta} \rvert ^{2}dx}=\frac{\lvert \psi_{\theta}(\mathbf{X'}) \rvert ^{2}}{\lvert \psi_{\theta}(\mathbf{X}_{0}) \rvert ^{2}}
+\end{equation}
+
 \item
   Generate a uniform number \(U\in[0,1]\)
 \item
   If: \(U<A(\mathbf{X}_{0}\to \mathbf{X'}_{l})\) then
   \(\mathbf{X_{1}}=\mathbf{X}'\), otherwise try another \(\mathbf{X}'\).
-  Accept or decline.
 \item
-  Repeat until obtain \(N_{eq}\) accepted sample, the changes stabilizes
-  (we reach a stationary distribution) this phase is called \textbf{burn
-  in}.
+  Repeat until obtain \(N_{eq}\) accepted samples, for a large $N_{\text{eq}}$ the changes between samples stabilizes
+ (we reach a stationary distribution), this phase is called \textbf{burn in}. 
 \item
-  From \(\mathbf{X}_{N_{\text{eq}}}\) generate \(M\) samples until reach
-  the sample \(\mathbf{X}_{N_{\text{eq}}+M+1}\). In each sample
-  generates \(E_{L}(\mathbf{R}_{k})\) then average to obtain
-  \(\mathbb{E}(E_{L})\) and with it and the derivative from equation  we are able to begin the back propagation step.
+  From \(\mathbf{X}_{N_{\text{eq}}}\) generate another \(M\) samples until obtain
+  the sample \(\mathbf{X}_{N_{\text{eq}}+M+1}\). In each sample generates \(E_{L}(\mathbf{R}_{k})\) then average to obtain \(\mathbb{E}(E_{L})\).
 \end{enumerate}
+
+Once that you obtain $\mathbb{E}(E_L)$ and using equation \ref{eq:loss} we can optimize our net using backpropagation \cite{RumelhartHintonWilliams1986}.
 
 \subsection{Deep Learning Fundamentals}
 
 This subsection introduces the core concepts of Deep Learning that are going to be applied in this work.
 
 \subsubsection{Multi Layer Perceptron}
-A multi layer perceptron (MLP) is a nonlinear function \(\mathcal{F}:\mathbb{R}^{\text{in}}\to \mathbb{R}^{\text{out}}\) \cite{RumelhartHintonWilliams1986}
-, it actually is the composition of
-  \(L\) layers, the first layer is called the input layer, the last
-  output layer and the intermediates hidden layers. In each layer we
-  find a arbitrary number of neurons although is a good practice always
-  choose number which are powers of two and an affine map
+A multi layer perceptron (MLP) is a nonlinear mapping from a input patern $\mathbf{x}$ to an ouput vector $\mathbf{y}$ \(\mathcal{F}:\mathbb{R}^{\text{in}}\to \mathbb{R}^{\text{out}}\) \cite{RumelhartHintonWilliams1986}
+,is the composition of
+  \(L\) layers, the first layer is called the input layer, the last,
+  output layer, and the intermediates hidden layers. In each layer we
+  find a arbitrary number of neurons although is a good practice always choose number which are powers of two and an affine map
   \(\mathbf{z}^{(l)},l\in \{ L,L-1,\dots,2 \}\) (\(l=1\) is the input
-  layer) of the follow form. \[
-  \mathbf{z}^{(l)}=\mathbf{W}^{(l)}\mathbf{a}^{(l-1)}+\mathbf{b}^{(l)}
-  \] Where \(\mathbf{W}^{(l)}\) called weight matrix and
-  \(\mathbf{b}^{(l)}\) the bias vector of the \(l\) layer. We use a
-  non-linear function \(\sigma ^{(l)}\) in the \(l\) layer (typically
-  Softmax, ReLu, Tanh), thus the output of each layer is:
-  \[ f^{(l)}=\sigma ^{(l)}\circ \mathbf{z}^{(l)} \] Where \(\circ\)
-  means composition. A MLP is the composition of all the layers. \[
+  layer) of the follow form. 
+
+\begin{equation}
+\mathbf{z}^{(l)}=\mathbf{W}^{(l)}\mathbf{a}^{(l-1)}+\mathbf{b}^{(l)}
+\end{equation}
+Where \(\mathbf{W}^{(l)}\) called weight matrix and \(\mathbf{b}^{(l)}\) the bias vector of the \(l\) layer. We use a non-linear function \(\sigma ^{(l)}\) in the \(l\) layer (typically Softmax, ReLu, Tanh), thus the output of each layer is:
+\begin{equation}
+f^{(l)}=\sigma ^{(l)}\circ \mathbf{z}^{(l)}
+\end{equation}
+Where \(\circ\) means function composition. A MLP is the composition of all the layers. 
+\begin{equation}
   \mathcal{F}=f^{(L)}\circ f^{(L-1)}\circ\dots \circ f^{(1)}
-  \] We call parameters to the set of all the weights and bias of each
-  layer. And represented it with the symbol \(\theta\).
+\end{equation}
+We call parameters to the set of all the weights and bias of each layer. And represented it with the symbol \(\theta\).
   \[\{ \mathbf{W}^{(l)},\mathbf{b}^{(l)}\}_{l=2}^{L}=\theta\] You
   typically train a MLP, using a training data set, a loss function (e.g
   Mean Square Error, Mean Absolute Error, Cross entropy) and an
