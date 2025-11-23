@@ -1351,7 +1351,7 @@ cusp conditions.
 
 The implementation of PsiFormer requires a computational framework capable of expressing flexible neural architectures while remaining efficient on large-scale parallel hardware. Modern deep-learning ecosystems offer several possibilities, most notably JAX, TensorFlow, and PyTorch. Each provides automatic differentiation and GPU/TPU support. PyTorch, widely adopted across research domains, offers a dynamic computation graph and a rich ecosystem of scientific tooling. Prior work in variational Monte Carlo, including FermiNet, has motivated similar design principles, although its original implementation relied on TensorFlow \cite{Paszke2019PyTorch, vonglehn2023selfattentionansatzabinitioquantum, Pfau_2020}. Given the broader community support, debugging simplicity, and availability of open-source implementations of attention-based architectures, PyTorch is chosen as the primary framework.
 
-Additionally, the HuggingFace Transformers library \cite{wolf-etal-2020-transformers} provides a modular reference for attention layers, layer norms, initialization schemes, and efficient training utilities.
+Additionally, the HuggingFace Transformers library \cite{wolfetal2020transformers} provides a modular reference for attention layers, layer norms, initialization schemes, and efficient training utilities.
 
 
 Training models in the PsiFormer family requires significant computational resources, as reported by the original authors. Electronic-structure wavefunctions demand repeated sampling, expensive determinant evaluations, and long optimization horizons, pushing typical training times into several days or weeks depending on molecular complexity.
