@@ -105,8 +105,7 @@ specific problem, \cref{psi-former-model}  introduce \textbf{Psi Former} a trans
 
 \section{Theoretical Framework}\label{sec:theo}
 
-In this section, we develop the physical and mathematical foundation needed to understand the problem we study. We begin with the Schrödinger wave equation, which is central to non-relativistic quantum mechanics, later
-
+In this section, we develop the physical and mathematical foundation needed to understand the problem we study. We begin with the Schrödinger wave equation, which is central to non-relativistic quantum mechanics.
 \subsection{The wave function and the governing physical laws}
 
 \subsubsection{The Schrodinger Equation}
@@ -153,6 +152,13 @@ explicitly:
 The \textbf{time independent form} (TISE) could be derived from equation ,when the wave function \(\psi\) could be written like the
 product of two functions \(R\) and \(T\), where \(R\) depends uniquely
 on the spatial term \((\mathbf{{r}})\) and \(T\) uniquely on the temporal \((t)\), this is:
+
+\begin{figure*}[htbp]
+    \centering
+    \includegraphics[width=0.5\textwidth]{img/ferminet.png}
+    \caption{FermiNet have two streams, acting on electron-nuclear and electron-electron features which are merged via concatenation, image source from \cite{vonglehn2023selfattentionansatzabinitioquantum}}
+    \label{fig:fermi}
+\end{figure*}
 
 \begin{equation}
 \psi(\mathbf{{r}},t)=R(\mathbf{{r}})T(t)
@@ -237,15 +243,22 @@ particles). Let \(N\) electrons at \(\mathbf r_i\) and \(M\) nucleous at
 
 As with any differential equation, where one is searching one solution, is important to consider initial conditions (IC) and boundary conditions (BC), here we have to fulfill certain conditions that comes from physical laws.
 
-Bosons (e.g., photons) follow \textbf{Bose--Einstein} statistics \cite{Bose1924, Einstein1924Gas}, whereas fermions (e.g., electrons, protons) follow \textbf{Fermi Dirac} statistics \cite{Fermi1926Quantelung, Dirac1926TheoryQM}, because at the microscopic level identical particles are
-indistinguishable then the wave function should be equal  but Pauli
-Exclusion \cite{Pauli1925Exclusion} don't like that , the many-particle wave function must be \textbf{anti symmetric} under the exchange of any two fermions. This
-implies:
+
+At the microscopic level particles are indistinguishable, any measurement cannot distinguish between electron one and electron two. Therefore swapping the labels of two particles must leave all measurable  predictions unchanged.
+
+Quantum theory \cite{Zettili2009} show that particles are or bosons (e.g., photons) that follows the \textbf{Bose--Einstein} statistics \cite{Bose1924, Einstein1924Gas} or fermions (e.g., electrons, protons) that follow \textbf{Fermi Dirac} statistics \cite{Fermi1926Quantelung, Dirac1926TheoryQM}, an important consequence of the second is the antisymmetry on the wave function.
+
+If we plug the same coordinates $x_1=x_2$ (meaning same position and same spin coordinate).
+
+\begin{equation}
+\psi(x,x)=−\psi(x,x) \implies \psi(x,x)=0
+\end{equation}
+
+So two fermions cannot occupy the same one-particle quantum state. That’s the Pauli exclusion principle \cite{Pauli1925Exclusion}, being more general:
 \begin{equation}
 \psi(\dots,\mathbf{x}_{i},\dots,\mathbf{x}_{j},\dots)=-\psi(\dots ,\mathbf{x}_{j},\dots ,\mathbf{x}_{i},\dots)
 \label{eq:every}
 \end{equation}
-
 
 We can enforce \textbf{antisymmetry} using a \(N\times N\)
 Slater determinant \cite{Slater1929TheoryComplexSpectra}, which involves one-particle states only (a wave function
@@ -484,14 +497,12 @@ Once that you obtain $\mathbb{E}(E_L)$ and using equation \ref{eq:loss} we can o
 This subsection introduces the core concepts of Deep Learning that are going to be applied in this work.
 
 \subsubsection{Multi Layer Perceptron}
-A multi layer perceptron (MLP) is a nonlinear mapping from a input patern $\mathbf{x}$ to an ouput vector $\mathbf{y}$ \(\mathcal{F}:\mathbb{R}^{\text{in}}\to \mathbb{R}^{\text{out}}\) \cite{RumelhartHintonWilliams1986}
+A multi layer perceptron (MLP) is a nonlinear mapping \(\mathcal{F}:\mathbb{R}^{\text{in}}\to \mathbb{R}^{\text{out}}\) from a input pattern $\mathbf{x}$ to an output vector $\mathbf{y}$ \cite{RumelhartHintonWilliams1986}
 ,is the composition of
   \(L\) layers, the first layer is called the input layer, the last,
-  output layer, and the intermediates hidden layers. In each layer we
-  find a arbitrary number of neurons although is a good practice always choose number which are powers of two and an affine map
-  \(\mathbf{z}^{(l)},l\in \{ L,L-1,\dots,2 \}\) (\(l=1\) is the input
+  output layer, and the intermediates, hidden layers. In each layer we
+  find a arbitrary number of neurons and an affine map \(\mathbf{z}^{(l)},l\in \{ L,L-1,\dots,2 \}\) (\(l=1\) is the input
   layer) of the follow form.
-
 \begin{equation}
 \mathbf{z}^{(l)}=\mathbf{W}^{(l)}\mathbf{a}^{(l-1)}+\mathbf{b}^{(l)}
 \end{equation}
@@ -897,7 +908,7 @@ through attention, while remaining highly parallelizable.
 
 \subsection{Fermi Net}\label{fermi-net}
 
-A very important work for us is FermiNet \cite{Pfau_2020}. It uses
+A very important work for us is FermiNet \cite{Pfau_2020}. As shown at \cref{fig:fermi} it uses
 deep neural networks to represent \textbf{orbitals} and then combines
 them into a sum of Slater determinants. At the top level, the ansatz is
 a linear combination of \(K\) determinant products
@@ -973,7 +984,12 @@ updating  \(\mathbf{h}^{\ell\alpha}_i\) (single-electron features),
 \(\mathbf{h}^{\ell\alpha\beta}_{ij}\) (pairwise features), for
 \(\ell = 0,1,\dots,L-1\).
 
-
+\begin{figure*}[htbp]
+    \centering
+    \includegraphics[width=0.5\textwidth]{img/psiformer.png}
+    \caption{Psiformer uses a single stream of self attention layers, acting on nuclear-electron features only. Electron-electron features appear only via the Jastrow factor. Image source from \cite{vonglehn2023selfattentionansatzabinitioquantum}}
+    \label{fig:psif}
+\end{figure*}
 \subsubsection{Mixing and updating features across
 layers}\label{mixing-and-updating-features-across-layers-1}
 
@@ -1117,12 +1133,7 @@ electrons, \(\ell\) for layers, \(k\) for determinant index, is what
 guarantees that the final object has the correct permutation symmetry
 and antisymmetry required for a fermionic wavefunction.
 
-\begin{figure*}[htbp]
-    \centering
-    \includegraphics[width=0.5\textwidth]{img/ferminet.png}
-    \caption{Architecture of FermiNet .Image source Dfau et al}
-    \label{fig:placeholder}
-\end{figure*}
+
 
 \subsection{Applying Attention to Fermi Net
 (Psiformer-style)}\label{applying-attention-to-fermi-net-psiformer-style}
@@ -1161,12 +1172,12 @@ explicit \(|\mathbf{r}_i-\mathbf{r}_j|\) dependence lives in
 \(\mathcal{J}_\theta\).
 
 
-Conceptually, Psiformer is ``FermiNet with the two-electron stream
+Conceptually as shown on \cref{fig:psif}, Psiformer is ``FermiNet with the two-electron stream
 replaced by self-attention''. It only uses \textbf{electron--nuclear} features (plus spin) as
 input to the attention stack. For each electron \(i\): 1. Let
 \(\mathbf{R}_I\) be nuclear positions. 2. Build raw features by
 concatenating for all \(I\):  some function of
-\(\mathbf{r}_i  \mathbf{R}_I\) (relative position), 
+\(\mathbf{r}_i  \mathbf{R}_I\) (relative position),
 \(|\mathbf{r}_i - \mathbf{R}_I|\) (distance),  and the spin as a scalar
 (e.g.~\(\sigma_i = +1\) for \(\uparrow\), \(-1\) for \(\downarrow\)).
 
@@ -1237,9 +1248,6 @@ Next, we \textbf{concatenate over heads} for each electron: \[
 \in \mathbb{R}^{Hd_v},
 \] where \(d_v\) is the value dimension of each head.
 
-This is your \[
-A^{\ell} = \text{concat}_{h}[A_{h}],
-\] but again with the electron index \(i\) made explicit.
 
 \subsubsection{Residual projection and
 MLP}\label{residual-projection-and-mlp}
@@ -1253,7 +1261,7 @@ dimension and add a residual connection: \[
 \mathbf{W}_{o}^{\ell}\,\mathbf{A}^{\ell}_i,
 \] where \(\mathbf{W}_{o}^{\ell}\) is a learned matrix.
 
-Then we pass this through a small MLP (just a linear + \(\tanh\) here),
+Then we pass this through a small MLP,
 again with a residual: \[
 \mathbf{h}_{i}^{\ell+1}
 =
@@ -1261,7 +1269,6 @@ again with a residual: \[
 +
 \tanh\big(\mathbf{W}^{\ell+1}\mathbf{f}_{i}^{\ell+1} + \mathbf{b}^{\ell+1}\big).
 \]
-
 So a full Psiformer layer \(\ell\) is:
 
 \begin{enumerate}
@@ -1277,12 +1284,9 @@ So a full Psiformer layer \(\ell\) is:
 \end{enumerate}
 
 Repeat this for \(\ell=0,\dots,L-1\) and you get \textbf{final hidden
-states} \[
-\mathbf{h}_j^{L} \quad \text{for each electron } j.
-\] Here: - \(L\) = number of layers in the Psiformer. - For each layer,
-\(i\) indexes the electron the output belongs to, \(j\) indexes
-electrons we attend over. - \(h\) indexes different heads in multi-head
-attention.
+states} $
+\mathbf{h}_j^{L} \text{ for each electron } j$
+
 
 \subsubsection{From hidden states to orbitals and
 determinants}\label{from-hidden-states-to-orbitals-and-determinants}
@@ -1311,17 +1315,15 @@ asymptotic decay: \[
 \exp\big(
 - \big|\mathbf{\Sigma}^{k}_{im}(\mathbf{r}_j - \mathbf{R}_m)\big|
 \big),
-\] where - \(m\) indexes nuclei (or ``envelope centers''), -
+\] where \(m\) indexes nuclei (or ``envelope centers''),
 \(\pi^{k}_{im}\) and \(\mathbf{\Sigma}^{k}_{im}\) are learned
 parameters.
-
 The final spin-orbital entries are \[
 \Phi^{k}_{ij}
 =
 \Omega^{k}_{ij}\,
 \tilde{\phi}^{k}_i(x_j).
 \]
-
 Collecting these into the matrix \[
 \boldsymbol{\Phi}^k(\mathbf{x}) =
 \big[\Phi^{k}_{ij}\big]_{i,j=1}^N,
@@ -1337,56 +1339,24 @@ Collecting these into the matrix \[
 \exp(\mathcal{J}_{\theta}(\mathbf{x}))
 \sum_{k=1}^{N_{\det}}\det[\boldsymbol{\Phi}^{k}_{\theta}(\mathbf{x})].
 \]
-
-So the story in terms of indices is:
-
-\begin{itemize}
-\item
-  \(i\) = which \textbf{orbital} (row of the determinant).
-\item
-  \(j\) = which \textbf{electron} the orbital is evaluated on (column of
-  the determinant).
-\item
-  \(k\) = which \textbf{determinant} in the sum.
-\item
-  \(\ell\) = which \textbf{layer} of the attention/MLP stack produced
-  the hidden states.
-\item
-  \(h\) = which \textbf{attention head} participated in mixing
-  information across electrons.
-\item
-  \(I,m\) = which \textbf{nucleus/center} is used for the envelope.
-\end{itemize}
-
 The self-attention layers are what let \(\mathbf{h}_j^L\) depend on all
 other electrons in a flexible, learned way, while the determinant over
 \(i,j\) and the Jastrow over \(i,j\) enforce fermionic antisymmetry and
 cusp conditions.
 
-\begin{figure*}[htbp]
-    \centering
-    \includegraphics[width=0.5\textwidth]{img/psiformer.png}
-    \caption{Architecture of Psi Former, Source: Pfau et all}
-    \label{fig:placeholdesdr}
-\end{figure*}
+
 
 \section{Methodology}\label{methodology}
-To implement the code, the choose of the library is important. The three
-options to implement this kind of matter are JAX, Tensor Flow and
-pytorch, each one with his advantages and disadvantages.
 
-\subsection{Environment}
 
-For this project we are going to be using Pytorch due his user-friendly and support. Python, and several libraries as transformers from hugging face, a library who implements KFCA and like guide the implement of Fermi Net by google deepmind which is made it on TensorFlow.
+The implementation of PsiFormer requires a computational framework capable of expressing flexible neural architectures while remaining efficient on large-scale parallel hardware. Modern deep-learning ecosystems offer several possibilities, most notably JAX, TensorFlow, and PyTorch. Each provides automatic differentiation and GPU/TPU support. PyTorch, widely adopted across research domains, offers a dynamic computation graph and a rich ecosystem of scientific tooling. Prior work in variational Monte Carlo, including FermiNet, has motivated similar design principles, although its original implementation relied on TensorFlow \cite{Paszke2019PyTorch, vonglehn2023selfattentionansatzabinitioquantum, Pfau_2020}. Given the broader community support, debugging simplicity, and availability of open-source implementations of attention-based architectures, PyTorch is chosen as the primary framework.
 
-Project manager with UV.
+Additionally, the HuggingFace Transformers library \cite{wolf-etal-2020-transformers} provides a modular reference for attention layers, layer norms, initialization schemes, and efficient training utilities.
 
-\subsection{Training}
 
-Due the high computational power needed we are going to using GPUS mention by the authors. Several weeks to train molecules
+Training models in the PsiFormer family requires significant computational resources, as reported by the original authors. Electronic-structure wavefunctions demand repeated sampling, expensive determinant evaluations, and long optimization horizons, pushing typical training times into several days or weeks depending on molecular complexity.
 
-and of course CUDA. Is clear that we are going to use virtual GPUS, for that matter we have two option or well use a GPU via SSH or directly using services like Azure , Colab, or anothers matters. For simplicity we are going to use Colab services or RunPod. The election of the GPU is not trivial. use TPUS are not a bad idea.
-
+To address these requirements, we rely on GPU-accelerated environments with CUDA support. While cloud notebook platforms such as Google Colab offer accessible GPUs, their instability, session limits, and restricted runtimes make them unsuitable for long-range experiments. Instead, the project uses rented GPU instances (e.g., RunPod or comparable providers).
 
 \bibliographystyle{unsrt}
 \bibliography{refs1}
