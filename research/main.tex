@@ -249,11 +249,9 @@ At the microscopic level particles are indistinguishable, any measurement cannot
 Quantum theory \cite{Zettili2009} show that particles are or bosons (e.g., photons) that follows the \textbf{Bose--Einstein} statistics \cite{Bose1924, Einstein1924Gas} or fermions (e.g., electrons, protons) that follow \textbf{Fermi Dirac} statistics \cite{Fermi1926Quantelung, Dirac1926TheoryQM}, an important consequence of the second is the antisymmetry on the wave function.
 
 If we plug the same coordinates $x_1=x_2$ (meaning same position and same spin coordinate).
-
 \begin{equation}
 \psi(x,x)=−\psi(x,x) \implies \psi(x,x)=0
 \end{equation}
-
 So two fermions cannot occupy the same one-particle quantum state. That’s the Pauli exclusion principle \cite{Pauli1925Exclusion}, being more general:
 \begin{equation}
 \psi(\dots,\mathbf{x}_{i},\dots,\mathbf{x}_{j},\dots)=-\psi(\dots ,\mathbf{x}_{j},\dots ,\mathbf{x}_{i},\dots)
@@ -543,8 +541,8 @@ Taylor expansion of the KL gives \[
 = \tfrac12\,\Delta\theta^\top \mathcal{F}(\theta)\,\Delta\theta + \mathcal{O}(\|\Delta\theta\|^3),
 \] where \(\mathcal{F}(\theta)\) is the Fisher Information Matrix (FIM) \cite{Fisher1922Foundations}.
 To define it, introduce the \textbf{score function}
-_\theta(x) = \nabla_\theta \log p(x\mid \theta) \in \mathbb{R}^d
-\]
+$\theta(x) = \nabla_\theta \log p(x\mid \theta) \in \mathbb{R}^d
+$
 then the FIM is:
 \begin{equation}
 \mathcal{F}(\theta) = \mathbb{E}_{x\sim p(\cdot\mid\theta)}\!\big[\,s_\theta(x)\,s_\theta(x)^{\mathsf T}\big].
@@ -1351,10 +1349,10 @@ cusp conditions.
 
 The implementation of PsiFormer requires a computational framework capable of expressing flexible neural architectures while remaining efficient on large-scale parallel hardware. Modern deep-learning ecosystems offer several possibilities, most notably JAX, TensorFlow, and PyTorch. Each provides automatic differentiation and GPU/TPU support. PyTorch, widely adopted across research domains, offers a dynamic computation graph and a rich ecosystem of scientific tooling. Prior work in variational Monte Carlo, including FermiNet, has motivated similar design principles, although its original implementation relied on TensorFlow \cite{Paszke2019PyTorch, vonglehn2023selfattentionansatzabinitioquantum, Pfau_2020}. Given the broader community support, debugging simplicity, and availability of open-source implementations of attention-based architectures, PyTorch is chosen as the primary framework.
 
-Additionally, the HuggingFace Transformers library \cite{wolfetal2020transformers} provides a modular reference for attention layers, layer norms, initialization schemes, and efficient training utilities.
+Additionally, the HuggingFace Transformers library provides a modular reference for attention layers, layer norms, initialization schemes, and efficient training utilities.
 
 
-Training models in the PsiFormer family requires significant computational resources, as reported by the original authors. Electronic-structure wavefunctions demand repeated sampling, expensive determinant evaluations, and long optimization horizons, pushing typical training times into several days or weeks depending on molecular complexity.
+Training models in the PsiFormer family requires significant computational resources, as reported by the original authors. Electronic-structure wavefunctions demand repeated sampling, expensive determinant evaluations, and long optimization horizons, pushing typical training times into several days or weeks depending on molecular complexity.\cite{wolfetal2020transformers}
 
 To address these requirements, we rely on GPU-accelerated environments with CUDA support. While cloud notebook platforms such as Google Colab offer accessible GPUs, their instability, session limits, and restricted runtimes make them unsuitable for long-range experiments. Instead, the project uses rented GPU instances (e.g., RunPod or comparable providers).
 
