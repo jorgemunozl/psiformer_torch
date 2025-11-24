@@ -180,9 +180,8 @@ constant energy, the electron are almost always found near the lowest
 energy state, known as the ground state. Solutions with higher energy known as excited states are relevant to photochemistry , but in this work we will restrict our attention to ground states. \subsubsection{The many electron Schrodinger Equation}
 
 When we are considering more than one single particle we consider the spin \((\sigma)\) and the interaction between particles. Thus, in its time-independent form the Schrodinger equation can be written as an eigen value problem:
-
 \begin{equation}
-\hat{H}\psi(\mathbf{x}_{0},\dots ,\mathbf{x}_{n})=E\psi(\mathbf{x}_{1},\dots ,\mathbf{x}_{n})
+\hat{H}\psi(\mathbf{x}_{1},\dots ,\mathbf{x}_{n})=E\psi(\mathbf{x}_{1},\dots ,\mathbf{x}_{n})
   \label{eq:tilin}
 \end{equation}
 Where \(\mathbf{x}_{i}=\{ \mathbf{r}_{i},\sigma \}\), \(\mathbf{r}_{i}\in \mathbb{R}^{3}\) is the position of each electron
@@ -266,7 +265,7 @@ interchange introduces a change in the sign of the determinant. For even
 permutations we have \((-1)^{P}=1\), and for odd permutations we have \((-1)^{P}=-1\).
 
 \begin{equation}
-\Psi(\mathbf x_1,\ldots,\mathbf x_N)
+\psi(\mathbf x_1,\ldots,\mathbf x_N)
 \propto
 \begin{vmatrix}
 \phi_1(\mathbf x_1) & \phi_2(\mathbf x_1) & \cdots & \phi_N(\mathbf x_1)\\
@@ -275,7 +274,7 @@ permutations we have \((-1)^{P}=1\), and for odd permutations we have \((-1)^{P}
 \phi_1(\mathbf x_N) & \phi_2(\mathbf x_N) & \cdots & \phi_N(\mathbf x_N)
 \end{vmatrix}
 \end{equation}
-Where \(\phi_k\) are orthonormal (by construction) spin orbitals. This is, for instance
+Where \(\phi_k\) is a wave function of a single entry called spin orbitals. Thus, when considering just two electrons we obtain:
 \((N=2)\):
 \begin{equation}
 \Psi(\mathbf x_1,\mathbf x_2) \propto\Big[\phi_a(\mathbf x_1)\phi_b(\mathbf x_2)-\phi_a(\mathbf x_2)\phi_b(\mathbf x_1)\Big].
@@ -1352,7 +1351,7 @@ The implementation of PsiFormer requires a computational framework capable of ex
 Additionally, the HuggingFace Transformers library provides a modular reference for attention layers, layer norms, initialization schemes, and efficient training utilities.
 
 
-Training models in the PsiFormer family requires significant computational resources, as reported by the original authors. Electronic-structure wavefunctions demand repeated sampling, expensive determinant evaluations, and long optimization horizons, pushing typical training times into several days or weeks depending on molecular complexity.\cite{wolfetal2020transformers}
+Training models in the PsiFormer family requires significant computational resources, as reported by the original authors. Electronic-structure wavefunctions demand repeated sampling, expensive determinant evaluations, and long optimization horizons, pushing typical training times into several days or weeks depending on molecular complexity.
 
 To address these requirements, we rely on GPU-accelerated environments with CUDA support. While cloud notebook platforms such as Google Colab offer accessible GPUs, their instability, session limits, and restricted runtimes make them unsuitable for long-range experiments. Instead, the project uses rented GPU instances (e.g., RunPod or comparable providers).
 

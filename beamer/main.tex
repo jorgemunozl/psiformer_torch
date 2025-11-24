@@ -92,7 +92,7 @@ Find the potential $V$ of the system.
 \begin{frame}{Many-Body System}
 When considering a many-body system, we need to consider the position of each electron like also the spin of it. When considering $n$ bodies, we have:
 $$
-\hat{H}\psi(\mathbf{x}_{0},\dots ,\mathbf{x}_{n})=E\psi(\mathbf{x}_{1},\dots ,\mathbf{x}_{n})
+\hat{H}\psi(\mathbf{x}_{1},\dots ,\mathbf{x}_{n})=E\psi(\mathbf{x}_{1},\dots ,\mathbf{x}_{n})
 $$
 With $\mathbf{x}_{i}=\{ \mathbf{r}_{i},\sigma \}$, where $\mathbf{r}_{i}\in \mathbb{R}^{3}$ is the position of each particle and $\sigma \in \{ \uparrow.\downarrow \}$ is the so called spin.
 
@@ -158,7 +158,7 @@ Where $\phi$ are called spin orbitals
 When two electrons
 
 \begin{itemize}
-        \item Coulomb potentials cause a sharp cusp in $\Psi$ when particles coalesce.
+        \item Coulomb potentials cause a sharp cusp in $\Psi$ when particles overlaps.
         \item Electron--nucleus cusp: $\displaystyle \frac{\partial \Psi}{\partial r_{iI}}\Big|_{r_{iI}=0} = -\,Z_I\,\Psi(0)$.
         \item Electron--electron cusp: $\displaystyle \frac{\partial \Psi}{\partial r_{ij}}\Big|_{r_{ij}=0} = \frac{1}{2}\,\Psi(0)$.
     \end{itemize}
@@ -186,12 +186,11 @@ $$E[\Psi] = \displaystyle \frac{\langle \Psi \mid H \mid \Psi \rangle}{\langle \
 
 Minimizing $E[\Psi]$ drives the ansatz toward the ground state.
 $E_0$ is the true ground energy (minimum possible).
-
 $$
-\mathcal{L}(\Psi_\theta)=\frac{\bra{\Psi_{\theta}} \hat{H}\ket{\Psi_{\theta}} }{\braket{ \Psi_{\theta} | \Psi _{\theta}} }=\frac{\int d\mathbf{r}\Psi ^{*}(\mathbf{r})\hat{H}\Psi(\mathbf{r})}{\int d\mathbf{r}\Psi ^{*}(\mathbf{r})\Psi(\mathbf{r})}
+\mathcal{L}(\Psi_\theta)=\frac{\bra{\Psi_{\theta}} \hat{H}\ket{\Psi_{\theta}} }{\braket{ \Psi_{\theta}} }=\frac{\int d\mathbf{r}\Psi ^{*}(\mathbf{r})\hat{H}\Psi(\mathbf{r})}{\int d\mathbf{r}\Psi ^{*}(\mathbf{r})\Psi(\mathbf{r})}
 $$
 Define:
-$$p_{\theta}(x)=\frac{\Psi^{2}_{\theta}(x)}{\int dx'\Psi^{2}_{\theta}(x')}\land E_{L}(x)=\Psi ^{-1}_{\theta}(x)\hat{H}\Psi_{\theta}(x)
+$$p_{\theta}(x)=\frac{\Psi^{2}_{\theta}(x)}{\int  dx'\Psi^{2}_{\theta}(x')}\land E_{L}(x)=\Psi ^{-1}_{\theta}(x)\hat{H}\Psi_{\theta}(x)
 $$
 Then:
 $$
@@ -221,7 +220,7 @@ To obtain those samples we use the \textbf{Metropolis-Hastings Algorithm} which 
 
 1. Take a initial configuration $\mathbf{X}_{0}\in E$ arbitrary:
 
-2. Propose $\mathbf{X}'=\mathbf{X}_{0}+\eta$ ,where $\eta \sim q(\eta)$, $q$ is a probability density on $E$ called **proposal kernel**. symmetric Gaussian
+2. Propose $\mathbf{X}'=\mathbf{X}_{0}+\eta$ ,where $\eta \sim q(\eta)$, $q$ is a probability density on $E$ called proposal kernel. symmetric Gaussian
 
 3. Compute the quantity:
 $$
@@ -229,7 +228,7 @@ A(\mathbf{X_{0}}, \mathbf{X}')=\text{min}\left( 1,\frac{\rho(\mathbf{X}')}{\rho(
 $$
 Where $\rho$ is the target distribution where we want sample, In the case where $q$ is symmetric, this simplifies to:
 $$
-A(\mathbf{X}_{0},\mathbf{X}')=\text{min}\left( 1,\frac{\rho(\mathbf{X}_{l})}{\rho(\mathbf{X}_{0})} \right)
+A(\mathbf{X}_{0},\mathbf{X}')=\text{min}\left( 1,\frac{\rho(\mathbf{X}^{'})}{\rho(\mathbf{X}_{0})} \right)
 $$
 4. Generate a uniform number $U\in[0,1]$
 
@@ -250,7 +249,7 @@ $$
 \nabla _{\theta}\mathcal{L}=2\mathbb{E}_{x\sim \Psi^{2}}[(E_{L}(x)-\mathbb{E}_{x'\sim\Psi^{2}}[E_{L}(x')])\nabla \log \lvert \Psi(x) \rvert ]
 $$
 \end{block}
-
+*
 This expectation is calculated in the same way.
 \end{frame}
 
