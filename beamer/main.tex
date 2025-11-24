@@ -53,9 +53,11 @@
 
 \begin{frame}{The Schr\"odinger equation}
   On 1926 Schrodinger derived the Time Dependent Form.(TDSE)
-        \[
+
+\begin{equation}
             i\,\hbar\,\partial_t \Psi = \hat{H}\,\Psi,
-        \]
+\end{equation}
+
 
 \begin{itemize}
 \item $\Psi \in \mathcal{H}$ is a complex value function called \textbf{wave function}.
@@ -66,34 +68,45 @@
 
 \begin{block}{Hamiltonian}
 In the position basis:
-$$\hat{H}=\frac{\hat{\vec{{P}}}^{2}}{2m}+\hat{V} =-\frac{\hbar^{2}}{2m}\nabla^{2}+\hat{V} $$
+
+\begin{equation}
+\hat{H}=\frac{\hat{\vec{{P}}}^{2}}{2m}+\hat{V} =-\frac{\hbar^{2}}{2m}\nabla^{2}+\hat{V}
+\end{equation}
+
 \end{block}
 \end{frame}
 
 \begin{frame}{Time Dependent Form}
 When the wave function could be written as:
-$$
+
+\begin{equation}
 \psi(\vec{\mathbf{r}},t)=R(\vec{\mathbf{r}})T(t)
-$$
+\end{equation}
+
 TDSE returns you that:
-$$
+
+\begin{equation}
 T(t)=e^{ -iEt/\hbar } \land \hat{H}R(\vec{\mathbf{r}})=ER(\vec{\mathbf{r}})
-$$
+\end{equation}
+
+
 Where $E$ is the total energy of the system.
 The eigen-problem becomes obtain $R$ solving:
 \begin{block}{Find a $\Psi$, such that:}
-$$
+\begin{equation}
 \left[-\frac{\hbar^{2}}{2m}\nabla^{2}+V(\mathbf r,t)\right]\psi(\vec{\mathbf{r}})= E \psi(\vec{\mathbf{r}})
-$$
+\end{equation}
+
 \end{block}
 Find the potential $V$ of the system.
 \end{frame}
 
 \begin{frame}{Many-Body System}
 When considering a many-body system, we need to consider the position of each electron like also the spin of it. When considering $n$ bodies, we have:
-$$
+\begin{equation}
 \hat{H}\psi(\mathbf{x}_{1},\dots ,\mathbf{x}_{n})=E\psi(\mathbf{x}_{1},\dots ,\mathbf{x}_{n})
-$$
+\end{equation}
+
 With $\mathbf{x}_{i}=\{ \mathbf{r}_{i},\sigma \}$, where $\mathbf{r}_{i}\in \mathbb{R}^{3}$ is the position of each particle and $\sigma \in \{ \uparrow.\downarrow \}$ is the so called spin.
 
 \begin{alertblock}{Considerations}
@@ -104,7 +117,6 @@ With $\mathbf{x}_{i}=\{ \mathbf{r}_{i},\sigma \}$, where $\mathbf{r}_{i}\in \mat
 \end{itemize}
 \end{alertblock}
 \end{frame}
-
 \begin{frame}{Setting up the Hamiltonian}
   The first step is obtain a practical form of the \textbf{Hamiltonian}.
 
@@ -117,13 +129,12 @@ With $\mathbf{x}_{i}=\{ \mathbf{r}_{i},\sigma \}$, where $\mathbf{r}_{i}\in \mat
    \hat H & =
 -\sum_{i=1}^{N}\frac{1}{2}\nabla_i^{2}
 -\sum_{I=1}^{M}\frac{1}{2M_I}\nabla_{I}^{2}
--\sum_{i=1}^{N}\sum_{I=1}^{M}\frac{Z_I}{|\mathbf r_i-\mathbf R_I|} \\
+-\sum_{i=1}^{N}\sum_{I=1}^{M}\frac{Z_I}{|\mathbf r_i-\mathbf R_I|} \notag\\
 & +\sum_{1\le i<j\le N}\frac{1}{|\mathbf r_i-\mathbf r_j|}
 +\sum_{1\le I<J\le M}\frac{Z_I Z_J}{|\mathbf R_I-\mathbf R_J|}
 \end{align}
 
 \textbf{Borh Oppenheimer} approximation helps with.
-
 \end{frame}
 
 \subsection{Physical laws and conditions}
@@ -141,16 +152,16 @@ All the fermions follow the Fermi-Dirac Statistics, this is.
 
     \begin{block}{Slater Determinant}
 We can enforce this using a determinant to enforce an antisymmetric $\Psi$.
-
-$$
+\begin{equation}
+\psi=
 \begin{vmatrix}
 \phi_{1}^{k}(\mathbf{x}_{1})  & \dots  &  \phi_{1}^{k}(\mathbf{x}_{n}) \\
 \vdots   &  & \vdots  \\
 \phi_{n}^{k}(\mathbf{x}_{1}) & \dots & \phi_{n}^{k}(\mathbf{x}_{n})
 \end{vmatrix}
-$$
-Where $\phi$ are called spin orbitals
+\end{equation}
 \end{block}
+Where $\phi$ are called spin orbitals
 \end{frame}
 
 \begin{frame}{Kato cusp conditions, Jastrow Factor}
@@ -165,14 +176,14 @@ When two electrons
 
 \begin{block}{Jastrow Factor $\exp(\mathcal{J})$}
 In this work we are going to use this specific form:
-$$
-\mathcal{J}_{\theta}(x)=\sum_{i<j;\sigma_{i}=\sigma_{j}}-\frac{1}{4}\frac{\alpha^{2}_{par}}{\alpha_{par}+\lvert \mathbf{r}_{i}-\mathbf{r}_{j} \rvert }+\sum_{i,j;\sigma_{i}\neq \sigma_{j}}-\frac{1}{2}\frac{\alpha^{2}_{anti}}{\alpha_{anti}+\lvert \mathbf{r}_{i}-\mathbf{r}_{j} \rvert }
-$$
+
+
+\begin{equation}
+ \mathcal{J}_{\theta}(x)=\sum_{i<j;\sigma_{i}=\sigma_{j}}-\frac{1}{4}\frac{\alpha^{2}_{par}}{\alpha_{par}+\lvert \mathbf{r}_{i}-\mathbf{r}_{j} \rvert }+\sum_{i,j;\sigma_{i}\neq \sigma_{j}}-\frac{1}{2}\frac{\alpha^{2}_{anti}}{\alpha_{anti}+\lvert \mathbf{r}_{i}-\mathbf{r}_{j} \rvert }
+\end{equation}
+
 \end{block}
 \end{frame}
-
-
-
 
 \subsection{Optimizing an Ansatz}
 \begin{frame}
@@ -193,17 +204,18 @@ Define:
 $$p_{\theta}(x)=\frac{\Psi^{2}_{\theta}(x)}{\int  dx'\Psi^{2}_{\theta}(x')}\land E_{L}(x)=\Psi ^{-1}_{\theta}(x)\hat{H}\Psi_{\theta}(x)
 $$
 Then:
-$$
+\begin{equation}
 \mathcal{L}_{\theta}=\mathbb{E}_{x\sim p_{\theta}}[E_{L}(x)]
-$$
+\end{equation}
 \end{frame}
 \begin{frame}{Variational Monte Carlo}
   To evaluate that expectation we use Monte Carlo estimator.
   \begin{block}{Quantum Monte Carlo}
 With the samples $\mathbf{R}_{1},\dots,\mathbf{R}_{M}\sim p_{\theta}(\mathbf{R})$ we can make:
-$$
+
+\begin{equation}
 \mathcal{L}_{\theta}=\mathbb{E}_{x\sim p_{\theta}}[E_{L}(x)]\approx \frac{1}{M}\sum_{i=1}^{m} E_{L}(\mathbf{R}_{k})
-$$
+\end{equation}
 \end{block}
 
 With:
@@ -245,11 +257,10 @@ In each sample generates $E_{L}(\mathbf{R}_{k})$ then average to obtain $\mathbb
 
 \begin{block}{Gradients of the Loss}
 Using calculus you obtain:
-$$
-\nabla _{\theta}\mathcal{L}=2\mathbb{E}_{x\sim \Psi^{2}}[(E_{L}(x)-\mathbb{E}_{x'\sim\Psi^{2}}[E_{L}(x')])\nabla \log \lvert \Psi(x) \rvert ]
-$$
+\begin{equation}
+\nabla _{\theta}\mathcal{L}=2\mathbb{E}_{x\sim \Psi^{2}}[(E_{L}(x)
+\end{equation}
 \end{block}
-*
 This expectation is calculated in the same way.
 \end{frame}
 
@@ -307,9 +318,10 @@ $$
 \mathbb{E}_{p(\mathbf{X})}\left[ \frac{\partial \log p(X)}{\partial \text{vec}(\mathbf{W}_{\ell})}\frac{\partial \log p(X)}{\partial \text{vec}(\mathbf{W}_{\ell})}^{\mathsf{T}} \right]=\mathbb{E}_{p(\mathbf{X})}[(\mathbf{a}_{\ell}\otimes \mathbf{e}_{\ell})(\mathbf{a}_{\ell}\otimes \mathbf{e}_{\ell})^{\mathsf{T}}]
 $$
 Where $\mathbf{a}_{\ell}$ are the forward activation and $\mathbf{e}_{\ell}$ are the backward sensitivities for that layer.
-$$
-\mathbb{E}_{p(\mathbf{X})}[(\mathbf{a}_{\ell}\otimes \mathbf{e}_{\ell})(\mathbf{a}_{\ell}\otimes \mathbf{e}_{\ell})^{\mathsf{\top}}]^{-1}\approx \mathbb{E}_{p(\mathbf{X})}[\mathbf{a}_{\ell}\mathbf{a_{\ell}}^{\mathsf{\top}}]\otimes \mathbb{E}_{p(\mathbf{X})}[\mathbf{e}_{\ell}\mathbf{e}_{\ell}^{\mathsf{\top}}]^{-1}
-$$
+
+\begin{equation}
+\mathbb{E}_{p(\mathbf{X})}[(\mathbf{a}_{\ell}\otimes \mathbf{e}_{\ell})(\mathbf{a}_{\ell}\otimes \mathbf{e}_{\ell})^{\mathsf{\top}}]^{-1}\approx \mathbb{E}_{p(\mathbf{X})}[\mathbf{a}_{\ell}\mathbf{a_{\ell}}^{\mathsf{\top}}]^{-1}\otimes \mathbb{E}_{p(\mathbf{X})}[\mathbf{e}_{\ell}\mathbf{e}_{\ell}^{\mathsf{\top}}]^{-1}
+\end{equation}
 \end{frame}
 
 
@@ -332,9 +344,10 @@ $$
 \end{align}
 $$
 In the $i-th$ head:
-$$
+\begin{equation}
 \mathbf{o}_{t,i}=\sum_{j=1}^{t}\text{Softmax}\left( \frac{\mathbf{q}^{T}_{t,i}\mathbf{k}_{j,i}}{\sqrt{ d_{h} }} \right) \mathbf{v}_{j,i}
-$$
+\end{equation}
+
 \end{frame}
 
 
@@ -360,22 +373,18 @@ $$\mathbf{u}_{t}=W^{O}[\mathbf{o}_{t,1};\mathbf{o}_{t,2};\dots ;\mathbf{o}_{t,n_
 
 \begin{block}{Orbital}
 To compute the orbitals we need to compute.
-  $$
-\phi^{k\alpha}_i(\mathbf{r}^\alpha_j; \{\mathbf{r}^\alpha_{/j}\}; \{\mathbf{r}^{\bar{\alpha}}\}) =
-    \left(\mathbf{w}^{k\alpha}_i \cdot \mathbf{h}^{L\alpha}_j + g^{k\alpha}_i\right)
-	\sum_{m} \pi^{k\alpha}_{im}\mathrm{exp}\left(-|\mathbf{\Sigma}_{im}^{k \alpha}(\mathbf{r}^{\alpha}_j-\mathbf{R}_m)|\right)
-$$
+\begin{equation}
+\phi^{k\alpha}_i(\mathbf{r}^\alpha_j; \{\mathbf{r}^\alpha_{/j}\}; \{\mathbf{r}^{\bar{\alpha}}\}) = \left(\mathbf{w}^{k\alpha}_i \cdot \mathbf{h}^{L\alpha}_j + g^{k\alpha}_i\right) \sum_{m} \pi^{k\alpha}_{im}\mathrm{exp}\left(-|\mathbf{\Sigma}_{im}^{k \alpha}(\mathbf{r}^{\alpha}_j-\mathbf{R}_m)|\right)
+\end{equation}
 \end{block}
 Where the hidden states are:
 \begin{align}
-    \mathbf{h}^{\ell+1 \alpha}_i &= \mathrm{tanh}\left(\mathbf{V}^\ell \mathbf{f}^{\ell \alpha}_i + \mathbf{b}^\ell\right) + \mathbf{h}^{\ell\alpha}_i \nonumber \\
-    \mathbf{h}^{\ell+1 \alpha\beta}_{ij} &= \mathrm{tanh}\left(\mathbf{W}^\ell\mathbf{h}^{\ell \alpha\beta}_{ij} + \mathbf{c}^\ell\right) + \mathbf{h}^{\ell \alpha\beta}_{ij}
+    \mathbf{h}^{\ell+1 \alpha}_i &= \mathrm{tanh}\left(\mathbf{V}^\ell \mathbf{f}^{\ell \alpha}_i + \mathbf{b}^\ell\right) + \mathbf{h}^{\ell\alpha}_i \nonumber \notag\\
+    \mathbf{h}^{\ell+1 \alpha\beta}_{ij} &= \mathrm{tanh}\left(\mathbf{W}^\ell\mathbf{h}^{\ell \alpha\beta}_{ij} + \mathbf{c}^\ell\right) + \mathbf{h}^{\ell \alpha\beta}_{ij}\notag
 \end{align}
-
 Finally:
-
 \begin{align}
-	\psi(\mathbf{r}^\uparrow_1,\ldots,\mathbf{r}^\downarrow_{n^\downarrow}) = \sum_{k}\omega_k &\left(\det\left[\phi^{k \uparrow}_i(\mathbf{r}^\uparrow_j; \{\mathbf{r}^\uparrow_{/j}\}; \{\mathbf{r}^\downarrow\})\right]\right.\\&\left.\hphantom{\left(\right.}\det\left[\phi^{k\downarrow}_i(\mathbf{r}^\downarrow_j; \{\mathbf{r}^\downarrow_{/j}\});
+	\psi(\mathbf{r}^\uparrow_1,\ldots,\mathbf{r}^\downarrow_{n^\downarrow}) = \sum_{k}\omega_k &\left(\det\left[\phi^{k \uparrow}_i(\mathbf{r}^\uparrow_j; \{\mathbf{r}^\uparrow_{/j}\}; \{\mathbf{r}^\downarrow\})\right]\right.\notag \\&\left.\hphantom{\left(\right.}\det\left[\phi^{k\downarrow}_i(\mathbf{r}^\downarrow_j; \{\mathbf{r}^\downarrow_{/j}\});
 	\{\mathbf{r}^\uparrow\};\right]\right).
 \end{align}
 
@@ -394,9 +403,9 @@ Finally:
 \subsection{Psi Former}
 \begin{frame}{The Psiformer Ansatz (overview)}
   The output of \textbf{Psiformer} is:
-$$
-\Psi_{\theta}(\mathbf{x})=\exp(\mathcal{J}_{\theta}(\mathbf{x}))\sum_{k=1}^{N_{\det}}\det[\boldsymbol{\Phi}_{\theta}^{k}(x)]
-$$
+  \begin{equation}
+  \Psi_{\theta}(\mathbf{x})=\exp(\mathcal{J}_{\theta}(\mathbf{x}))\sum_{k=1}^{N_{\det}}\det[\boldsymbol{\Phi}_{\theta}^{k}(x)]
+\end{equation}
 We obtain the hidden states:
 $$
  A^{l}_{h}=[\text{SelfAttn}(\mathbf{h}^{l}_{1},\dots,\mathbf{h}^{\ell}_{N};\mathbf{W}^{\ell h}_{q},\mathbf{W}^{\ell h}_{k},\mathbf{W}^{\ell h}_{v})]
