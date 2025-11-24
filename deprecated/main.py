@@ -4,6 +4,7 @@ import torch.nn.functional as F
 from utils import get_device, MODEL
 from config import Config, outPut
 
+
 torch.manual_seed(42)
 torch.cuda.manual_seed(42)
 
