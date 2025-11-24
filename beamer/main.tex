@@ -258,7 +258,7 @@ In each sample generates $E_{L}(\mathbf{R}_{k})$ then average to obtain $\mathbb
 \begin{block}{Gradients of the Loss}
 Using calculus you obtain:
 \begin{equation}
-\nabla _{\theta}\mathcal{L}=2\mathbb{E}_{x\sim \Psi^{2}}[(E_{L}(x)
+  \nabla _{\theta}\mathcal{L}=2\mathbb{E}_{x\sim \Psi^{2}}[(E_{L}(x)-\mathbf{E}_{p}(E_L))\log \psi]
 \end{equation}
 \end{block}
 This expectation is calculated in the same way.
