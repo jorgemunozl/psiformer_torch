@@ -1,6 +1,6 @@
 # Solving the many-electron Schrödinger equation with transformers
 
-![Transformer diagram](assets/transformer_diagram.svg)
+> Acknolwedge to 
 
 ## Table of contents
 
