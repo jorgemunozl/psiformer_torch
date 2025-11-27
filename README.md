@@ -2,6 +2,8 @@
 
 > Acknolwedge to 
 
+Implementation of the paper A self attention mechanism for quantum chemistry
+
 ## Table of contents
 
 - [What this does](#what-this-does)
