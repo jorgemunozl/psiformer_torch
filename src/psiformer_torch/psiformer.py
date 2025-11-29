@@ -13,42 +13,45 @@ def get_device():
 class MHA(nn.Module):
     def __init__(self, config):
         super().__init__()
-        assert config.n_embd % config.n_head == 0  # 768/12 = 64 features
+        assert config.n_embd % config.n_head == 0
 
         # key, query, value projections for all heads
         self.c_attn = nn.Linear(config.n_embd, 3 * config.n_embd)
 
         # output projection
         self.c_proj = nn.Linear(config.n_embd, config.n_embd)
-        # regularization
         self.n_head = config.n_head
         self.n_embd = config.n_embd
 
-        # create causal mask buffer (lower triangular matrix)
-        mask = torch.tril(torch.ones(config.block_size, config.block_size))
-        self.register_buffer(
-            "bias",
-            mask.view(1, 1, config.block_size, config.block_size)
-        )
-
     def forward(self, x):
-        B, T, C = x.size()  # batch, sequence length, Context Length, this imposes that our x is 3D, i.e., (batch_size, seq_len, embedding_dim)
+        T, C = x.size()  # sequence length, Embedding dim
+        # imposes that our x is 3D, i.e.,
+        # (batch_size, seq_len, embedding_dim)
 
         # get query, key, values from single linear projection
         qkv = self.c_attn(x)
-        q, k, v = qkv.split(self.n_embd, dim=2)
+        print(qkv.shape)
+        print(qkv)
+        q, k, v = qkv.split()
+
+        print("Q Before View:", q)
+        print("K Before View:", k)
+        print("V Before View:", v)
         # reshape and transpose for attention calculation
-        k = k.view(B, T, self.n_head, C // self.n_head).transpose(1, 2)
-        v = v.view(B, T, self.n_head, C // self.n_head).transpose(1, 2)
-        q = q.view(B, T, self.n_head, C // self.n_head).transpose(1, 2)
+
+        k = k.view()
+        v = v.view()
+        q = q.view()
+
+        print("Q After View:", q)
+        print("K After View:", k)
+        print("V After View:", v)
+
         # compute attention scores
-        att = (q @ k.transpose(-2, -1)) / math.sqrt(k.size(-1))
-        att = att.masked_fill(self.bias[:, :, :T, :T] == 0,
-                              float('-inf'))
-        att = F.softmax(att, dim=-1)
+        att = (q @ k.transpose()) / math.sqrt(2)
+        att = F.softmax(torch.Tensor(), dim=-1)
         # apply attention to values
         y = att @ v
-        y = y.transpose(1, 2).contiguous().view(B, T, C)
         y = self.c_proj(y)
         return y
 
@@ -87,10 +90,41 @@ class Config():
     n_embd: int = 9
 
 
-config = Config()
-layer = Layer(config)
-value = torch.randn(1, 1, config.n_embd)
+def main():
+    config = Config()
+    layer = Layer(config)
+    hidden_states = torch.randn(3, 9)  # (seq_len, embedding_dim)
+    print("Input Hidden States:", hidden_states)
+    output = layer(hidden_states)
+    print("Output Hidden States:", output)
 
-B, T, C = value.size()
-print(B, T, C)
-# output = layer(value)
+
+if __name__ == "__main__":
+    main()
+
+
+def potential(x):
+    return x**2
+
+
+def kinetic_log(f, x):
+    derivative = torch.autograd.grad(f(x).sum(), x, create_graph=True)[0]
+    return derivative**2
+
+
+def local_energy(f, x):
+    V = potential(x)
+    K_log = kinetic_log(f, x)
+    return K_log + V
+
+
+def monte_carlo(local_energy, samples):
+    average_energy = 0
+    for sample in samples:
+        average_energy += local_energy(sample)
+    return average_energy / len(samples)
+
+
+def metropolis_hastings(target, proposal):
+    samples = []
+    return samples

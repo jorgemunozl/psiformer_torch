@@ -1,15 +1,10 @@
-from hamiltonian import Hamiltonian, Potential
-import wandb
 import logging
 
 
-# Compute Local Energy
-
-
 def train():
-    wandb.init(project="psiformer_torch_example")
+    # wandb.init(project="psiformer_torch_example")
     logging.info("WandB initialized for project: psiformer_torch_example")
-    wandb.finish()
+    # wandb.finish()
 
 
 if __name__ == "__main__":
