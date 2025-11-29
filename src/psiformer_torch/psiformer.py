@@ -30,30 +30,25 @@ class MHA(nn.Module):
 
         # get query, key, values from single linear projection
         qkv = self.c_attn(x)
-        print(qkv.shape)
-        print(qkv)
-        q, k, v = qkv.split()
+        # print(qkv.size())
+        q, k, v = qkv.split(self.n_embd, dim=1)
 
-        print("Q Before View:", q)
-        print("K Before View:", k)
-        print("V Before View:", v)
-        # reshape and transpose for attention calculation
+        # print("K Before View:", k.shape)
+        head_dim = C // self.n_head
 
-        k = k.view()
-        v = v.view()
-        q = q.view()
+        # dim (heads, T, head_dim)
+        k = k.view(T, self.n_head, head_dim).permute(1, 0, 2)
+        q = q.view(T, self.n_head, head_dim).permute(1, 0, 2)
+        v = v.view(T, self.n_head, head_dim).permute(1, 0, 2)
 
-        print("Q After View:", q)
-        print("K After View:", k)
-        print("V After View:", v)
+        # head, T, head_dim x head, head_dim , T -> head, T, T
+        att = (q @ k.transpose(-2, -1)) / math.sqrt(head_dim)
+        att = F.softmax(att, dim=-1)
+        y = att @ v  # heads, T, T x heads, T , head_dim -> T, head_dim
 
-        # compute attention scores
-        att = (q @ k.transpose()) / math.sqrt(2)
-        att = F.softmax(torch.Tensor(), dim=-1)
-        # apply attention to values
-        y = att @ v
-        y = self.c_proj(y)
-        return y
+        # Back to (T, emb_dim)
+        y = y.permute(1, 0, 2).contiguous().view(T, C)
+        return self.c_proj(y)
 
 
 class MLP(nn.Module):
@@ -85,22 +80,37 @@ class Layer(nn.Module):
 
 class Config():
     n_layer: int = 4
-    block_size: int = 10
-    n_head: int = 3  # It must divide n_embd
-    n_embd: int = 9
+    n_head: int = 4
+    n_embd: int = 124
 
 
 def main():
+    device = get_device()
+    print(f"Using {device}")
     config = Config()
     layer = Layer(config)
-    hidden_states = torch.randn(3, 9)  # (seq_len, embedding_dim)
-    print("Input Hidden States:", hidden_states)
+    hidden_states = torch.randn(3, config.n_embd)  # (seq_len, embedding_dim)
+    print("Input Hidden States:", hidden_states.shape)
     output = layer(hidden_states)
-    print("Output Hidden States:", output)
+    print("Output Hidden States:", output.shape)
 
 
 if __name__ == "__main__":
     main()
+
+
+class PsiFormer(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.layers = [Layer(config) for _ in config.n_layer]
+
+    def forward(self, x):
+        # return self.layers(x)
+        pass
+
+    def _build(self):
+        feature = torch.rand(1, 1)
+        return feature
 
 
 def potential(x):
