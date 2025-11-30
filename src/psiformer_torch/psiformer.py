@@ -44,9 +44,9 @@ class MHA(nn.Module):
         # head, T, head_dim x head, head_dim , T -> head, T, T
         att = (q @ k.transpose(-2, -1)) / math.sqrt(head_dim)
         att = F.softmax(att, dim=-1)
-        y = att @ v  # heads, T, T x heads, T , head_dim -> T, head_dim
+        y = att @ v  # heads, T, T x heads, T , head_dim -> heads , T, head_dim
 
-        # Back to (T, emb_dim)
+        # Back to (T, heads, head_dim)
         y = y.permute(1, 0, 2).contiguous().view(T, C)
         return self.c_proj(y)
 
@@ -78,39 +78,71 @@ class Layer(nn.Module):
         return x
 
 
+class First_Layer(nn.Module):
+    def __init__(self, n_features, n_emb):
+        super().__init__()
+        self.f1 = nn.Linear(n_features, n_emb)
+
+    def forward(self, x):
+        return self.f1(x)
+
+
+class Last_Layer(nn.Module):
+    def __init__(self, n_emb, output_dim) -> None:
+        super().__init__()
+        self.f1 = nn.Linear(n_emb, output_dim)
+
+    def forward(self, x):
+        return self.f1(x)
+
+
 class Config():
     n_layer: int = 4
     n_head: int = 4
-    n_embd: int = 124
+    n_embd: int = 32
+    n_features: int = 4
+    n_out: int = 3
+
+
+class PsiFormer(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.f_1 = First_Layer(config.n_features, config.n_embd)
+        self.f_h = Layer(config)
+        self.f_n = Last_Layer(config.n_embd, config.n_out)
+
+    def build_features(self, r_electron=torch.rand(3),
+                       r_proton=torch.rand(3)) -> torch.Tensor:
+        """
+        Hidrogen atom, simple.
+        """
+        h_0_1 = r_electron-r_proton
+        h_0_2 = torch.norm(h_0_1)
+        return torch.cat([h_0_1, torch.tensor([h_0_2])])
+
+    def forward(self):
+        features = self.build_features()
+        f1 = self.f_1(features)
+        first = torch.unsqueeze(f1, 0)
+        # print("Input Hidden States:", first.shape)
+        output = self.f_h(first)
+        # print("Output Hidden States:", output.shape)
+        f_n = self.f_n(output)
+        # print("Last dim", f_n.shape)
+        return f_n
 
 
 def main():
     device = get_device()
     print(f"Using {device}")
     config = Config()
-    layer = Layer(config)
-    hidden_states = torch.randn(3, config.n_embd)  # (seq_len, embedding_dim)
-    print("Input Hidden States:", hidden_states.shape)
-    output = layer(hidden_states)
-    print("Output Hidden States:", output.shape)
+    model = PsiFormer(config)
+    output = model()
+    print("Output", output)
 
 
 if __name__ == "__main__":
     main()
-
-
-class PsiFormer(nn.Module):
-    def __init__(self, config):
-        super().__init__()
-        self.layers = [Layer(config) for _ in config.n_layer]
-
-    def forward(self, x):
-        # return self.layers(x)
-        pass
-
-    def _build(self):
-        feature = torch.rand(1, 1)
-        return feature
 
 
 def potential(x):
