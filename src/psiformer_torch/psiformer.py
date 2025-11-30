@@ -81,24 +81,6 @@ class Layer(nn.Module):
         return x
 
 
-class First_Layer(nn.Module):
-    def __init__(self, n_features: int, n_emb: int):
-        super().__init__()
-        self.f1 = nn.Linear(n_features, n_emb)
-
-    def forward(self, x):
-        return self.f1(x)
-
-
-class Last_Layer(nn.Module):
-    def __init__(self, n_emb: int, output_dim: int):
-        super().__init__()
-        self.f1 = nn.Linear(n_emb, output_dim)
-
-    def forward(self, x: torch.Tensor):
-        return self.f1(x)
-
-
 class Model_Config():
     n_layer: int = 4
     n_head: int = 4
@@ -117,9 +99,9 @@ class Train_Config():
 class PsiFormer(nn.Module):
     def __init__(self, config: Model_Config):
         super().__init__()
-        self.f_1 = First_Layer(config.n_features, config.n_embd)
+        self.f_1 = nn.Linear(config.n_features, config.n_embd)
         self.f_h = Layer(config)
-        self.f_n = Last_Layer(config.n_embd, config.n_out)
+        self.f_n = nn.Linear(config.n_embd, config.n_out)
 
     def build_features(self, r_electron=torch.rand(3),
                        r_proton=torch.rand(3)) -> torch.Tensor:
@@ -130,14 +112,13 @@ class PsiFormer(nn.Module):
         h_0_2 = torch.norm(h_0_1)
         return torch.cat([h_0_1, torch.tensor([h_0_2])])
 
-    def forward(self):
-        features = self.build_features()
-
-        f1 = self.f_1(features)
-        first = torch.unsqueeze(f1, 0)
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        if x.ndim == 0:
+            x = x.unsqueeze(0)
+        f1 = self.f_1(x)
 
         # print("Input Hidden States:", first.shape)
-        output = self.f_h(first)
+        output = self.f_h(f1)
 
         # print("Output Hidden States:", output.shape)
         f_n = self.f_n(output)
@@ -147,7 +128,7 @@ class PsiFormer(nn.Module):
 
 def potential(r_e: torch.Tensor, r_p: torch.Tensor) -> torch.Tensor:
     # Compute the potential between the hidrogen proton and electron
-    return torch.norm(r_e-r_p)
+    return (torch.norm(r_e-r_p))**(-1)
 
 
 def kinetic_from_log(model: PsiFormer, x: torch.Tensor) -> torch. Tensor:
@@ -160,37 +141,46 @@ class train():
         self.model = model
         self.config = config
 
+    def model_square(self, x: torch.Tensor) -> torch.Tensor:
+        psi2 = (torch.norm(self.model(x))**2)
+        return psi2
+
     def local_energy(self, sample: torch.Tensor) -> torch.Tensor:
-        V = potential(torch.rand(2), torch.rand())
+        V = potential(torch.rand(1,2), torch.rand(1,2))
         K = kinetic_from_log(self.model, sample)
         return K + V
 
-    def metroplis_step(self, mc) -> torch.Tensor:
-        sample = torch.rand(2)
+    def generate_trial(self, state: torch.Tensor) -> torch.Tensor:
+        sample = state + torch.rand_like(state)
         return sample
 
-    def accept(self, trial: torch.Tensor) -> bool:
-        quotient = torch.tensor([2])
-        num = torch.min(torch.ones_like(quotient), quotient)
-        if quotient < torch.rand(unifirm)
+    def accept_decline(self, trial: torch.Tensor,
+                       current_state: torch.Tensor) -> bool:
+        quotient = self.model_square(trial)/self.model_square(current_state)
+        min = torch.min(torch.ones_like(quotient), quotient)
+        if torch.rand_like(quotient) < min:
             return True
         else:
-            False
+            return False
 
-    def thermalize(self):
-        markov_chain = []
+    def thermalize(self) -> List[torch.Tensor]:
+        markov_chain = [torch.rand(1, 4)]
         while len(markov_chain) < self.config.burn_in:
-            trial = generate_trial()
-            if accept(trial):
+            trial = self.generate_trial(markov_chain[-1])
+            if self.accept_decline(trial, markov_chain[-1]):
                 markov_chain.append(trial)
+        return markov_chain
 
-    def sampler(self) -> List[torch.Tensor]:
-        samples = []
-        for i in range(self.config.monte_carlo_size):
-            samples.append(torch.rand(3))
+    def sampler(self, markov_chain_state: torch.Tensor) -> List[torch.Tensor]:
+        samples = [markov_chain_state]
+        while len(samples) < (self.config.monte_carlo_size):
+            trial = self.generate_trial(samples[-1])
+            if self.accept_decline(trial, samples[-1]):
+                samples.append(trial)
         return samples
 
-    def compute_loss_mc(self, samples: List[torch.Tensor]) -> torch.Tensor:
+    def compute_loss_mc(self) -> torch.Tensor:
+        samples = self.sampler(self.thermalize()[-1])
         avg = torch.zeros_like(samples[0])
         for sample in samples:
             avg += self.local_energy(sample)
@@ -206,7 +196,7 @@ class train():
                 print("Saving checkpoint")
                 self.save_checkpoint()
             if step % 100 == 0:
-                print(loss)
+                print("Loss", loss)
 
 
 def main():
