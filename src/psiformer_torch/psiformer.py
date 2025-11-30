@@ -1,7 +1,10 @@
+from __future__ import annotations
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 import math
+from typing import List
 
 
 def get_device():
@@ -11,7 +14,7 @@ def get_device():
 
 
 class MHA(nn.Module):
-    def __init__(self, config):
+    def __init__(self, config: Model_Config):
         super().__init__()
         assert config.n_embd % config.n_head == 0
 
@@ -23,7 +26,7 @@ class MHA(nn.Module):
         self.n_head = config.n_head
         self.n_embd = config.n_embd
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor):
         T, C = x.size()  # sequence length, Embedding dim
         # imposes that our x is 3D, i.e.,
         # (batch_size, seq_len, embedding_dim)
@@ -52,7 +55,7 @@ class MHA(nn.Module):
 
 
 class MLP(nn.Module):
-    def __init__(self, config):
+    def __init__(self, config: Model_Config):
         super().__init__()
         self.c_fc = nn.Linear(config.n_embd, 4*config.n_embd)
         self.gelu = nn.GELU(approximate='tanh')
@@ -67,7 +70,7 @@ class MLP(nn.Module):
 
 class Layer(nn.Module):
     # Combines MHA and MLP with residual connections
-    def __init__(self, config):
+    def __init__(self, config: Model_Config):
         super().__init__()
         self.attn = MHA(config)
         self.mlp = MLP(config)
@@ -79,7 +82,7 @@ class Layer(nn.Module):
 
 
 class First_Layer(nn.Module):
-    def __init__(self, n_features, n_emb):
+    def __init__(self, n_features: int, n_emb: int):
         super().__init__()
         self.f1 = nn.Linear(n_features, n_emb)
 
@@ -88,24 +91,31 @@ class First_Layer(nn.Module):
 
 
 class Last_Layer(nn.Module):
-    def __init__(self, n_emb, output_dim) -> None:
+    def __init__(self, n_emb: int, output_dim: int):
         super().__init__()
         self.f1 = nn.Linear(n_emb, output_dim)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor):
         return self.f1(x)
 
 
-class Config():
+class Model_Config():
     n_layer: int = 4
     n_head: int = 4
     n_embd: int = 32
-    n_features: int = 4
+    n_features: int = 4  # For Hidrogen atom, vec r plus distance
     n_out: int = 3
 
 
+class Train_Config():
+    steps: int = 10000
+    checkpoint_step: int = 100
+    monte_carlo_size: int = 20
+    burn_in: int = 20
+
+
 class PsiFormer(nn.Module):
-    def __init__(self, config):
+    def __init__(self, config: Model_Config):
         super().__init__()
         self.f_1 = First_Layer(config.n_features, config.n_embd)
         self.f_h = Layer(config)
@@ -122,42 +132,98 @@ class PsiFormer(nn.Module):
 
     def forward(self):
         features = self.build_features()
+
         f1 = self.f_1(features)
         first = torch.unsqueeze(f1, 0)
+
         # print("Input Hidden States:", first.shape)
         output = self.f_h(first)
+
         # print("Output Hidden States:", output.shape)
         f_n = self.f_n(output)
         # print("Last dim", f_n.shape)
         return f_n
 
 
+def potential(r_e: torch.Tensor, r_p: torch.Tensor) -> torch.Tensor:
+    # Compute the potential between the hidrogen proton and electron
+    return torch.norm(r_e-r_p)
+
+
+def kinetic_from_log(model: PsiFormer, x: torch.Tensor) -> torch. Tensor:
+    # derivative = torch.autograd.grad(f(x).sum(), x, create_graph=True)[0]
+    return torch.Tensor([2])
+
+
+class train():
+    def __init__(self, model: PsiFormer, config: Train_Config):
+        self.model = model
+        self.config = config
+
+    def local_energy(self, sample: torch.Tensor) -> torch.Tensor:
+        V = potential(torch.rand(2), torch.rand())
+        K = kinetic_from_log(self.model, sample)
+        return K + V
+
+    def metroplis_step(self, mc) -> torch.Tensor:
+        sample = torch.rand(2)
+        return sample
+
+    def accept(self, trial: torch.Tensor) -> bool:
+        quotient = torch.tensor([2])
+        num = torch.min(torch.ones_like(quotient), quotient)
+        if quotient < torch.rand(unifirm)
+            return True
+        else:
+            False
+
+    def thermalize(self):
+        markov_chain = []
+        while len(markov_chain) < self.config.burn_in:
+            trial = generate_trial()
+            if accept(trial):
+                markov_chain.append(trial)
+
+    def sampler(self) -> List[torch.Tensor]:
+        samples = []
+        for i in range(self.config.monte_carlo_size):
+            samples.append(torch.rand(3))
+        return samples
+
+    def compute_loss_mc(self, samples: List[torch.Tensor]) -> torch.Tensor:
+        avg = torch.zeros_like(samples[0])
+        for sample in samples:
+            avg += self.local_energy(sample)
+        return avg.mean()
+
+    def save_checkpoint(self):
+        pass
+
+    def train(self):
+        for step in range(1000):
+            loss = self.compute_loss_mc()
+            if step % self.config.checkpoint_step == 0:
+                print("Saving checkpoint")
+                self.save_checkpoint()
+            if step % 100 == 0:
+                print(loss)
+
+
 def main():
     device = get_device()
     print(f"Using {device}")
-    config = Config()
-    model = PsiFormer(config)
-    output = model()
-    print("Output", output)
+
+    model_config = Model_Config()
+    model = PsiFormer(model_config)
+
+    train_config = Train_Config()
+    trainer = train(model, train_config)
+
+    trainer.train()
 
 
 if __name__ == "__main__":
     main()
-
-
-def potential(x):
-    return x**2
-
-
-def kinetic_log(f, x):
-    derivative = torch.autograd.grad(f(x).sum(), x, create_graph=True)[0]
-    return derivative**2
-
-
-def local_energy(f, x):
-    V = potential(x)
-    K_log = kinetic_log(f, x)
-    return K_log + V
 
 
 def monte_carlo(local_energy, samples):
