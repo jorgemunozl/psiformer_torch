@@ -2,7 +2,8 @@ from __future__ import annotations
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import torch.optim as Optimzer
+import torch.optim as Optimizer
+from torch.autograd.functional import jacobian
 
 
 import math
@@ -96,6 +97,7 @@ class Train_Config():
     checkpoint_step: int = 100
     monte_carlo_size: int = 20
     burn_in: int = 20
+    checkpoint_name: str = "last_checkpoint.pth"
 
 
 class PsiFormer(nn.Module):
@@ -134,13 +136,21 @@ def potential(r_e: torch.Tensor, r_p: torch.Tensor) -> torch.Tensor:
 
 
 def kinetic_from_log(model: PsiFormer, x: torch.Tensor) -> torch. Tensor:
+    """
+    Returns the value H psi / psi
+    """
     # derivative = torch.autograd.grad(f(x).sum(), x, create_graph=True)[0]
-    return torch.Tensor([2])
+    log = torch.log(model(x))
+    return laplacian(log, x) + torch.square(jacobian(log, x))
+
+
+def laplacian(f, x: torch.Tensor) -> torch.Tensor:
+    return jacobian(jacobian(f, x)[0], x)[0]
 
 
 def kinetic(model: PsiFormer, x: torch.Tensor) -> torch.Tensor:
     """Computes the raw kinetic term"""
-    return 
+    return laplacian(model, x)
 
 
 class train():
@@ -153,12 +163,12 @@ class train():
         return psi2
 
     def local_energy(self, sample: torch.Tensor) -> torch.Tensor:
-        V = potential(torch.rand(1,2), torch.rand(1,2))
+        V = potential(sample[2:], sample[:2])
         K = kinetic_from_log(self.model, sample)
         return K + V
 
     def generate_trial(self, state: torch.Tensor) -> torch.Tensor:
-        sample = state + torch.rand_like(state)
+        sample = state + torch.randn_like(state)
         return sample
 
     def accept_decline(self, trial: torch.Tensor,
@@ -167,8 +177,7 @@ class train():
         min = torch.min(torch.ones_like(quotient), quotient)
         if torch.rand_like(quotient) < min:
             return True
-        else:
-            return False
+        return False
 
     def thermalize(self) -> List[torch.Tensor]:
         markov_chain = [torch.rand(1, 4)]
@@ -193,19 +202,20 @@ class train():
             avg += self.local_energy(sample)
         return avg.mean()
 
-    def save_checkpoint(self):
-        pass
+    def save_checkpoint(self, step):
+        if step % self.config.checkpoint_step == 0:
+            print("Saving checkpoint")
+            # Overwrite the last checkpoint
 
     def train(self):
+
+        optimizer = Optimizer.Adam(self.model.parameters(), lr=1e-3)
         for step in range(1000):
+            self.save_checkpoint(step)
             loss = self.compute_loss_mc()
-            optimizer = Optimzer.Adam(self.model.parameters(), lr=1e-3)
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-            # if step % self.config.checkpoint_step == 0:
-            #    print("Saving checkpoint")
-            #    self.save_checkpoint()
             if step % 100 == 0:
                 print("Loss", loss)
 
@@ -214,14 +224,19 @@ def main():
     device = get_device()
     print(f"Using {device}")
 
+    # Model
     model_config = Model_Config()
     model = PsiFormer(model_config)
 
+    # Train
     train_config = Train_Config()
     trainer = train(model, train_config)
 
+    # Metropolist Test, 
+    k
+
     # train the model
-    trainer.train()
+    #trainer.train()
 
 
 if __name__ == "__main__":
