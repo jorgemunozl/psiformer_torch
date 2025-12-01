@@ -2,6 +2,8 @@ from __future__ import annotations
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import torch.optim as Optimzer
+
 
 import math
 from typing import List
@@ -136,6 +138,11 @@ def kinetic_from_log(model: PsiFormer, x: torch.Tensor) -> torch. Tensor:
     return torch.Tensor([2])
 
 
+def kinetic(model: PsiFormer, x: torch.Tensor) -> torch.Tensor:
+    """Computes the raw kinetic term"""
+    return 
+
+
 class train():
     def __init__(self, model: PsiFormer, config: Train_Config):
         self.model = model
@@ -192,9 +199,13 @@ class train():
     def train(self):
         for step in range(1000):
             loss = self.compute_loss_mc()
-            if step % self.config.checkpoint_step == 0:
-                print("Saving checkpoint")
-                self.save_checkpoint()
+            optimizer = Optimzer.Adam(self.model.parameters(), lr=1e-3)
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+            # if step % self.config.checkpoint_step == 0:
+            #    print("Saving checkpoint")
+            #    self.save_checkpoint()
             if step % 100 == 0:
                 print("Loss", loss)
 
@@ -209,20 +220,9 @@ def main():
     train_config = Train_Config()
     trainer = train(model, train_config)
 
+    # train the model
     trainer.train()
 
 
 if __name__ == "__main__":
     main()
-
-
-def monte_carlo(local_energy, samples):
-    average_energy = 0
-    for sample in samples:
-        average_energy += local_energy(sample)
-    return average_energy / len(samples)
-
-
-def metropolis_hastings(target, proposal):
-    samples = []
-    return samples
