@@ -7,7 +7,7 @@ from torch.autograd.functional import jacobian
 
 
 import math
-from typing import List
+from typing import List, Callable
 
 
 def get_device():
@@ -95,8 +95,8 @@ class Model_Config():
 class Train_Config():
     steps: int = 10000
     checkpoint_step: int = 100
-    monte_carlo_size: int = 20
-    burn_in: int = 20
+    monte_carlo_length: int = 20  # Num samples
+    burn_in_steps: int = 20
     checkpoint_name: str = "last_checkpoint.pth"
 
 
@@ -153,8 +153,53 @@ def kinetic(model: PsiFormer, x: torch.Tensor) -> torch.Tensor:
     return laplacian(model, x)
 
 
+class MH():
+    """
+    Implementation for the Metropolis Hasting (MH) algorithm.
+    Returns a list a samples from the target distribution.
+    """
+    def __init__(self, target, eq_steps, num_samples):
+        self.target = target
+        self.eq_steps = eq_steps
+        self.num_samples = num_samples
+
+    def gaussian_kernel(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        A sample from a known distribution
+        """
+        return torch.randn()
+
+    def generate_trial(self, state: torch.Tensor) -> torch.Tensor:
+        sample = state + self.gaussian_kernel(state)
+        return sample
+
+    def accept_decline(self, trial: torch.Tensor,
+                       current_state: torch.Tensor) -> bool:
+        quotient = self.target(trial) / self.target(current_state)
+        min = torch.min(torch.ones_like(quotient), quotient)
+        if torch.rand_like(quotient) < min:
+            return True
+        return False
+
+    def thermalize(self) -> List[torch.Tensor]:
+        markov_chain = [torch.rand(1, 4)]
+        while len(markov_chain) == self.eq_steps:
+            trial = self.generate_trial(markov_chain[-1])
+            if self.accept_decline(trial, markov_chain[-1]):
+                markov_chain.append(trial)
+        return markov_chain
+
+    def sampler(self, markov_chain_state: torch.Tensor) -> List[torch.Tensor]:
+        samples = [markov_chain_state]
+        while len(samples) == (self.num_samples):
+            trial = self.generate_trial(samples[-1])
+            if self.accept_decline(trial, samples[-1]):
+                samples.append(trial)
+        return samples
+
+
 class train():
-    def __init__(self, model: PsiFormer, config: Train_Config):
+    def __init__(self, model, config: Train_Config):
         self.model = model
         self.config = config
 
@@ -167,36 +212,10 @@ class train():
         K = kinetic_from_log(self.model, sample)
         return K + V
 
-    def generate_trial(self, state: torch.Tensor) -> torch.Tensor:
-        sample = state + torch.randn_like(state)
-        return sample
-
-    def accept_decline(self, trial: torch.Tensor,
-                       current_state: torch.Tensor) -> bool:
-        quotient = self.model_square(trial)/self.model_square(current_state)
-        min = torch.min(torch.ones_like(quotient), quotient)
-        if torch.rand_like(quotient) < min:
-            return True
-        return False
-
-    def thermalize(self) -> List[torch.Tensor]:
-        markov_chain = [torch.rand(1, 4)]
-        while len(markov_chain) < self.config.burn_in:
-            trial = self.generate_trial(markov_chain[-1])
-            if self.accept_decline(trial, markov_chain[-1]):
-                markov_chain.append(trial)
-        return markov_chain
-
-    def sampler(self, markov_chain_state: torch.Tensor) -> List[torch.Tensor]:
-        samples = [markov_chain_state]
-        while len(samples) < (self.config.monte_carlo_size):
-            trial = self.generate_trial(samples[-1])
-            if self.accept_decline(trial, samples[-1]):
-                samples.append(trial)
-        return samples
-
     def compute_loss_mc(self) -> torch.Tensor:
-        samples = self.sampler(self.thermalize()[-1])
+        mh = MH(self.model, self.config.burn_in_steps,
+                self.config.monte_carlo_length)
+        samples = mh.sampler(mh.thermalize()[-1])
         avg = torch.zeros_like(samples[0])
         for sample in samples:
             avg += self.local_energy(sample)
@@ -208,7 +227,6 @@ class train():
             # Overwrite the last checkpoint
 
     def train(self):
-
         optimizer = Optimizer.Adam(self.model.parameters(), lr=1e-3)
         for step in range(1000):
             self.save_checkpoint(step)
@@ -231,12 +249,8 @@ def main():
     # Train
     train_config = Train_Config()
     trainer = train(model, train_config)
-
-    # Metropolist Test, 
-    k
-
     # train the model
-    #trainer.train()
+    trainer.train()
 
 
 if __name__ == "__main__":
