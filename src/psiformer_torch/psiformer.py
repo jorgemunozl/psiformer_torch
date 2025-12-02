@@ -5,9 +5,8 @@ import torch.nn.functional as F
 import torch.optim as Optimizer
 from torch.autograd.functional import jacobian
 
-
 import math
-from typing import List, Callable
+from typing import Callable
 
 
 def get_device():
@@ -98,6 +97,7 @@ class Train_Config():
     monte_carlo_length: int = 20  # Num samples
     burn_in_steps: int = 20
     checkpoint_name: str = "last_checkpoint.pth"
+    dim: int = 4  # For Hidrogen Atom
 
 
 class PsiFormer(nn.Module):
@@ -155,46 +155,53 @@ def kinetic(model: PsiFormer, x: torch.Tensor) -> torch.Tensor:
 
 class MH():
     """
-    Implementation for the Metropolis Hasting (MH) algorithm.
-    Returns a list a samples from the target distribution.
+    Implementation for the Metropolis Hasting (MH) algorithm
+    using a gaussian kernel. Returns a list a samples from
+    the target distribution.
+    We work with the log form. !
     """
-    def __init__(self, target, eq_steps, num_samples):
+    def __init__(self, target: Callable[[torch.Tensor], torch.Tensor],
+                 eq_steps: int,
+                 num_samples: int,
+                 dim: int,
+                 step_size: float = 1.0
+                 ):
         self.target = target
         self.eq_steps = eq_steps
         self.num_samples = num_samples
-
-    def gaussian_kernel(self, x: torch.Tensor) -> torch.Tensor:
-        """
-        A sample from a known distribution
-        """
-        return torch.randn()
+        self.dim = dim
 
     def generate_trial(self, state: torch.Tensor) -> torch.Tensor:
-        sample = state + self.gaussian_kernel(state)
+        sample = state + torch.randn_like(state)
         return sample
 
     def accept_decline(self, trial: torch.Tensor,
                        current_state: torch.Tensor) -> bool:
-        quotient = self.target(trial) / self.target(current_state)
-        min = torch.min(torch.ones_like(quotient), quotient)
-        if torch.rand_like(quotient) < min:
+        alpha = self.target(trial) - self.target(current_state)
+        if torch.rand(()) < torch.exp(torch.minimum(alpha, torch.tensor(0.0))):
             return True
         return False
 
-    def thermalize(self) -> List[torch.Tensor]:
-        markov_chain = [torch.rand(1, 4)]
-        while len(markov_chain) == self.eq_steps:
-            trial = self.generate_trial(markov_chain[-1])
-            if self.accept_decline(trial, markov_chain[-1]):
-                markov_chain.append(trial)
-        return markov_chain
+    def sampler(self) -> torch.Tensor:
+        # Thermalization
+        x = torch.randn(self.dim)
 
-    def sampler(self, markov_chain_state: torch.Tensor) -> List[torch.Tensor]:
-        samples = [markov_chain_state]
-        while len(samples) == (self.num_samples):
-            trial = self.generate_trial(samples[-1])
-            if self.accept_decline(trial, samples[-1]):
-                samples.append(trial)
+        for _ in range(self.eq_steps):
+            trial = self.generate_trial(x)
+            if self.accept_decline(trial, x):
+                x = trial
+
+        # Sampling
+
+        samples = torch.zeros(self.num_samples, self.dim)
+        samples[0] = x
+
+        for i in range(1, self.num_samples):
+            trial = self.generate_trial(x)
+            if self.accept_decline(trial, x):
+                x = trial
+            samples[i] = x
+
         return samples
 
 
@@ -214,8 +221,8 @@ class train():
 
     def compute_loss_mc(self) -> torch.Tensor:
         mh = MH(self.model, self.config.burn_in_steps,
-                self.config.monte_carlo_length)
-        samples = mh.sampler(mh.thermalize()[-1])
+                self.config.monte_carlo_length, self.config.dim)
+        samples = mh.sampler()
         avg = torch.zeros_like(samples[0])
         for sample in samples:
             avg += self.local_energy(sample)
