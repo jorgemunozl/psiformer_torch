@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 def target(x: torch.Tensor) -> torch.Tensor:
     """
-    A sample from a known distribution. First one dimension
+    Sample from the gaussian distribution, log up a constant.
     """
     a = (- 0.5 * (x**2).sum())
     return a
