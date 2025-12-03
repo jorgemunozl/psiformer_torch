@@ -2,12 +2,11 @@ import torch
 import numpy as np
 import matplotlib.pyplot as plt
 from typing import Callable
-from torch.autograd.functional import jacobian
+from torch.autograd.functional import jacobian, hessian
 
 
 def vectorial_function(x: torch.Tensor) -> torch.Tensor:
     # Let's say that it has a shape (2,)
-    print(x.shape)
     y0 = torch.exp(-x[0]**2 - x[1]**2)
     y1 = torch.sin(x[0]) * torch.cos(x[1])
     return torch.stack([y0, y1])
@@ -26,7 +25,6 @@ def jacobian_manual(f: Callable, x: torch.Tensor) -> torch.Tensor:
 
 def function(x: torch.Tensor) -> torch.Tensor:
     # Let's say that it has a shape (2,)
-    print(x.shape)
     return torch.exp(-x[0]**2-x[1]**2)
 
 
@@ -42,21 +40,29 @@ def gradient(f: Callable, x: torch.Tensor):
     return grad.sum()
 
 
-def laplacian(f, x):
-    # x: shape (..., n), f(x): scalar
+def laplacian(f: Callable[[torch.Tensor], torch.Tensor], x: torch.Tensor) -> torch.Tensor:
+    # Compute the Laplacian at a single point by tracing the Hessian
     x = x.clone().detach().requires_grad_(True)
-    y = f(x)  # scalar tensor
-    # first derivatives
-    grad = torch.autograd.grad(y, x, create_graph=True)[0]  # same shape as x
-    # second derivatives: grad outputs is a tensor of ones matching grad
-    lap = 0.0
-    for g in grad.view(-1):
-        lap_term = torch.autograd.grad(g, x, retain_graph=True, allow_unused=False)[0]
-        lap += lap_term.sum()
-    return lap
+    hess = hessian(f, x)
+    return torch.einsum("ii->", hess)
+
+
+def laplacian_on_grid(f: Callable[[torch.Tensor], torch.Tensor], grid: torch.Tensor) -> torch.Tensor:
+    """
+    Evaluate the Laplacian of f over a grid of coordinates.
+    grid has shape (dim, ...). We treat each spatial location independently.
+    """
+    dim = grid.shape[0]
+    flat_points = grid.reshape(dim, -1).transpose(0, 1)
+    results = torch.zeros(flat_points.shape[0], dtype=grid.dtype, device=grid.device)
+    for idx, point in enumerate(flat_points):
+        results[idx] = laplacian(f, point)
+    return results.reshape(grid.shape[1:])
 
 
 def plot_scalar_field(f) -> None:
+    if isinstance(f, torch.Tensor):
+        f = f.detach().cpu().numpy()
     plt.figure()
     plt.imshow(f)
     plt.show()
@@ -65,10 +71,10 @@ def plot_scalar_field(f) -> None:
 def main():
     x = torch.linspace(0, 1, 100)
     y = torch.linspace(0, 1, 100)
-    X, Y = torch.meshgrid(x, y)
+    X, Y = torch.meshgrid(x, y, indexing="ij")
     XY = torch.stack([X, Y])
     AL = analytic_laplacian(XY)
-    torchL = laplacian(function, XY)
+    torchL = laplacian_on_grid(function, XY)
     plot_scalar_field(torchL)
 
 
