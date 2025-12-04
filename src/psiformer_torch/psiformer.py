@@ -10,6 +10,9 @@ import math
 from typing import Callable
 
 
+CHECKPOINT_PATH = "checkpoints/"
+
+
 def get_device():
     if torch.cuda.is_available():
         return torch.device("cuda")
@@ -106,8 +109,8 @@ class Layer(nn.Module):
         self.mlp = MLP(config)
 
     def forward(self, x):
-        x += self.attn(x)
-        x += self.mlp(x)
+        x = x + self.attn(x)
+        x = x + self.mlp(x)
         return x
 
 
@@ -158,17 +161,6 @@ class PsiFormer(nn.Module):
         return f_n.squeeze(-1).mean(dim=-1)
 
 
-def kinetic_from_log(model: PsiFormer, x: torch.Tensor) -> torch. Tensor:
-    """
-    Returns the value H psi / psi
-    """
-    # derivative = torch.autograd.grad(f(x).sum(), x, create_graph=True)[0]
-    log = model(x)
-    lap = laplacian_log_psi(lambda t: model(t), x)
-    g = grad_log_psi(lambda t: model(t), x)
-    return lap + torch.square(g).sum()
-
-
 class MH():
     """
     Implementation for the Metropolis Hasting (MH) algorithm
@@ -193,11 +185,14 @@ class MH():
 
     def accept_decline(self, trial: torch.Tensor,
                        current_state: torch.Tensor) -> bool:
-        alpha = self.target(trial) - self.target(current_state)
+        # Sampling does not need gradients; keep it detached from autograd.
+        with torch.no_grad():
+            alpha = self.target(trial) - self.target(current_state)
         if torch.rand(()) < torch.exp(torch.minimum(alpha, torch.tensor(0.0))):
             return True
         return False
 
+    @torch.no_grad()
     def sampler(self) -> torch.Tensor:
         # Thermalization
         x = torch.randn(self.dim)
@@ -267,8 +262,9 @@ class Trainer():
     def save_checkpoint(self, step):
         if step % self.config.checkpoint_step == 0:
             # Check if father directory checkpoint_path exist.
-            os.makedirs(directory, exist_ok=True)
-            torch.save(self.model.state_dict(), self.config.checkpoint_name)
+            os.makedirs(CHECKPOINT_PATH, exist_ok=True)
+            path = os.path.join(CHECKPOINT_PATH, self.config.checkpoint_name)
+            torch.save(self.model.state_dict(), path)
             print(f"Saved checkpoint at step {step}")
 
     def train(self):
