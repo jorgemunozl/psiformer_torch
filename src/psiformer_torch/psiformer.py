@@ -1,9 +1,10 @@
 from __future__ import annotations
+import os
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import torch.optim as Optimizer
-from torch.autograd.functional import hessian
+import torch.optim as optim
+from torch.autograd import grad
 
 import math
 from typing import Callable
@@ -13,6 +14,33 @@ def get_device():
     if torch.cuda.is_available():
         return torch.device("cuda")
     return torch.device("cpu")
+
+
+def grad_log_psi(log_psi_fn: Callable[[torch.Tensor], torch.Tensor],
+                 x: torch.Tensor) -> torch.Tensor:
+    """
+    Gradient of log psi with graph retained for higher order derivatives.
+    """
+    x_req = x.clone().detach().requires_grad_(True)
+    y = log_psi_fn(x_req)
+    (g,) = grad(y, x_req, create_graph=True)
+    return g
+
+
+def laplacian_log_psi(log_psi_fn: Callable[[torch.Tensor], torch.Tensor],
+                      x: torch.Tensor) -> torch.Tensor:
+    """
+    Laplacian of log psi via second derivatives of each dimension.
+    """
+    x_req = x.clone().detach().requires_grad_(True)
+    y = log_psi_fn(x_req)
+    (g,) = grad(y, x_req, create_graph=True, retain_graph=True)
+
+    second_terms = []
+    for i in range(x_req.numel()):
+        (g_i,) = grad(g[i], x_req, retain_graph=True)
+        second_terms.append(g_i[i])
+    return torch.stack(second_terms).sum()
 
 
 class MHA(nn.Module):
@@ -117,7 +145,7 @@ class PsiFormer(nn.Module):
         return torch.cat([h_0_1, torch.tensor([h_0_2])])
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        if x.ndim == 0:
+        if x.ndim == 1:
             x = x.unsqueeze(0)
         f1 = self.f_1(x)
 
@@ -126,8 +154,8 @@ class PsiFormer(nn.Module):
 
         # print("Output Hidden States:", output.shape)
         f_n = self.f_n(output)
-        # print("Last dim", f_n.shape)
-        return f_n
+        # Return scalar log-psi per sample
+        return f_n.squeeze(-1).mean(dim=-1)
 
 
 def kinetic_from_log(model: PsiFormer, x: torch.Tensor) -> torch. Tensor:
@@ -135,8 +163,10 @@ def kinetic_from_log(model: PsiFormer, x: torch.Tensor) -> torch. Tensor:
     Returns the value H psi / psi
     """
     # derivative = torch.autograd.grad(f(x).sum(), x, create_graph=True)[0]
-    log = torch.log(model(x))
-    return laplacian(log, x) + torch.square(jacobian(log, x))
+    log = model(x)
+    lap = laplacian_log_psi(lambda t: model(t), x)
+    g = grad_log_psi(lambda t: model(t), x)
+    return lap + torch.square(g).sum()
 
 
 class MH():
@@ -191,8 +221,8 @@ class MH():
         return samples
 
     def montecarlo_estimator(self, func: Callable) -> torch.Tensor:
-        avg = torch.tensor([0.0])    
-        samples = self.sampler() # Samples is a Tensor recall that
+        avg = torch.tensor([0.0])
+        samples = self.sampler()
         for sample in samples:
             avg += func(sample)
         return avg
@@ -206,72 +236,61 @@ class Potential():
         # Compute the potential between the hidrogen proton and electron
         self.r_e = r_e
         self.r_p = r_p
- 
+
     def potential(self) -> torch.Tensor:
         return (torch.norm(self.r_e-self.r_p))**(-1)
 
 
 class Hamiltonian():
-    def __init__(self, func: Callable[[torch.Tensor], torch.Tensor]):
-        self.func = func
-
-    def laplacian(self, f: Callable[[torch.Tensor],
-                  torch.Tensor], x: torch.Tensor) -> torch.Tensor:
-        # Compute the Laplacian at a single point by tracing the Hessian
-        x = x.clone().detach().requires_grad_(True)
-        hess = hessian(f, x)
-        #  more derivatives that I want
-        return torch.einsum("ii->", hess)
+    def __init__(self, log_psi_fn: Callable[[torch.Tensor], torch.Tensor]):
+        self.log_psi_fn = log_psi_fn
 
     def local_energy(self, sample: torch.Tensor) -> torch.Tensor:
-        V = Potential(sample[2:], sample[:2])
-        V = V.potential()
-        K = (-0.5 * self.laplacian(self.func, sample)) # This guy should 
-        return K + V
+        # Hydrogen: potential from proton/electron distance
+        V = Potential(sample[2:], sample[:2]).potential()
+        g = grad_log_psi(self.log_psi_fn, sample)
+        lap = laplacian_log_psi(self.log_psi_fn, sample)
+        kinetic = -0.5 * (lap + (g * g).sum())
+        return kinetic + V
 
-   
-class train():
+
+class Trainer():
     def __init__(self, model, config: Train_Config):
-        self.model = model
+        self.model = model.to(get_device())
         self.config = config
+        self.optimizer = optim.Adam(self.model.parameters(), lr=1e-3)
+        self.device = get_device()
 
-    def model_square(self, x: torch.Tensor) -> torch.Tensor:
-        psi2 = (torch.norm(self.model(x))**2)
-        return psi2
-
-    def expectation_EL(self, local_energy) -> torch.Tensor:
-        
-        return avg.mean()
+    def log_psi(self, x: torch.Tensor) -> torch.Tensor:
+        return self.model(x.to(self.device))
 
     def save_checkpoint(self, step):
         if step % self.config.checkpoint_step == 0:
-            print("Saving checkpoint")
-            # Overwrite the last checkpoint
-    def derivative_loss(self, local_energy) -> torch.Tensor:
-        # (Local Energy - expectiation) log psi
-        e = self.expectation_EL(local_energy)
-        avg = torch.tensor([0.0])
-        for sample in samples:
-            avg += 
-        return
-
+            # Check if father directory checkpoint_path exist.
+            os.makedirs(directory, exist_ok=True)
+            torch.save(self.model.state_dict(), self.config.checkpoint_name)
+            print(f"Saved checkpoint at step {step}")
 
     def train(self):
-        mh = MH(self.model, self.config.burn_in_steps,
-                self.config.monte_carlo_length, self.config.dim)
-        optimizer = Optimizer.Adam(self.model.parameters(), lr=1e-3)
-        
+        mh = MH(self.log_psi, self.config.burn_in_steps,
+                self.config.monte_carlo_length, self.config.dim, step_size=0.1)
+        hamilton = Hamiltonian(self.log_psi)
+
         for step in range(self.config.train_steps):
-            hamilton = Hamiltonian(self.model)
-            local_energy = hamilton.local_energy
-            expectation_local_energy = mh.montecarlo_estimator(local_energy)
-            deviation = (local_energy - expectation_local_energy)*torch.log(self.model)
-            derivative_loss = mh.montecarlo_estimator(deviation)
-            
-            optimizer.zero_grad()
-            optimizer.step()
+            samples = mh.sampler().to(self.device)
+            local_energies = torch.stack([hamilton.local_energy(s) for s in samples])
+            log_psi_vals = torch.stack([self.log_psi(s) for s in samples])
+
+            E_mean = local_energies.mean().detach()
+            loss = ((local_energies - E_mean) * log_psi_vals).mean()
+
+            self.optimizer.zero_grad()
+            loss.backward()
+            self.optimizer.step()
+            self.save_checkpoint(step)
+
             if step % 100 == 0:
-                print("Loss", loss)
+                print(f"step {step} | loss {loss.item():.4f} | energy {local_energies.mean().item():.4f}")
 
 
 def main():
@@ -284,7 +303,9 @@ def main():
 
     # Train
     train_config = Train_Config()
-    trainer = train(model, train_config)
+    # keep dim consistent with model input size
+    train_config.dim = model_config.n_features
+    trainer = Trainer(model, train_config)
     # train the model
     trainer.train()
 
