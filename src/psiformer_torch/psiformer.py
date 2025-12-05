@@ -118,8 +118,9 @@ class Model_Config():
     n_layer: int = 4
     n_head: int = 8
     n_embd: int = 128
-    n_features: int = 4  # For Hidrogen atom, vec r, distance
+    n_features: int = 3  # Hydrogen coordinates (x, y, z)
     n_out: int = 1
+    envelope_beta: float = 1.0  # exp(-beta * r) envelope strength
 
 
 class Train_Config():
@@ -128,12 +129,13 @@ class Train_Config():
     monte_carlo_length: int = 4000  # Num samples
     burn_in_steps: int = 1
     checkpoint_name: str = "last_checkpoint.pth"
-    dim: int = 3  # For Hidrogen Atom
+    dim: int = 3  # Hydrogen coordinates only
 
 
 class PsiFormer(nn.Module):
     def __init__(self, config: Model_Config):
         super().__init__()
+        self.config = config
         self.f_1 = nn.Linear(config.n_features, config.n_embd)
         self.f_h = Layer(config)
         self.f_n = nn.Linear(config.n_embd, config.n_out)
@@ -180,10 +182,10 @@ class MH():
         self.eq_steps = eq_steps
         self.num_samples = num_samples
         self.dim = dim
+        self.step_size = step_size
 
     def generate_trial(self, state: torch.Tensor) -> torch.Tensor:
-        sample = state + torch.randn_like(state)
-        return sample
+        return state + self.step_size * torch.randn_like(state)
 
     def accept_decline(self, trial: torch.Tensor,
                        current_state: torch.Tensor) -> bool:
@@ -225,7 +227,7 @@ class Potential():
     """
     def __init__(self, r_e: torch.Tensor):
         # Compute the potential between the hidrogen proton and electron
-        self.r_e = r_e
+        self.r_e = r_e[..., :3]  # only spatial coords
 
     def potential(self) -> torch.Tensor:
         eps = 1e-12
@@ -254,7 +256,10 @@ class Trainer():
         self.device = get_device()
 
     def log_psi(self, x: torch.Tensor) -> torch.Tensor:
-        return self.model(x.to(self.device))
+        x = x.to(self.device)
+        r = torch.linalg.norm(x, dim=-1)
+        envelope = -self.model.config.envelope_beta * r
+        return self.model(x) + envelope
 
     def save_checkpoint(self, step):
         if step % self.config.checkpoint_step == 0:

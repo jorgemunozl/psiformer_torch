@@ -43,7 +43,8 @@ def gradient(f: Callable, x: torch.Tensor):
 def laplacian(f: Callable[[torch.Tensor], torch.Tensor], x: torch.Tensor) -> torch.Tensor:
     # Compute the Laplacian at a single point by tracing the Hessian
     x = x.clone().detach().requires_grad_(True)
-    hess = hessian(f, x)  #  This would be efficient? I mean this computes 
+    hess = hessian(f, x)  # This would be efficient?
+    # I mean this computes
     #  more derivatives that I want
     print(hess)
     return torch.einsum("ii->", hess)
