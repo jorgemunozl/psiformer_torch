@@ -1,4 +1,15 @@
-# Solving the many-electron Schrödinger equation with transformers
+<div align="center">
+  <h1>Solving the many-electron Schrödinger equation with transformers</h1>
+  <p>
+    <a href="https://pytorch.org/"><img alt="PyTorch" src="https://img.shields.io/badge/PyTorch-ready-EE4C2C?logo=pytorch&logoColor=white"></a>
+    <a href="https://www.python.org/"><img alt="Python" src="https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white"></a>
+    <a href="https://wandb.ai/"><img alt="Weights & Biases" src="https://img.shields.io/badge/Weights_&_Biases-Track_runs-FFBE00?logo=weightsandbiases&logoColor=white"></a>
+    <a href="https://deepmind.google/"><img alt="DeepMind" src="https://img.shields.io/badge/DeepMind-inspired-4285F4?logo=google&logoColor=white"></a>
+    <a href="#"><img alt="Tests" src="https://img.shields.io/badge/CI-tests_pending-lightgrey?logo=githubactions&logoColor=white"></a>
+    <a href="#"><img alt="PRs Welcome" src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg"></a>
+    <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/License-repo-default-lightgrey.svg"></a>
+  </p>
+</div>
 
 > Acknolwedge to 
 

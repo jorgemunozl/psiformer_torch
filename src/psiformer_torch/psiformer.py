@@ -116,19 +116,19 @@ class Layer(nn.Module):
 
 class Model_Config():
     n_layer: int = 4
-    n_head: int = 4
-    n_embd: int = 32
-    n_features: int = 4  # For Hidrogen atom, vec r plus distance
-    n_out: int = 3
+    n_head: int = 8
+    n_embd: int = 128
+    n_features: int = 4  # For Hidrogen atom, vec r, distance
+    n_out: int = 1
 
 
 class Train_Config():
-    train_steps: int = 10000
-    checkpoint_step: int = 100
-    monte_carlo_length: int = 20  # Num samples
-    burn_in_steps: int = 20
+    train_steps: int = 100
+    checkpoint_step: int = 10
+    monte_carlo_length: int = 4000  # Num samples
+    burn_in_steps: int = 1
     checkpoint_name: str = "last_checkpoint.pth"
-    dim: int = 4  # For Hidrogen Atom
+    dim: int = 3  # For Hidrogen Atom
 
 
 class PsiFormer(nn.Module):
@@ -150,15 +150,17 @@ class PsiFormer(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         if x.ndim == 1:
             x = x.unsqueeze(0)
-        f1 = self.f_1(x)
+
+        # From input features to embedding dimension
+        x = self.f_1(x)
 
         # print("Input Hidden States:", first.shape)
-        output = self.f_h(f1)
+        x = self.f_h(x)
 
         # print("Output Hidden States:", output.shape)
-        f_n = self.f_n(output)
+        x = self.f_n(x)
         # Return scalar log-psi per sample
-        return f_n.squeeze(-1).mean(dim=-1)
+        return x.squeeze(-1).mean(dim=-1)
 
 
 class MH():
@@ -187,7 +189,7 @@ class MH():
                        current_state: torch.Tensor) -> bool:
         # Sampling does not need gradients; keep it detached from autograd.
         with torch.no_grad():
-            alpha = self.target(trial) - self.target(current_state)
+            alpha = 2*(self.target(trial) - self.target(current_state))
         if torch.rand(()) < torch.exp(torch.minimum(alpha, torch.tensor(0.0))):
             return True
         return False
@@ -195,7 +197,7 @@ class MH():
     @torch.no_grad()
     def sampler(self) -> torch.Tensor:
         # Thermalization
-        x = torch.randn(self.dim)
+        x = torch.randn(self.dim)  # Here the first configuration is sampled from a normal distribution is n.
 
         for _ in range(self.eq_steps):
             trial = self.generate_trial(x)
@@ -215,25 +217,20 @@ class MH():
 
         return samples
 
-    def montecarlo_estimator(self, func: Callable) -> torch.Tensor:
-        avg = torch.tensor([0.0])
-        samples = self.sampler()
-        for sample in samples:
-            avg += func(sample)
-        return avg
-
 
 class Potential():
     """
-    For now just of the hidrogen atom.
+    For the hidrogen atom, the only nucleous is fixed at (0,0,0).
+    Broadcast.
     """
-    def __init__(self, r_e: torch.Tensor, r_p: torch.Tensor):
+    def __init__(self, r_e: torch.Tensor):
         # Compute the potential between the hidrogen proton and electron
         self.r_e = r_e
-        self.r_p = r_p
 
     def potential(self) -> torch.Tensor:
-        return (torch.norm(self.r_e-self.r_p))**(-1)
+        eps = 1e-12
+        r = torch.linalg.norm(self.r_e, dim=-1)
+        return -1/(r+eps)
 
 
 class Hamiltonian():
@@ -242,7 +239,7 @@ class Hamiltonian():
 
     def local_energy(self, sample: torch.Tensor) -> torch.Tensor:
         # Hydrogen: potential from proton/electron distance
-        V = Potential(sample[2:], sample[:2]).potential()
+        V = Potential(sample).potential()
         g = grad_log_psi(self.log_psi_fn, sample)
         lap = laplacian_log_psi(self.log_psi_fn, sample)
         kinetic = -0.5 * (lap + (g * g).sum())
@@ -268,25 +265,32 @@ class Trainer():
             print(f"Saved checkpoint at step {step}")
 
     def train(self):
+        """
+        Create samples, using those computes the E_mean, E,
+        Then using model carlo you can compute the derivative of the loss.
+        Important the detach.
+        """
         mh = MH(self.log_psi, self.config.burn_in_steps,
                 self.config.monte_carlo_length, self.config.dim, step_size=0.1)
         hamilton = Hamiltonian(self.log_psi)
 
         for step in range(self.config.train_steps):
             samples = mh.sampler().to(self.device)
-            local_energies = torch.stack([hamilton.local_energy(s) for s in samples])
+            local_energies = torch.stack(
+                [hamilton.local_energy(s) for s in samples]
+                )
             log_psi_vals = torch.stack([self.log_psi(s) for s in samples])
 
             E_mean = local_energies.mean().detach()
-            loss = ((local_energies - E_mean) * log_psi_vals).mean()
+            loss = 2*((local_energies.detach() - E_mean) * log_psi_vals).mean()
 
             self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()
             self.save_checkpoint(step)
 
-            if step % 100 == 0:
-                print(f"step {step} | loss {loss.item():.4f} | energy {local_energies.mean().item():.4f}")
+            if step % 2 == 0:
+                print(f"step {step} | loss {loss.item()} | energy {E_mean}")
 
 
 def main():
