@@ -100,6 +100,7 @@ class Layer(nn.Module):
         return x
 
 
+@dataclass
 class Model_Config():
     n_layer: int = 4
     n_head: int = 8
@@ -153,6 +154,8 @@ class PsiFormer(nn.Module):
         if x.ndim == 1:
             x = x.unsqueeze(0)
 
+        r = torch.linalg.norm(x, dim=-1)
+        envelope = -self.config.envelope_beta * r
         # From input features to embedding dimension
         x = self.f_1(x)
 
@@ -162,7 +165,7 @@ class PsiFormer(nn.Module):
         # print("Output Hidden States:", output.shape)
         x = self.f_n(x)
         # Return scalar log-psi per sample
-        return x.squeeze(-1).mean(dim=-1)
+        return (x+envelope).squeeze(-1).mean(dim=-1)
 
 
 class MH():
@@ -281,9 +284,9 @@ class Trainer():
 
     def log_psi(self, x: torch.Tensor) -> torch.Tensor:
         x = x.to(self.device)
-        r = torch.linalg.norm(x, dim=-1)
-        envelope = -self.model.config.envelope_beta * r
-        return self.model(x) + envelope
+        # r = torch.linalg.norm(x, dim=-1)
+        # envelope = -self.model.config.envelope_beta * r
+        return self.model(x)  # + envelope
 
     def save_checkpoint(self, step):
         if step % self.config.checkpoint_step == 0:
@@ -330,7 +333,8 @@ class Trainer():
             self.optimizer.step()
             self.save_checkpoint(step)
             # Logging
-            logger.info(f"Step {step}: E_mean = {E_mean.item():.6f}, Loss = {loss.item():.6f}")
+            logger.info(f"Step {step}: E_mean = {E_mean.item():.6f}")
+            logger.info(f"Loss = {loss.item():.6f}")
             run.log({"Energy": E_mean, "loss": loss})
 
         run.finish()
@@ -345,7 +349,7 @@ def train():
     model = PsiFormer(model_config)
 
     # Train
-    train_config = Train_Config(run_name="Envelope inside the training")
+    train_config = Train_Config(run_name="Envelope inside the model")
 
     # Keep dim consistent with model input size
     train_config.dim = model_config.n_features
@@ -366,7 +370,10 @@ def use_checkpoint():
 
     model.load_state_dict(state_dict)
     model.eval()
-    x = torch.stack([torch.tensor([float(_), 0.0, 0.0]) for _ in range(100)], dim=0)
+    x = torch.stack(
+        [torch.tensor([float(_), 0.0, 0.0]) for _ in range(100)],
+        dim=0
+    )
     probability = torch.exp(model(x))**2
     plt.plot(x, probability.detach().numpy())
     plt.show()
