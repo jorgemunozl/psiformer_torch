@@ -3,7 +3,7 @@ tags:
   - idea
 author: Jorge
 date: 2025-09-16 08:53
-modified: 2025-12-06 12:22
+modified: 2025-12-06 15:56
 ---
 Google Deepmind's implementation with [[TensorFlow]] is a good guided. This work relies on [[PyTorch]]. You are going to learn a ton doing this or at least you are going to present it everywhere you can. So a strong basis is completely necessary, use [[Hugging Face Transformers]] is over-killed.
 
@@ -190,6 +190,12 @@ class MHA(nn.Module):
         return self.c_proj(y)
 ```
 
+
+But here have to be careful, because the follow questions are important ones.
+
+- In the hydrogen at, what concept we can find to the attention steps?
+- When more electrons and protons, how create the attention between protons and electrons? Electrons, electrons only? 
+
 ## Molecule Configuration
 
 A atom has a `atomic_number` and all that stuff that is super useful when you want 
@@ -214,6 +220,12 @@ At the end you are going to make:
 ```python
 loss.backward()
 ```
+
+
+## Variational Principle 
+
+It says that the energy from our Ansatz should be greater than the ground state, but we don't observe that, why?
+
 
 ## Metropolis Hasting
 
