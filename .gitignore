@@ -1,5 +1,6 @@
 .env/
 .venv/
+wandb/
 __pycache__/
 *.pyc
 .vscode/

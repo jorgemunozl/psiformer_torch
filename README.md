@@ -11,9 +11,9 @@
   </p>
 </div>
 
-> Acknolwedge to 
+> Acknolwedge to Angel Aaron Flores Alberca and
 
-Implementation of the paper A self attention mechanism for quantum chemistry
+For a mental model on how this repository was created look [PsiFormer](PsiFormer.md)
 
 ## Table of contents
 
