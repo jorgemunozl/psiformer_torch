@@ -2,48 +2,34 @@ from __future__ import annotations
 import os
 import torch
 import torch.nn as nn
+import wandb
 import torch.nn.functional as F
 import torch.optim as optim
 from torch.autograd import grad
+import matplotlib.pyplot as plt
+from dataclasses import dataclass, asdict
+import logging
+
 
 import math
 from typing import Callable
 
 
-CHECKPOINT_PATH = "checkpoints/"
+logging.basicConfig(level=logging.INFO,
+                    format="%(asctime)s %(name)s %(levelname)s: %(message)s")
+logger = logging.getLogger("Trainer")
+logger.info("Starting training Loop")
+
+CHECKPOINT_DIR = "checkpoints/"
+CHECKPOINT_NAME = "last_checkpoint.pth"
+os.makedirs(CHECKPOINT_DIR, exist_ok=True)
+CHECKPOINT_PATH = os.path.join(CHECKPOINT_DIR, CHECKPOINT_NAME)
 
 
 def get_device():
     if torch.cuda.is_available():
         return torch.device("cuda")
     return torch.device("cpu")
-
-
-def grad_log_psi(log_psi_fn: Callable[[torch.Tensor], torch.Tensor],
-                 x: torch.Tensor) -> torch.Tensor:
-    """
-    Gradient of log psi with graph retained for higher order derivatives.
-    """
-    x_req = x.clone().detach().requires_grad_(True)
-    y = log_psi_fn(x_req)
-    (g,) = grad(y, x_req, create_graph=True)
-    return g
-
-
-def laplacian_log_psi(log_psi_fn: Callable[[torch.Tensor], torch.Tensor],
-                      x: torch.Tensor) -> torch.Tensor:
-    """
-    Laplacian of log psi via second derivatives of each dimension.
-    """
-    x_req = x.clone().detach().requires_grad_(True)
-    y = log_psi_fn(x_req)
-    (g,) = grad(y, x_req, create_graph=True, retain_graph=True)
-
-    second_terms = []
-    for i in range(x_req.numel()):
-        (g_i,) = grad(g[i], x_req, retain_graph=True)
-        second_terms.append(g_i[i])
-    return torch.stack(second_terms).sum()
 
 
 class MHA(nn.Module):
@@ -123,13 +109,27 @@ class Model_Config():
     envelope_beta: float = 1.0  # exp(-beta * r) envelope strength
 
 
+@dataclass
 class Train_Config():
     train_steps: int = 100
     checkpoint_step: int = 10
     monte_carlo_length: int = 4000  # Num samples
     burn_in_steps: int = 1
-    checkpoint_name: str = "last_checkpoint.pth"
+    checkpoint_path: str = CHECKPOINT_PATH
     dim: int = 3  # Hydrogen coordinates only
+    lr: float = 1e-3
+    entity: str = "alvaro18ml-university-of-minnesota"
+    project: str = "Psiformer"
+    run_name: str = "Add envelope on the train script"
+
+
+def init_wandb(cfg: Train_Config):
+    return wandb.init(
+        entity=cfg.entity,
+        project=cfg.project,
+        name=cfg.run_name,
+        config=asdict(cfg)
+        )
 
 
 class PsiFormer(nn.Module):
@@ -199,7 +199,9 @@ class MH():
     @torch.no_grad()
     def sampler(self) -> torch.Tensor:
         # Thermalization
-        x = torch.randn(self.dim)  # Here the first configuration is sampled from a normal distribution is n.
+        x = torch.randn(self.dim)
+        # Here the first configuration is
+        # sampled from a normal distribution is n.
 
         for _ in range(self.eq_steps):
             trial = self.generate_trial(x)
@@ -207,7 +209,6 @@ class MH():
                 x = trial
 
         # Sampling
-
         samples = torch.zeros(self.num_samples, self.dim)
         samples[0] = x
 
@@ -242,10 +243,33 @@ class Hamiltonian():
     def local_energy(self, sample: torch.Tensor) -> torch.Tensor:
         # Hydrogen: potential from proton/electron distance
         V = Potential(sample).potential()
-        g = grad_log_psi(self.log_psi_fn, sample)
-        lap = laplacian_log_psi(self.log_psi_fn, sample)
+        g = self.grad_log_psi(sample)
+        lap = self.laplacian_log_psi(sample)
         kinetic = -0.5 * (lap + (g * g).sum())
         return kinetic + V
+
+    def grad_log_psi(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Gradient of log psi with graph retained for higher order derivatives.
+        """
+        x_req = x.clone().detach().requires_grad_(True)
+        y = self.log_psi_fn(x_req)
+        (g,) = grad(y, x_req, create_graph=True)
+        return g
+
+    def laplacian_log_psi(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Laplacian of log psi via second derivatives of each dimension.
+        """
+        x_req = x.clone().detach().requires_grad_(True)
+        y = self.log_psi_fn(x_req)
+        (g,) = grad(y, x_req, create_graph=True, retain_graph=True)
+
+        second_terms = []
+        for i in range(x_req.numel()):
+            (g_i,) = grad(g[i], x_req, retain_graph=True)
+            second_terms.append(g_i[i])
+        return torch.stack(second_terms).sum()
 
 
 class Trainer():
@@ -264,9 +288,13 @@ class Trainer():
     def save_checkpoint(self, step):
         if step % self.config.checkpoint_step == 0:
             # Check if father directory checkpoint_path exist.
-            os.makedirs(CHECKPOINT_PATH, exist_ok=True)
-            path = os.path.join(CHECKPOINT_PATH, self.config.checkpoint_name)
-            torch.save(self.model.state_dict(), path)
+            torch.save(
+                {
+                    "model_state_dict": self.model.state_dict(),
+                    "step": step,
+                },
+                self.config.checkpoint_path,
+            )
             print(f"Saved checkpoint at step {step}")
 
     def train(self):
@@ -278,27 +306,37 @@ class Trainer():
         mh = MH(self.log_psi, self.config.burn_in_steps,
                 self.config.monte_carlo_length, self.config.dim, step_size=0.1)
         hamilton = Hamiltonian(self.log_psi)
-
+        run = init_wandb(self.config)
         for step in range(self.config.train_steps):
+            # Sampling
             samples = mh.sampler().to(self.device)
+
+            # Local Energies
             local_energies = torch.stack(
                 [hamilton.local_energy(s) for s in samples]
-                )
+            )
+
+            # Log Psi
             log_psi_vals = torch.stack([self.log_psi(s) for s in samples])
 
+            # Energy Local Expection
             E_mean = local_energies.mean().detach()
+
+            # Derivative of the Loss
             loss = 2*((local_energies.detach() - E_mean) * log_psi_vals).mean()
 
             self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()
             self.save_checkpoint(step)
+            # Logging
+            logger.info(f"Step {step}: E_mean = {E_mean.item():.6f}, Loss = {loss.item():.6f}")
+            run.log({"Energy": E_mean, "loss": loss})
 
-            if step % 2 == 0:
-                print(f"step {step} | loss {loss.item()} | energy {E_mean}")
+        run.finish()
 
 
-def main():
+def train():
     device = get_device()
     print(f"Using {device}")
 
@@ -307,13 +345,36 @@ def main():
     model = PsiFormer(model_config)
 
     # Train
-    train_config = Train_Config()
-    # keep dim consistent with model input size
+    train_config = Train_Config(run_name="Envelope inside the training")
+
+    # Keep dim consistent with model input size
     train_config.dim = model_config.n_features
     trainer = Trainer(model, train_config)
+
     # train the model
     trainer.train()
 
 
+def use_checkpoint():
+    loaded = torch.load(CHECKPOINT_PATH, map_location=torch.device("cpu"))
+    model = PsiFormer(Model_Config())
+    if isinstance(loaded, dict) and "model_state_dict" in loaded:
+        state_dict = loaded["model_state_dict"]
+    else:
+        # Backwards compatibility for checkpoints saved as raw state_dict
+        state_dict = loaded
+
+    model.load_state_dict(state_dict)
+    model.eval()
+    x = torch.stack([torch.tensor([float(_), 0.0, 0.0]) for _ in range(100)], dim=0)
+    probability = torch.exp(model(x))**2
+    plt.plot(x, probability.detach().numpy())
+    plt.show()
+
+
 if __name__ == "__main__":
-    main()
+    # Evaluation
+    # use_checkpoint()
+
+    # Training
+    train()
