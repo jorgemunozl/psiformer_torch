@@ -13,10 +13,12 @@ class Model_Config():
     n_layer: int = 4
     n_head: int = 8
     n_embd: int = 128
-    n_features: int = 6  # Hydrogen coordinates (x, y, z)
+    n_features: int = 4  # Hydrogen coordinates (x, y, z)
     n_out: int = 1
     n_determinants: int = 1
     n_electron_num: int = 2
+    n_spin_down: int = 1
+    n_spin_up: int = 1
     envelope_beta: float = 1.0  # exp(-beta * r) envelope strength
 
 

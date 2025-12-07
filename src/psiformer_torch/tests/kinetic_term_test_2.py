@@ -1,13 +1,5 @@
-import os
-import sys
 import torch
-
-try:
-    from psiformer_torch.psiformer import Hamiltonian
-except ImportError:
-    # Fallback for running as a standalone script: add src/psiformer_torch to path.
-    sys.path.append(os.path.abspath(os.path.dirname(__file__)))
-    from psiformer import Hamiltonian
+from hamiltonian import Hamiltonian
 
 
 def log_psi_100(x: torch.Tensor) -> torch.Tensor:
@@ -31,7 +23,7 @@ def local_energy_from_psiformer(x: torch.Tensor) -> torch.Tensor:
 def main():
     x = torch.randn(1024, 3)
     E_loc = local_energy_from_psiformer(x)
-    print(f"Mean local energy: {E_loc.mean().item():.4f} Hartree (target -0.5)")
+    print(f"{E_loc.mean().item():.4f} Hartree (target -0.5)")
 
 
 if __name__ == "__main__":

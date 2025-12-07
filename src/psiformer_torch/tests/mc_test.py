@@ -1,4 +1,4 @@
-from psiformer import MH
+from mcmc import MH
 import torch
 import matplotlib.pyplot as plt
 
@@ -21,7 +21,8 @@ def main():
 
 def ploter(data):
     plt.figure(figsize=(8, 4))
-    plt.hist(data, bins=30, color="#4c72b0", edgecolor="white", alpha=0.85) # Here is the guy that I was looking for, what does bins means? the __ I guess.
+    # Here is the guy that I was looking for, what does bins means?
+    plt.hist(data, bins=30, color="#4c72b0", edgecolor="white", alpha=0.85)
     plt.xlabel("Value")
     plt.ylabel("Frequency")
     plt.title("Histogram example")

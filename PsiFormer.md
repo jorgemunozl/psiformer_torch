@@ -3,7 +3,7 @@ tags:
   - idea
 author: Jorge
 date: 2025-09-16 08:53
-modified: 2025-12-06 15:56
+modified: 2025-12-07 10:46
 ---
 Google Deepmind's implementation with [[TensorFlow]] is a good guided. This work relies on [[PyTorch]]. You are going to learn a ton doing this or at least you are going to present it everywhere you can. So a strong basis is completely necessary, use [[Hugging Face Transformers]] is over-killed.
 
@@ -22,6 +22,33 @@ Where the Jastrow factor is an instance from  a `class Jastrow` and the I don't 
 ## Input of the Model
 
 The features are variable. I mean you train a different model for each molecule, which I consider is kind of a waste, it would be amazing a single model for dominate all. Or at least a model for each group in the atomic table, at the end the atoms who belong to the same group. Share the same properties, that somehow is encoded in the wave function.
+
+### Position of each electron and protons
+
+So we are going to randomize the position of all the electrons and protons, using a normal distribution. So think life follow:
+
+### Spin 
+
+And the spin in something that is making me crazy. We always attach the two possible states to a single position? No, for instance for the Helium atom, we consider just two electrons, one labeled with $\uparrow$ and another with down $\downarrow$. This is:
+
+So you look up your sarrus trick:
+$$
+1s^{2}
+$$
+Which means that for the Helium you have one spin up and another spin down, $r^{\uparrow}_{1},r^{\downarrow}_{2}$.
+. But in practice how you work with it. Just concatenate, man. 
+
+
+$$
+\begin{align}
+h_{1}^{\uparrow} & =\text{concatenate}(r^{\uparrow}_{1}, \lvert r_{1}^{\uparrow} \rvert ) \\
+h^{\downarrow}_{2} & =\text{concatenate}(r^{\downarrow}_{2},\lvert r^{\downarrow}_{2} \rvert ) \\
+h^{\uparrow\downarrow}_{12} & =\text{concatenate}(r-r, \lvert  \rvert )
+\end{align}
+$$
+
+Now for the Litium. $1s^{2}2s^{1}$. So two spin up and just one down.
+
 
 ## Hamiltonian and Potential
 
@@ -82,14 +109,22 @@ Like also the potential $V_{nn},V_{e n},V_{e e}$.
 
 The proton position vector are fixed to the zero vector. This have a lot of  sense when dealing with a single electron but when you have more than one, you fixed all of them to the zero vector? That is practical? 
 
-The potential energy that comes from the repulsion between electrons in that case would become zero.
+The potential energy that comes from the repulsion between electrons in that case would become zero. For the Hidrogen atom we obtain that:
+$$
+V=-\frac{1}{\lvert r_{e} \rvert }
+$$
+Pretty simple, now for the Helium atom, we consider the electron - electron and the two electron proton, and what about the proton. Bohr Oppenheimer tell us that we are consider the nucleous like a single point!
+$$
+V=+\frac{1}{\lvert r_{e_{1}} -r_{e_{2}}\rvert }-\frac{2}{\lvert R_{e}-r \rvert }- \frac{2}{\lvert R_{e}-r \rvert }
+$$
+
+But we are going to assume that $R_{e}$.
+
 
 #### Hidrogen Baseline
 
 For our baseline the Hydrogen Atom we obtain simply obtain a single term. Important to consider the negative sign and the fact that the hydrogen proton is fixed on the origin. Once that we obtain the model how can we visualize it? How? First that recall that the model is actually biased! Is working in the log space. And the envelope is just in the training. So that is wrong.
-
 Recall that the Hydrogen atom has spherical symmetry. 
-
 Important to check the spherical symmetry.
 
 

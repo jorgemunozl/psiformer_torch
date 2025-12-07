@@ -5,29 +5,36 @@ from typing import Callable
 
 class Potential():
     """
-    For the hidrogen atom, the only nucleous is fixed at (0,0,0).
+    For the Helium atom, the only nucleous is fixed at (0,0,0).
     Broadcast.
     """
-    def __init__(self, r_e1: torch.Tensor, r_e2: torch.Tensor):
-        # Compute the potential between the hidrogen proton and electron
-        self.r_e1 = r_e1  # only spatial coords
-        self.r_e2 = r_e2  # r_e2
+    def __init__(self, coords: torch.Tensor, Z: int=2):
+        # coords: (n_elec, 3)
+        self.coords = coords
+        self.Z = Z
 
     def potential(self) -> torch.Tensor:
-        V_1 = torch.linalg.norm(self.r_e1)
-        V_2 = torch.linalg.norm(self.r_e2)
-        V_12 = torch.linalg.norm(self.r_e2-self.r_e1, dim=-1)
+        eps = 1e-5
+        r_i = torch.linalg.norm(self.coords, dim=-1)  # (n_elec, 1)
+        nuc_term = -self.Z*(1/(r_i+eps)).sum()
+        diff = self.coords[0] - self.coords[1]
+        r_12 = torch.linalg.norm(diff)
+        e_e_term = 1/(r_12 + eps)
 
-        return -2/V_1 - 2/V_2 + 1/V_12
+        return nuc_term + e_e_term
 
 
 class Hamiltonian():
-    def __init__(self, log_psi_fn: Callable[[torch.Tensor], torch.Tensor]):
+    def __init__(self, log_psi_fn: Callable[[torch.Tensor], torch.Tensor],
+                 n_elec: int = 2, Z: int = 2
+                 ):
         self.log_psi_fn = log_psi_fn
+        self.n_elec = n_elec
+        self.Z = Z
 
     def local_energy(self, sample: torch.Tensor) -> torch.Tensor:
-        # Hydrogen: potential from proton/electron distance
-        V = Potential(sample).potential()
+        # sample : (n_elec, 3)
+        V = Potential(sample, self.Z).potential()
         g = self.grad_log_psi(sample)
         lap = self.laplacian_log_psi(sample)
         kinetic = -0.5 * (lap + (g * g).sum())
