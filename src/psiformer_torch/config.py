@@ -16,6 +16,7 @@ class Model_Config():
     n_features: int = 6  # Hydrogen coordinates (x, y, z)
     n_out: int = 1
     n_determinants: int = 1
+    n_electron_num: int = 2
     envelope_beta: float = 1.0  # exp(-beta * r) envelope strength
 
 
@@ -39,5 +40,3 @@ class Train_Config():
             name=self.run_name,
             config=asdict(self)
         )
-
-

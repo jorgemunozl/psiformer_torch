@@ -8,14 +8,17 @@ class Potential():
     For the hidrogen atom, the only nucleous is fixed at (0,0,0).
     Broadcast.
     """
-    def __init__(self, r_e: torch.Tensor):
+    def __init__(self, r_e1: torch.Tensor, r_e2: torch.Tensor):
         # Compute the potential between the hidrogen proton and electron
-        self.r_e = r_e[..., :3]  # only spatial coords
+        self.r_e1 = r_e1  # only spatial coords
+        self.r_e2 = r_e2  # r_e2
 
     def potential(self) -> torch.Tensor:
-        eps = 1e-12
-        r = torch.linalg.norm(self.r_e, dim=-1)
-        return -1/(r+eps)
+        V_1 = torch.linalg.norm(self.r_e1)
+        V_2 = torch.linalg.norm(self.r_e2)
+        V_12 = torch.linalg.norm(self.r_e2-self.r_e1, dim=-1)
+
+        return -2/V_1 - 2/V_2 + 1/V_12
 
 
 class Hamiltonian():
