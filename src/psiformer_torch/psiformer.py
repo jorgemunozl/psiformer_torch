@@ -1,4 +1,5 @@
 from __future__ import annotations
+from jastrow import Jastrow
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -26,30 +27,31 @@ class MHA(nn.Module):
         self.n_embd = config.n_embd
 
     def forward(self, x: torch.Tensor):
-        B, T, C = x.size()  # sequence length, Embedding dim
+        B, T, C = x.size()  # Batch, sequence length, Embedding dim
         # imposes that our x is 3D, i.e.,
         # (batch_size, seq_len, embedding_dim)
 
         # get query, key, values from single linear projection
         qkv = self.c_attn(x)
-        # print(qkv.size())
-        q, k, v = qkv.split(self.n_embd, dim=1)
 
-        # print("K Before View:", k.shape)
+        q, k, v = qkv.split(self.n_embd, dim=2)
+
         head_dim = C // self.n_head
 
+        # dim (B, T, heads, head_dim) -> trans
         # dim (B, heads, T, head_dim)
-        k = k.view(B, T, self.n_head, head_dim).permute(1, 0, 2)
-        q = q.view(B, T, self.n_head, head_dim).permute(1, 0, 2)
-        v = v.view(B, T, self.n_head, head_dim).permute(1, 0, 2)
+        k = k.view(B, T, self.n_head, head_dim).transpose(1, 2)
+        q = q.view(B, T, self.n_head, head_dim).transpose(1, 2)
+        v = v.view(B, T, self.n_head, head_dim).transpose(1, 2)
 
-        # B, head, T, head_dim x head, head_dim , T -> B, head, T, T
+        # B, heads, T, head_dim x B, heads, head_dim , T -> B, head, T, T
         att = (q @ k.transpose(-2, -1)) / math.sqrt(head_dim)
         att = F.softmax(att, dim=-1)
-        y = att @ v  # B, heads, T, T x heads, T , head_dim -> B, heads , T, head_dim
+        # B, heads, T, T x B, heads, T , head_dim -> B, heads , T, head_dim
+        y = att @ v
 
         # Back to (B, T, heads, head_dim)
-        y = y.permute(1, 0, 2).contiguous().view(T, C)  # Fix because the batch.
+        y = y.transpose(1, 2).contiguous().view(B, T, C)
         return self.c_proj(y)
 
 
@@ -80,17 +82,62 @@ class Layer(nn.Module):
         return x
 
 
-
 class Orbital_Head(nn.Module):
     """
     This guy create k matrix to takes the determinants.
     """
-    def __init__(self, n_elec, n_det) -> None:
+    def __init__(self, config: Model_Config) -> None:
         super().__init__()
-        self.n_elec = n_elec
-        self.n_det = n_det
-    def forward(self, x):
-        
+        self.n_det = config.n_determinants
+        self.n_spin_up = config.n_spin_up
+        self.n_spin_down = config.n_spin_down
+        self.n_embd = config.n_embd
+
+        # Heads for up/down
+        self.orb_up = nn.Linear(self.n_embd, self.n_det*self.n_spin_up)
+        self.orb_down = nn.Linear(self.n_embd, self.n_det*self.n_spin_down)
+
+    def build_orbital_matrix(self, h: torch.Tensor, spin: str) -> torch.Tensor:
+        """
+        h: (B, n_spin, n_embd)
+        return: (B, n_det, n_spin, n_spin)
+        """
+        # From where the H comes from.
+
+        if spin == "up":
+            out = self.orb_up(h)
+            n_spin = self.n_spin_up
+
+        else:
+            out = self.orb_down(h)
+            n_spin = self.n_spin_down
+        # out shape: B, N_spin, n_det * n_spin_**
+        B, N, _ = out.shape
+        print(out.shape)
+        return out.view(B, N, self.n_det, n_spin).transpose(1, 2)
+
+    def slogdet_sum(self, mats: torch.Tensor) -> torch.Tensor:
+        """
+        mats: (B, n_det, n_spin, n_spin)
+        returns stable sum of determinants
+        """
+        det_logs = []
+        for k in range(self.n_det):
+            sign, logs_abs = torch.linalg.slogdet(mats[:, k, :, :])
+            det_logs.append(logs_abs)
+        det_logs = torch.stack(det_logs, dim=-1)
+        return torch.logsumexp(det_logs, dim=-1)
+
+    def forward(self, h, spin_up_idx, spin_down_idx):
+        h_up = h[:, spin_up_idx, :]
+        h_down = h[:, spin_down_idx, :]
+        phi_up = self.build_orbital_matrix(h_up, "up")
+        phi_down = self.build_orbital_matrix(h_down, "up")
+
+        logdet_up = self.slogdet_sum(phi_up)
+        logdet_down = self.slogdet_sum(phi_down)
+        return logdet_up, logdet_down
+
 
 class PsiFormer(nn.Module):
     """
@@ -99,41 +146,27 @@ class PsiFormer(nn.Module):
     def __init__(self, config: Model_Config):
         super().__init__()
         self.config = config
-        self.f_1 = nn.Linear(config.n_features, config.n_embd)  # From input feature -> hidden dimension
-        self.f_h = Layer(config) # Hidden Dimension
-
-    def build_features(self, r_electron=torch.rand(3),
-                       r_proton=torch.rand(3)) -> torch.Tensor:
-        """
-        Hidrogen atom, simple.
-        """
-        h_0_1 = r_electron-r_proton
-        h_0_2 = torch.norm(h_0_1)
-        return torch.cat([h_0_1, torch.tensor([h_0_2])])
+        self.f_1 = nn.Linear(config.n_features, config.n_embd)
+        self.f_h = Layer(config)  # Hidden Dimension
+        self.orbital_head = Orbital_Head(config)
+        self.jastrow = Jastrow()
+        self.spin_up_idx = [0]
+        self.spin_down_idx = [1]
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        if x.ndim == 1:
-            x = x.unsqueeze(0)
+        """
+        x: (B, n_electron ,3)
+        """
+        r = torch.linalg.norm(x, dim=-1, keepdim=True)  # (B, n_elec, 1)
+        envelope = -self.config.envelope_beta*r.sum(dim=1)
 
-        r = torch.linalg.norm(x, dim=-1)
-        envelope = -self.config.envelope_beta * r
+        features = torch.cat([x, r], dim=-1)  # B, n_electron, 4
+        h = self.f_1(features)  # B, n_electron, n_embd
+        h = self.f_h(h)  # B, n_electron, n_embd
+        logdet_up, logdet_down = self.orbital_head(
+            h, self.spin_up_idx, self.spin_down_idx
+        )
+        jastrow_term = self.jastrow(x)
+        log_psi = logdet_up + logdet_down + envelope.squeeze(-1) + jastrow_term
 
-        R_up = x[:, :0, :]
-        R_down = x[:, :1, :]
-
-        # From input features to embedding dimension
-        R_up = self.f_1(R_up)
-        R_down = self.f_1(R_down)
-
-        R_up = self.f_h(R_up)
-        R_down = self.f_h(R_down)
-
-        # Return the sum of determinants
-        # d = torch.tensor([0])
-        #for k in range(self.config.n_determinants):
-        #    orbital = make_orbital()
-        #    for i in range(n_orbitals):
-        #        phi_ij = 2
-        #    d += torch.det(orbital_matrix)
-
-        return (x+envelope).squeeze(-1).mean(dim=-1)
+        return log_psi.squeeze(-1)
