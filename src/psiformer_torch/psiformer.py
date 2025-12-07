@@ -15,13 +15,10 @@ import math
 from typing import Callable
 
 
-logging.basicConfig(level=logging.INFO,
-                    format="%(asctime)s %(name)s %(levelname)s: %(message)s")
-logger = logging.getLogger("Trainer")
-logger.info("Starting training Loop")
+
 
 CHECKPOINT_DIR = "checkpoints/"
-CHECKPOINT_NAME = "last_checkpoint.pth"
+CHECKPOINT_NAME = "last_checkpoint_1.pth"
 os.makedirs(CHECKPOINT_DIR, exist_ok=True)
 CHECKPOINT_PATH = os.path.join(CHECKPOINT_DIR, CHECKPOINT_NAME)
 
@@ -370,18 +367,28 @@ def use_checkpoint():
 
     model.load_state_dict(state_dict)
     model.eval()
+    y = torch.linspace(0, 10, 100)
     x = torch.stack(
-        [torch.tensor([float(_), 0.0, 0.0]) for _ in range(100)],
+        [torch.tensor([_, 0.0, 0.0]) for _ in y],
         dim=0
     )
     probability = torch.exp(model(x))**2
-    plt.plot(x, probability.detach().numpy())
+    log_space = model(x)
+    # plt.plot(y, probability.detach().numpy(), label="probability")
+    plt.plot(y, log_space.detach().numpy(), label="model")
+    plt.legend()
     plt.show()
 
 
 if __name__ == "__main__":
-    # Evaluation
-    # use_checkpoint()
-
+    logging.basicConfig(level=logging.INFO,
+                        format="%(asctime)s %(nam)s %(levelname)s: %(message)s"
+                        )
+    logger = logging.getLogger("Beginning")
+    logger.info("Starting")
     # Training
-    train()
+    #train()
+    # train()
+
+    # Evaluation
+    use_checkpoint()
