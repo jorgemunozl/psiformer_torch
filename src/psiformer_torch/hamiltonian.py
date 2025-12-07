@@ -1,40 +1,54 @@
-import numpy as np
 import torch
+from torch.autograd import grad
+from typing import Callable
 
 
-class Potential:
-    def __init__(self, parameters):
-        self.parameters = parameters
-
-
-def kinetic_from_log(f, x):
-    """Compute -1/2 \nabla^2 psi / psi from log|psi|."""
-    grad = torch.tensor(f, x)
-    hess = torch.tensor(f, x)
-    laplacian = torch.trace(hess)
-    kinetic = -0.5 * (laplacian + torch.dot(grad, grad))
-    return kinetic
-
-
-def operators(atoms,
-              nelectrons,
-              potential_epsilon=0.0):
-    """Creates kinetic and potential operators of Hamiltonian in atomic units.
-
-    Args:
-    atoms: list of Atom objects for each atom in the system.
-    nelectrons: number of electrons
-    potential_epsilon: Epsilon used to smooth the divergence of the 1/r
-      potential near the origin for algorithms with numerical stability issues.
-
-    Returns:
-    The functions that generates the kinetic and
-    potential energy as a PyTorch op.
+class Potential():
     """
-    vnn = 0.0
-    for i, atom_i in enumerate(atoms):
-        for atom_j in atoms[i+1:]:
-            qij = float(atom_i.charge * atom_j.charge)
-            vnn += qij / np.linalg.norm(
-                atom_i.coords_array - atom_j.coords_array
-                )
+    For the hidrogen atom, the only nucleous is fixed at (0,0,0).
+    Broadcast.
+    """
+    def __init__(self, r_e: torch.Tensor):
+        # Compute the potential between the hidrogen proton and electron
+        self.r_e = r_e[..., :3]  # only spatial coords
+
+    def potential(self) -> torch.Tensor:
+        eps = 1e-12
+        r = torch.linalg.norm(self.r_e, dim=-1)
+        return -1/(r+eps)
+
+
+class Hamiltonian():
+    def __init__(self, log_psi_fn: Callable[[torch.Tensor], torch.Tensor]):
+        self.log_psi_fn = log_psi_fn
+
+    def local_energy(self, sample: torch.Tensor) -> torch.Tensor:
+        # Hydrogen: potential from proton/electron distance
+        V = Potential(sample).potential()
+        g = self.grad_log_psi(sample)
+        lap = self.laplacian_log_psi(sample)
+        kinetic = -0.5 * (lap + (g * g).sum())
+        return kinetic + V
+
+    def grad_log_psi(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Gradient of log psi with graph retained for higher order derivatives.
+        """
+        x_req = x.clone().detach().requires_grad_(True)
+        y = self.log_psi_fn(x_req)
+        (g,) = grad(y, x_req, create_graph=True)
+        return g
+
+    def laplacian_log_psi(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Laplacian of log psi via second derivatives of each dimension.
+        """
+        x_req = x.clone().detach().requires_grad_(True)
+        y = self.log_psi_fn(x_req)
+        (g,) = grad(y, x_req, create_graph=True, retain_graph=True)
+
+        second_terms = []
+        for i in range(x_req.numel()):
+            (g_i,) = grad(g[i], x_req, retain_graph=True)
+            second_terms.append(g_i[i])
+        return torch.stack(second_terms).sum()
