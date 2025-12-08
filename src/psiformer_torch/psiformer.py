@@ -148,7 +148,7 @@ class PsiFormer(nn.Module):
     def __init__(self, config: Model_Config):
         super().__init__()
         self.config = config
-        self.f_1 = nn.Linear(config.n_features, config.n_embd)
+        self.f_1 = nn.Linear(config.n_features+1, config.n_embd)
         self.f_h = Layer(config)  # Hidden Dimension
         self.orbital_head = Orbital_Head(config)
         self.jastrow = Jastrow()
@@ -159,17 +159,22 @@ class PsiFormer(nn.Module):
         """
         x: (B, n_electron ,3)
         """
+        if x.shape[1:] != (self.config.n_electron_num, self.config.n_features):
+            error = f"x shape: {x.shape}"
+            error += f"{self.config.n_electron_num, self.config.n_features}"
+            raise ValueError("Input model shape mismatch", error)
+
         r = torch.linalg.norm(x, dim=-1, keepdim=True)  # (B, n_elec, 1)
-        envelope = -self.config.envelope_beta*r
-        print(envelope.shape)
-        features = torch.cat([x, r], dim=-1)  # (B, n_electron, 4)
-        print(features.shape)
+        features = torch.cat([x, r], dim=-1)            # (B, n_electron, 4)
+
         h = self.f_1(features)  # (B, n_electron, n_embd)
         h = self.f_h(h)  # (B, n_electron, n_embd)
+
         logdet_up, logdet_down = self.orbital_head(
             h, self.spin_up_idx, self.spin_down_idx
         )
-        jastrow_term = self.jastrow(x)
-        log_psi = logdet_up + logdet_down + envelope.squeeze(-1) + jastrow_term
 
-        return log_psi.squeeze(-1)
+        jastrow_term = self.jastrow(x)
+        log_psi = logdet_up + logdet_down + jastrow_term
+        # log_psi: (B, )
+        return log_psi

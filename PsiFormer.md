@@ -3,7 +3,7 @@ tags:
   - idea
 author: Jorge
 date: 2025-09-16 08:53
-modified: 2025-12-08 07:18
+modified: 2025-12-08 08:39
 ---
 Google Deepmind's implementation with [[TensorFlow]] is a good guided. This work relies on [[PyTorch]]. You are going to learn a ton doing this or at least you are going to present it everywhere you can. So a strong basis is completely necessary, use [[Hugging Face Transformers]] is over-killed.
 
@@ -11,8 +11,6 @@ Google Deepmind's implementation with [[TensorFlow]] is a good guided. This work
 - [[Psiformer Milestone 1]]
 
 --- 
-# Model
-
 We use [[FermiNet Network]] like guide. Basically a `class Psiformer` that returns the form:
 $$
 \Psi_{\theta}(\mathbf{x})= \exp\big(\mathcal{J}_{\theta}(\mathbf{x})\big)\, \sum_{k=1}^{N_{\det}}\det[\boldsymbol{\Phi}^{k}_{\theta}(\mathbf{x})], 
@@ -154,6 +152,9 @@ def log_psi(self, x: torch.Tensor) -> torch.Tensor:
 
      return self.model(x) + envelope
 ```
+
+And where the **envelope** comes in? They fit in the orbital, so I am doing it, wrong!
+
 
 But If I put the envelope in the model itself then thing begin to broke, recall that we are using Psiformer for the Sampling also.
 

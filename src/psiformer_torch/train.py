@@ -8,30 +8,24 @@ from hamiltonian import Hamiltonian
 
 
 logging.basicConfig(level=logging.INFO,
-                    format="%(asctime)s %(nam)s %(levelname)s: %(message)s"
+                    format="%(asctime)s %(name)s %(levelname)s: %(message)s"
                     )
 logger = logging.getLogger("Beginning")
 logger.info("Starting")
 
 
 class Trainer():
-    def __init__(self, model, config: Train_Config):
+    def __init__(self, model: PsiFormer, config: Train_Config):
         self.model = model.to(get_device())
         self.config = config
         self.optimizer = optim.Adam(self.model.parameters(), lr=1e-3)
         self.device = get_device()
+        print(model.config.n_electron_num)
 
     def log_psi(self, x: torch.Tensor) -> torch.Tensor:
+        # x: (B, n_elec, 3)
         x = x.to(self.device)
-        n_elec = self.model.config.n_electron_num
-        expected_dim = n_elec * 3
-        if x.numel() != expected_dim:
-            raise ValueError(
-                f"Sample has {x.numel()} entries, expected {expected_dim} "
-                "(n_electron_num * 3 coordinates)."
-            )
-        x = x.view(1, n_elec, 3)
-        return self.model(x).squeeze(0)
+        return self.model(x)
 
     def save_checkpoint(self, step):
         if step % self.config.checkpoint_step == 0:
@@ -51,15 +45,15 @@ class Trainer():
         Then using model carlo you can compute the derivative of the loss.
         Important the detach.
         """
-        mh = MH(self.log_psi, self.config.burn_in_steps,
-                self.config.monte_carlo_length, self.config.dim, step_size=1.0)
+        mh = MH(self.log_psi, self.config, self.model.config.n_electron_num)
         hamilton = Hamiltonian(self.log_psi)
         run = self.config.init_wandb()
         for step in range(self.config.train_steps):
             # Sampling
+            # samples: (monte_carlo, B, n_e, 3)
             samples = mh.sampler().to(self.device)
 
-            # Local Energies
+            # Local Energies: (monte)
             local_energies = torch.stack(
                 [hamilton.local_energy(s) for s in samples]
             )
@@ -94,10 +88,8 @@ def train():
     model = PsiFormer(model_config)
 
     # Train
-    train_config = Train_Config(run_name="Envelope inside the model")
+    train_config = Train_Config(run_name="Helium")
 
-    # Keep dim consistent with number of electron coordinates (n_elec * 3)
-    train_config.dim = model_config.n_electron_num * 3
     trainer = Trainer(model, train_config)
 
     # train the model
