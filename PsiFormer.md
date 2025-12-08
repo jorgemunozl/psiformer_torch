@@ -3,7 +3,7 @@ tags:
   - idea
 author: Jorge
 date: 2025-09-16 08:53
-modified: 2025-12-07 10:46
+modified: 2025-12-08 07:18
 ---
 Google Deepmind's implementation with [[TensorFlow]] is a good guided. This work relies on [[PyTorch]]. You are going to learn a ton doing this or at least you are going to present it everywhere you can. So a strong basis is completely necessary, use [[Hugging Face Transformers]] is over-killed.
 
@@ -256,6 +256,9 @@ At the end you are going to make:
 loss.backward()
 ```
 
+## Batches
+We are introducing an additional dimension $B$. To leverage the parallelization that a GPU can offers. So we need to tweak some stuff. 
+
 
 ## Variational Principle 
 
@@ -315,6 +318,8 @@ In the regular space I was taking the quotient. Here assuming that we are dealin
 $$
 \text{model}=2\log |\psi|
 $$
+
+Now, the question relies on use many `walkers` is parallel. That is the question of using [Batches](#batches)
 
 ## Optimizer KFCA
 
