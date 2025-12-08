@@ -178,8 +178,10 @@ class PsiFormer(nn.Module):
     def __init__(self, config: Model_Config):
         super().__init__()
         self.config = config
-        self.f_1 = nn.Linear(config.n_features+1, config.n_embd)
-        self.f_h = Layer(config)  # Hidden Dimension
+        self.l_0 = nn.Linear(config.n_features+1, config.n_embd)
+        self.layers = nn.ModuleList(
+            [Layer(config) for _ in range(config.n_layer)]
+        )
         self.orbital_head = Orbital_Head(config)
         self.jastrow = Jastrow()
         self.spin_up_idx = [0]
@@ -197,8 +199,8 @@ class PsiFormer(nn.Module):
         r = torch.linalg.norm(x, dim=-1, keepdim=True)  # (B, n_elec, 1)
         features = torch.cat([x, r], dim=-1)            # (B, n_electron, 4)
 
-        h = self.f_1(features)  # (B, n_electron, n_embd)
-        h = self.f_h(h)  # (B, n_electron, n_embd)
+        h = self.l_0(features)  # (B, n_electron, n_embd)
+        h = self.layers(h)  # (B, n_electron, n_embd)
 
         # Electron-nucleus distances
         # (nucleus assumed at origin): (B, n_elec, natom, 1)
