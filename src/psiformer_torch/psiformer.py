@@ -82,6 +82,19 @@ class Layer(nn.Module):
         return x
 
 
+class Envelope(nn.Module):
+    def __init__(self, natom: int, out_dim: int, sigma_init: float = 1.0):
+        super().__init__()
+        self.pi = nn.Parameter(torch.ones(natom, out_dim))
+        # Start with a configurable decay rate; learnable during training.
+        self.sigma = nn.Parameter(torch.full((natom, out_dim), sigma_init))
+
+    def forward(self, r_ae: torch.Tensor) -> torch.Tensor:
+        # r_ae: [B, nelec, natom, 1] distances
+        # [B, nelec, out_dim]
+        return torch.sum(torch.exp(-r_ae * self.sigma) * self.pi, dim=2)
+
+
 class Orbital_Head(nn.Module):
     """
     This guy create k matrix to takes the determinants.
@@ -91,28 +104,44 @@ class Orbital_Head(nn.Module):
         self.n_det = config.n_determinants
         self.n_spin_up = config.n_spin_up
         self.n_spin_down = config.n_spin_down
+        # Helium nucleus at origin -> natom = 1
+        self.n_atom = 1
+        self.envelope_up = Envelope(
+            self.n_atom, self.n_det * self.n_spin_up, sigma_init=config.envelope_beta
+        )
+        self.envelope_down = Envelope(
+            self.n_atom, self.n_det * self.n_spin_down, sigma_init=config.envelope_beta
+        )
         self.n_embd = config.n_embd
 
         # Heads for up/down
         self.orb_up = nn.Linear(self.n_embd, self.n_det*self.n_spin_up)
         self.orb_down = nn.Linear(self.n_embd, self.n_det*self.n_spin_down)
 
-    def build_orbital_matrix(self, h: torch.Tensor, spin: str) -> torch.Tensor:
+    def build_orbital_matrix(self, h: torch.Tensor,
+                             r_ae: torch.Tensor, spin: str) -> torch.Tensor:
         """
         h: (B, n_spin, n_embd)
         return: (B, n_det, n_spin, n_spin)
         """
         # From where the H comes from.
+        # out shape: (B, N_spin, n_det * n_spin_up)
 
+        # Take in account the spin
         if spin == "up":
             out = self.orb_up(h)
+            env = self.envelope_up
             n_spin = self.n_spin_up
 
         else:
             out = self.orb_down(h)
+            env = self.envelope_down
             n_spin = self.n_spin_down
-        # out shape: (B, N_spin, n_det * n_spin_up)
+
+        out = out * env(r_ae)
+
         B, N, _ = out.shape
+
         return out.view(B, N, self.n_det, n_spin).transpose(1, 2)
 
     def slogdet_sum(self, mats: torch.Tensor) -> torch.Tensor:
@@ -127,14 +156,14 @@ class Orbital_Head(nn.Module):
         det_logs = torch.stack(det_logs, dim=-1)
         return torch.logsumexp(det_logs, dim=-1)
 
-    def forward(self, h, spin_up_idx, spin_down_idx):
+    def forward(self, h, spin_up_idx, spin_down_idx, r_ae_up, r_ae_down):
         """
         h: (B, n_elec, n_embd)
         """
         h_up = h[:, spin_up_idx, :]
         h_down = h[:, spin_down_idx, :]
-        phi_up = self.build_orbital_matrix(h_up, "up")
-        phi_down = self.build_orbital_matrix(h_down, "up")
+        phi_up = self.build_orbital_matrix(h_up, r_ae_up, "up")
+        phi_down = self.build_orbital_matrix(h_down, r_ae_down, "down")
 
         logdet_up = self.slogdet_sum(phi_up)
         logdet_down = self.slogdet_sum(phi_down)
@@ -170,8 +199,13 @@ class PsiFormer(nn.Module):
         h = self.f_1(features)  # (B, n_electron, n_embd)
         h = self.f_h(h)  # (B, n_electron, n_embd)
 
+        # Electron-nucleus distances (nucleus assumed at origin): (B, n_elec, natom, 1)
+        r_ae = torch.linalg.norm(x[:, :, None, :], dim=-1, keepdim=True)
+        r_ae_up = r_ae[:, self.spin_up_idx, :, :]
+        r_ae_down = r_ae[:, self.spin_down_idx, :, :]
+
         logdet_up, logdet_down = self.orbital_head(
-            h, self.spin_up_idx, self.spin_down_idx
+            h, self.spin_up_idx, self.spin_down_idx, r_ae_up, r_ae_down
         )
 
         jastrow_term = self.jastrow(x)

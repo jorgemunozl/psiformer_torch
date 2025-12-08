@@ -3,12 +3,6 @@ import os
 import wandb
 
 
-CHECKPOINT_DIR = "checkpoints/"
-CHECKPOINT_NAME = "last_checkpoint_1.pth"
-os.makedirs(CHECKPOINT_DIR, exist_ok=True)
-CHECKPOINT_PATH = os.path.join(CHECKPOINT_DIR, CHECKPOINT_NAME)
-
-
 @dataclass
 class Model_Config():
     n_layer: int = 4
@@ -17,7 +11,6 @@ class Model_Config():
     n_features: int = 3  # Hydrogen coordinates (x, y, z)
     n_determinants: int = 1
     n_electron_num: int = 2
-    batch_size: int = 3
     n_spin_down: int = 1
     n_spin_up: int = 1
     envelope_beta: float = 1.0  # exp(-beta * r) envelope strength
@@ -27,8 +20,8 @@ class Model_Config():
 class Train_Config():
     train_steps: int = 100
     checkpoint_step: int = 10
-    batch_size: int = 2
-    checkpoint_path: str = CHECKPOINT_PATH
+    batch_size: int = 1
+    checkpoint_name: str = ""
 
     dim: int = 3  # Three spatial cordinates
     lr: float = 1e-3
@@ -39,9 +32,15 @@ class Train_Config():
     run_name: str = "Add envelope on the train script"
 
     # MCMC
-    monte_carlo_length: int = 4000  # Num samples
+    monte_carlo_length: int = 1000  # Num samples
     burn_in_steps: int = 1
     step_size: float = 1.0
+
+    def init_checkpoint(self):
+        CHECKPOINT_DIR = "checkpoints/"
+        os.makedirs(CHECKPOINT_DIR, exist_ok=True)
+        check_path = os.path.join(CHECKPOINT_DIR, self.checkpoint_name)
+        return check_path
 
     def init_wandb(self):
         return wandb.init(
