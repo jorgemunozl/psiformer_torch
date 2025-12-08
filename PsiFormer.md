@@ -3,7 +3,7 @@ tags:
   - idea
 author: Jorge
 date: 2025-09-16 08:53
-modified: 2025-12-08 08:39
+modified: 2025-12-08 15:36
 ---
 Google Deepmind's implementation with [[TensorFlow]] is a good guided. This work relies on [[PyTorch]]. You are going to learn a ton doing this or at least you are going to present it everywhere you can. So a strong basis is completely necessary, use [[Hugging Face Transformers]] is over-killed.
 
@@ -132,7 +132,7 @@ When working with many electrons
 
 ## Jastrow Factor - Envelope
 
-The envelope is a must, with envelope I refer to multiply, by a exponential  decay factor. In Fermi net this is not necessary because 
+The envelope is a must, with envelope I refer to multiply, by a exponential  decay factor. In Fermi net this is not necessary because.
 
 But in Psiformer, the factor (plus the envelope is completely necessary)
 
@@ -158,6 +158,11 @@ And where the **envelope** comes in? They fit in the orbital, so I am doing it, 
 
 But If I put the envelope in the model itself then thing begin to broke, recall that we are using Psiformer for the Sampling also.
 
+### Envelope more dimension
+
+And here it comes more fun. Because here they are matrices, you count in account two learnable matrices.
+
+But wait a sec, think that we are going to use [[PyTorch Broadcast]], for the batch dimension. You are not is clear, I mean the learnable parameters are similar to the parameters from the model.
 
 ## MLPs
 

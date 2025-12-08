@@ -39,7 +39,8 @@ class Hamiltonian():
         g = self.grad_log_psi(sample)
         lap = self.laplacian_log_psi(sample)
         # kinetic : (B, )
-        kinetic = -0.5 * (lap + (g * g).sum())
+        g_sq_sum = g.pow(2).reshape(g.shape[0], -1).sum(dim=1)
+        kinetic = -0.5 * (lap + g_sq_sum)
         return kinetic + V
 
     def grad_log_psi(self, x: torch.Tensor) -> torch.Tensor:
@@ -47,6 +48,7 @@ class Hamiltonian():
         Gradient of log psi with graph retained for higher order derivatives.
         x: (B, n_elec, 3)
         """
+        print("Computing Grad")
         x_req = x.clone().detach().requires_grad_(True)
         y = self.log_psi_fn(x_req)  # y: (B,)
         (g,) = grad(
@@ -60,17 +62,22 @@ class Hamiltonian():
         Laplacian of log psi via second derivatives of each dimension.
         x: (B, n_elec, 3)
         """
+        print("Computing Laplacian")
         x_req = x.clone().detach().requires_grad_(True)
         y = self.log_psi_fn(x_req)  # (B,)
-        (g,) = grad(y, x_req, grad_outputs=torch.ones_like(y),
-                    create_graph=True, retain_graph=True)
+        (g,) = grad(
+            y, x_req, grad_outputs=torch.ones_like(y),
+            create_graph=True, retain_graph=True
+        )
 
-        second_terms = []
+        # Compute Hessian diagonals more efficiently by summing per-dimension
+        # gradients and differentiating once per dimension.
         g_flat = g.reshape(g.shape[0], -1)
-        for b in range(g_flat.shape[0]):
-            lap_b = 0.0
-            for j in range(g_flat.shape[1]):
-                second = grad(g_flat[b, j], x_req, retain_graph=True)[0]
-                lap_b = lap_b + second.reshape(g_flat.shape[0], -1)[b, j]
-            second_terms.append(lap_b)
-        return torch.stack(second_terms)
+        lap_terms = []
+        for j in range(g_flat.shape[1]):
+            second = grad(
+                g_flat[:, j].sum(), x_req, retain_graph=True
+            )[0]
+            lap_terms.append(second.reshape(g.shape[0], -1)[:, j])
+        lap = torch.stack(lap_terms, dim=1).sum(dim=1)
+        return lap

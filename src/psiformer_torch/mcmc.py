@@ -1,6 +1,7 @@
 import torch
 from typing import Callable
 from config import Train_Config
+from psiformer import get_device
 
 
 class MH():
@@ -11,10 +12,12 @@ class MH():
     We work with the log form. !
     """
     def __init__(self, target: Callable[[torch.Tensor], torch.Tensor],
-                 config: Train_Config, n_elec: int):
+                 config: Train_Config, n_elec: int,
+                 device: torch.device | None = None):
         self.target = target
         self.config = config
         self.n_elec = n_elec
+        self.device = device or get_device()
 
     def generate_trial(self, state: torch.Tensor) -> torch.Tensor:
         # state: (B, n_elec_, 3)
@@ -38,17 +41,21 @@ class MH():
         # Thermalization
         # x: (B, n_elec, 3)
         B, n_e, dim = self.config.batch_size, self.n_elec, self.config.dim
-        x = torch.randn(B, n_e, dim)
+        x = torch.randn(B, n_e, dim, device=self.device)
 
         for _ in range(self.config.burn_in_steps):
             trial = self.generate_trial(x)  # (B, n_e, 3)
             accept_mask = self.accept_decline(trial, x)  # (B,)
             x = torch.where(accept_mask[:, None, None], trial, x)  # Broadcast
 
-        samples_eq = torch.zeros(self.config.monte_carlo_length, B, n_e, dim)
+        samples_eq = torch.zeros(
+            self.config.monte_carlo_length, B, n_e, dim, device=self.device
+        )
         samples_eq[0] = x
 
         for i in range(1, self.config.monte_carlo_length):
+            if i % 100 == 0:
+                print("TRIAL", i)
             trial = self.generate_trial(x)
             acc = self.accept_decline(trial, x)
             # x: (B, n_e, dim)

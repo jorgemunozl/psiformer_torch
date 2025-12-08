@@ -35,7 +35,7 @@ class Trainer():
                     "model_state_dict": self.model.state_dict(),
                     "step": step,
                 },
-                self.config.checkpoint_path,
+                self.config.init_checkpoint(),
             )
             print(f"Saved checkpoint at step {step}")
 
@@ -45,7 +45,8 @@ class Trainer():
         Then using model carlo you can compute the derivative of the loss.
         Important the detach.
         """
-        mh = MH(self.log_psi, self.config, self.model.config.n_electron_num)
+        mh = MH(self.log_psi, self.config, self.model.config.n_electron_num,
+                device=self.device)
         hamilton = Hamiltonian(self.log_psi)
         run = self.config.init_wandb()
         for step in range(self.config.train_steps):
@@ -88,7 +89,8 @@ def train():
     model = PsiFormer(model_config)
 
     # Train
-    train_config = Train_Config(run_name="Helium")
+    train_config = Train_Config(run_name="Helium with Envelope",
+                                checkpoint_name="helium_with_envelope.pth")
 
     trainer = Trainer(model, train_config)
 
