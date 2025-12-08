@@ -9,7 +9,7 @@ class MH():
     Implementation for the Metropolis Hasting (MH) algorithm
     using a gaussian kernel. Returns a list a samples from
     the target distribution.
-    We work with the log form. !
+    We work with the log form!.
     """
     def __init__(self, target: Callable[[torch.Tensor], torch.Tensor],
                  config: Train_Config, n_elec: int,
@@ -54,8 +54,6 @@ class MH():
         samples_eq[0] = x
 
         for i in range(1, self.config.monte_carlo_length):
-            if i % 100 == 0:
-                print("TRIAL", i)
             trial = self.generate_trial(x)
             acc = self.accept_decline(trial, x)
             # x: (B, n_e, dim)

@@ -48,7 +48,6 @@ class Hamiltonian():
         Gradient of log psi with graph retained for higher order derivatives.
         x: (B, n_elec, 3)
         """
-        print("Computing Grad")
         x_req = x.clone().detach().requires_grad_(True)
         y = self.log_psi_fn(x_req)  # y: (B,)
         (g,) = grad(
@@ -62,7 +61,6 @@ class Hamiltonian():
         Laplacian of log psi via second derivatives of each dimension.
         x: (B, n_elec, 3)
         """
-        print("Computing Laplacian")
         x_req = x.clone().detach().requires_grad_(True)
         y = self.log_psi_fn(x_req)  # (B,)
         (g,) = grad(

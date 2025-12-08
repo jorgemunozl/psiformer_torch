@@ -50,7 +50,6 @@ class Trainer():
         hamilton = Hamiltonian(self.log_psi)
         run = self.config.init_wandb()
         for step in range(self.config.train_steps):
-            # Sampling
             # samples: (monte_carlo, B, n_e, 3)
             samples = mh.sampler().to(self.device)
 
@@ -68,19 +67,34 @@ class Trainer():
             # Derivative of the Loss
             loss = 2*((local_energies.detach() - E_mean) * log_psi_vals).mean()
 
+            # Optimizer Step
             self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()
             self.save_checkpoint(step)
-            # Logging
+
+            # Print info
             logger.info(f"Step {step}: E_mean = {E_mean.item():.6f}")
             logger.info(f"Loss = {loss.item():.6f}")
-            run.log({"Energy": E_mean, "loss": loss})
 
-        run.finish()
+            # Wandb sync information
+
+            env_up = self.model.orbital_head.envelope_up
+            env_down = self.model.orbital_head.envelope_down
+
+            metrics = {
+                "Energy": E_mean,
+                "loss": loss,
+                "env_up_pi_norm": env_up.pi.detach().norm().item(),
+                "env_up_sigma_norm": env_up.sigma.detach().norm().item(),
+                "env_down_pi_norm": env_down.pi.detach().norm().item(),
+                "env_down_sigma_norm": env_down.sigma.detach().norm().item(),
+            }
+            run.log(metrics)
+            run.finish()
 
 
-def train():
+if __name__ == "__main__":
     device = get_device()
     print(f"Using {device}")
 
@@ -89,13 +103,12 @@ def train():
     model = PsiFormer(model_config)
 
     # Train
-    train_config = Train_Config(run_name="Helium with Envelope",
-                                checkpoint_name="helium_with_envelope.pth")
+    train_config = Train_Config(
+        run_name="Helium with Envelope Expressive",
+        checkpoint_name="helium_with_envelope_expressive.pth"
+    )
 
     trainer = Trainer(model, train_config)
 
     # train the model
     trainer.train()
-
-
-train()
