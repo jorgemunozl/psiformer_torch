@@ -17,6 +17,7 @@ class Model_Config():
     n_out: int = 1
     n_determinants: int = 1
     n_electron_num: int = 2
+    batch_size: int = 3
     n_spin_down: int = 1
     n_spin_up: int = 1
     envelope_beta: float = 1.0  # exp(-beta * r) envelope strength
@@ -28,8 +29,9 @@ class Train_Config():
     checkpoint_step: int = 10
     monte_carlo_length: int = 4000  # Num samples
     burn_in_steps: int = 1
+    batch_size: int = 2
     checkpoint_path: str = CHECKPOINT_PATH
-    dim: int = 3  # Hydrogen coordinates only
+    dim: int = 3  # Three spatial cordinates
     lr: float = 1e-3
     entity: str = "alvaro18ml-university-of-minnesota"
     project: str = "Psiformer"

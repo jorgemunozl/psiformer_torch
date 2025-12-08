@@ -28,26 +28,26 @@ class MHA(nn.Module):
 
     def forward(self, x: torch.Tensor):
         B, T, C = x.size()  # Batch, sequence length, Embedding dim
-        # imposes that our x is 3D, i.e.,
-        # (batch_size, seq_len, embedding_dim)
+        # Imposes that our x is 3D, i.e.,
+        # (batch_size, seq_len=n_electrons, embedding_dim)
 
-        # get query, key, values from single linear projection
+        # Get query, key, values from single linear projection.
         qkv = self.c_attn(x)
 
         q, k, v = qkv.split(self.n_embd, dim=2)
 
         head_dim = C // self.n_head
 
-        # dim (B, T, heads, head_dim) -> trans
-        # dim (B, heads, T, head_dim)
+        # dim (B, T    , heads, head_dim) -> trans
+        # dim (B, heads, T    , head_dim)
         k = k.view(B, T, self.n_head, head_dim).transpose(1, 2)
         q = q.view(B, T, self.n_head, head_dim).transpose(1, 2)
         v = v.view(B, T, self.n_head, head_dim).transpose(1, 2)
 
-        # B, heads, T, head_dim x B, heads, head_dim , T -> B, head, T, T
+        # (B, heads, T, head_dim) x (B, heads, head_dim , T)->(B, head, T, T)
         att = (q @ k.transpose(-2, -1)) / math.sqrt(head_dim)
         att = F.softmax(att, dim=-1)
-        # B, heads, T, T x B, heads, T , head_dim -> B, heads , T, head_dim
+        # (B, heads, T, T) x (B, heads, T , head_dim)->(B, heads, T, head_dim)
         y = att @ v
 
         # Back to (B, T, heads, head_dim)
@@ -111,9 +111,8 @@ class Orbital_Head(nn.Module):
         else:
             out = self.orb_down(h)
             n_spin = self.n_spin_down
-        # out shape: B, N_spin, n_det * n_spin_**
+        # out shape: (B, N_spin, n_det * n_spin_up)
         B, N, _ = out.shape
-        print(out.shape)
         return out.view(B, N, self.n_det, n_spin).transpose(1, 2)
 
     def slogdet_sum(self, mats: torch.Tensor) -> torch.Tensor:
@@ -129,6 +128,9 @@ class Orbital_Head(nn.Module):
         return torch.logsumexp(det_logs, dim=-1)
 
     def forward(self, h, spin_up_idx, spin_down_idx):
+        """
+        h: (B, n_elec, n_embd)
+        """
         h_up = h[:, spin_up_idx, :]
         h_down = h[:, spin_down_idx, :]
         phi_up = self.build_orbital_matrix(h_up, "up")
@@ -158,11 +160,12 @@ class PsiFormer(nn.Module):
         x: (B, n_electron ,3)
         """
         r = torch.linalg.norm(x, dim=-1, keepdim=True)  # (B, n_elec, 1)
-        envelope = -self.config.envelope_beta*r.sum(dim=1)
-
-        features = torch.cat([x, r], dim=-1)  # B, n_electron, 4
-        h = self.f_1(features)  # B, n_electron, n_embd
-        h = self.f_h(h)  # B, n_electron, n_embd
+        envelope = -self.config.envelope_beta*r
+        print(envelope.shape)
+        features = torch.cat([x, r], dim=-1)  # (B, n_electron, 4)
+        print(features.shape)
+        h = self.f_1(features)  # (B, n_electron, n_embd)
+        h = self.f_h(h)  # (B, n_electron, n_embd)
         logdet_up, logdet_down = self.orbital_head(
             h, self.spin_up_idx, self.spin_down_idx
         )

@@ -13,13 +13,15 @@ class MH():
                  eq_steps: int,
                  num_samples: int,
                  dim: int,
-                 step_size: float = 1.0
+                 batch_size: int,
+                 step_size: float = 1.0,
                  ):
         self.target = target
         self.eq_steps = eq_steps
         self.num_samples = num_samples
         self.dim = dim
         self.step_size = step_size
+        self.batch_size = batch_size
 
     def generate_trial(self, state: torch.Tensor) -> torch.Tensor:
         return state + self.step_size * torch.randn_like(state)
@@ -35,11 +37,13 @@ class MH():
 
     @torch.no_grad()
     def sampler(self) -> torch.Tensor:
+        """
+        Generate monte_carlo_size samples times batch
+        """
         # Thermalization
-        x = torch.randn(self.dim)
-        # Here the first configuration is
-        # sampled from a normal distribution is n.
+        x = torch.randn(self.batch_size, self.num_samples, 3)
 
+        # Here the first configuration is sampled from
         for _ in range(self.eq_steps):
             trial = self.generate_trial(x)
             if self.accept_decline(trial, x):

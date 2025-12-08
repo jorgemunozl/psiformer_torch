@@ -8,7 +8,7 @@ class Potential():
     For the Helium atom, the only nucleous is fixed at (0,0,0).
     Broadcast.
     """
-    def __init__(self, coords: torch.Tensor, Z: int=2):
+    def __init__(self, coords: torch.Tensor, Z: int = 2):
         # coords: (n_elec, 3)
         self.coords = coords
         self.Z = Z
