@@ -23,9 +23,15 @@ class Trainer():
 
     def log_psi(self, x: torch.Tensor) -> torch.Tensor:
         x = x.to(self.device)
-        # r = torch.linalg.norm(x, dim=-1)
-        # envelope = -self.model.config.envelope_beta * r
-        return self.model(x)  # + envelope
+        n_elec = self.model.config.n_electron_num
+        expected_dim = n_elec * 3
+        if x.numel() != expected_dim:
+            raise ValueError(
+                f"Sample has {x.numel()} entries, expected {expected_dim} "
+                "(n_electron_num * 3 coordinates)."
+            )
+        x = x.view(1, n_elec, 3)
+        return self.model(x).squeeze(0)
 
     def save_checkpoint(self, step):
         if step % self.config.checkpoint_step == 0:
@@ -46,7 +52,7 @@ class Trainer():
         Important the detach.
         """
         mh = MH(self.log_psi, self.config.burn_in_steps,
-                self.config.monte_carlo_length, self.config.dim, step_size=0.1)
+                self.config.monte_carlo_length, self.config.dim, step_size=1.0)
         hamilton = Hamiltonian(self.log_psi)
         run = self.config.init_wandb()
         for step in range(self.config.train_steps):
@@ -90,8 +96,8 @@ def train():
     # Train
     train_config = Train_Config(run_name="Envelope inside the model")
 
-    # Keep dim consistent with model input size
-    train_config.dim = model_config.n_features
+    # Keep dim consistent with number of electron coordinates (n_elec * 3)
+    train_config.dim = model_config.n_electron_num * 3
     trainer = Trainer(model, train_config)
 
     # train the model
