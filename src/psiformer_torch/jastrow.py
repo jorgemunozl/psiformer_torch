@@ -20,5 +20,5 @@ class Jastrow(nn.Module):
         # Helium
         diff = x[:, 0, :] - x[:, 1, :]
         dist = torch.linalg.norm(diff, dim=-1)
-        fac = -0.5 * (self.alpha_anti + dist)
+        fac = -0.5 * self.alpha_anti**2/(self.alpha_anti + dist)
         return fac
