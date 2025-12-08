@@ -6,20 +6,19 @@ import wandb
 @dataclass
 class Model_Config():
     n_layer: int = 4
-    n_head: int = 8
-    n_embd: int = 128
+    n_head: int = 16
+    n_embd: int = 256
     n_features: int = 3  # Hydrogen coordinates (x, y, z)
-    n_determinants: int = 1
+    n_determinants: int = 2
     n_electron_num: int = 2
     n_spin_down: int = 1
     n_spin_up: int = 1
-    envelope_beta: float = 1.0  # exp(-beta * r) envelope strength
 
 
 @dataclass
 class Train_Config():
-    train_steps: int = 100
-    checkpoint_step: int = 10
+    train_steps: int = 120
+    checkpoint_step: int = 50
     batch_size: int = 1
     checkpoint_name: str = ""
 
@@ -29,7 +28,7 @@ class Train_Config():
     # Wandb
     entity: str = "alvaro18ml-university-of-minnesota"
     project: str = "Psiformer"
-    run_name: str = "Add envelope on the train script"
+    run_name: str = ""
 
     # MCMC
     monte_carlo_length: int = 1000  # Num samples
@@ -41,6 +40,10 @@ class Train_Config():
         os.makedirs(CHECKPOINT_DIR, exist_ok=True)
         check_path = os.path.join(CHECKPOINT_DIR, self.checkpoint_name)
         return check_path
+
+    def check_name(self):
+        # if self.checkpoint_name
+        pass
 
     def init_wandb(self):
         return wandb.init(

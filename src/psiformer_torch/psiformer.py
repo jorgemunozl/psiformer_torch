@@ -90,6 +90,7 @@ class Envelope(nn.Module):
         self.sigma = nn.Parameter(torch.full((natom, out_dim), sigma_init))
 
     def forward(self, r_ae: torch.Tensor) -> torch.Tensor:
+        # What the heck is atom?
         # r_ae: [B, nelec, natom, 1] distances
         # [B, nelec, out_dim]
         return torch.sum(torch.exp(-r_ae * self.sigma) * self.pi, dim=2)
@@ -107,10 +108,10 @@ class Orbital_Head(nn.Module):
         # Helium nucleus at origin -> natom = 1
         self.n_atom = 1
         self.envelope_up = Envelope(
-            self.n_atom, self.n_det * self.n_spin_up, sigma_init=config.envelope_beta
+            self.n_atom, self.n_det * self.n_spin_up
         )
         self.envelope_down = Envelope(
-            self.n_atom, self.n_det * self.n_spin_down, sigma_init=config.envelope_beta
+            self.n_atom, self.n_det * self.n_spin_down
         )
         self.n_embd = config.n_embd
 
@@ -199,7 +200,8 @@ class PsiFormer(nn.Module):
         h = self.f_1(features)  # (B, n_electron, n_embd)
         h = self.f_h(h)  # (B, n_electron, n_embd)
 
-        # Electron-nucleus distances (nucleus assumed at origin): (B, n_elec, natom, 1)
+        # Electron-nucleus distances
+        # (nucleus assumed at origin): (B, n_elec, natom, 1)
         r_ae = torch.linalg.norm(x[:, :, None, :], dim=-1, keepdim=True)
         r_ae_up = r_ae[:, self.spin_up_idx, :, :]
         r_ae_down = r_ae[:, self.spin_down_idx, :, :]
