@@ -200,7 +200,8 @@ class PsiFormer(nn.Module):
         features = torch.cat([x, r], dim=-1)            # (B, n_electron, 4)
 
         h = self.l_0(features)  # (B, n_electron, n_embd)
-        h = self.layers(h)  # (B, n_electron, n_embd)
+        for layer in self.layers:
+            h = layer(h)  # (B, n_electron, n_embd)
 
         # Electron-nucleus distances
         # (nucleus assumed at origin): (B, n_elec, natom, 1)

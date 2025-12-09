@@ -17,9 +17,9 @@ class Model_Config():
 
 @dataclass
 class Train_Config():
-    train_steps: int = 150
+    train_steps: int = 130
     checkpoint_step: int = 49
-    batch_size: int = 2
+    batch_size: int = 1
     checkpoint_name: str = ""
 
     dim: int = 3  # Three spatial cordinates
@@ -31,7 +31,7 @@ class Train_Config():
     run_name: str = ""
 
     # MCMC
-    monte_carlo_length: int = 6000  # Num samples
+    monte_carlo_length: int = 3000  # Num samples
     burn_in_steps: int = 100
     step_size: float = 1.0
 
