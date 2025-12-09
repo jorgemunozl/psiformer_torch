@@ -3,7 +3,7 @@ tags:
   - idea
 author: Jorge
 date: 2025-09-16 08:53
-modified: 2025-12-08 15:36
+modified: 2025-12-09 09:25
 ---
 Google Deepmind's implementation with [[TensorFlow]] is a good guided. This work relies on [[PyTorch]]. You are going to learn a ton doing this or at least you are going to present it everywhere you can. So a strong basis is completely necessary, use [[Hugging Face Transformers]] is over-killed.
 
@@ -328,6 +328,13 @@ $$
 Now, the question relies on use many `walkers` is parallel. That is the question of using [Batches](#batches)
 
 ## Optimizer KFCA
+
+Complicated,but it just optimization
+
+## Eval
+
+So it should to converge with more montecarlo steps. To make the plot we are going to make something 
+
 
 ---
 

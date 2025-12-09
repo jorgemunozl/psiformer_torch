@@ -28,7 +28,7 @@ class Train_Config():
     # Wandb
     entity: str = "alvaro18ml-university-of-minnesota"
     project: str = "Psiformer"
-    run_name: str = ""
+    run_name: str = "Train"
 
     # MCMC
     monte_carlo_length: int = 3000  # Num samples

@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # Torch CUDA wheel index; override for different CUDA versions (e.g. cu124) or CPU-only wheels.
-TORCH_INDEX_URL="${TORCH_INDEX_URL:-https://download.pytorch.org/whl/cu121}"
+TORCH_INDEX_URL="${TORCH_INDEX_URL:-https://download.pytorch.org/whl/cu124}"
 EXTRA_INDEX_URL="${EXTRA_INDEX_URL:-https://pypi.org/simple}"
 WANDB_MODE="${WANDB_MODE:-online}"
 export UV_PROJECT_ENVIRONMENT="${UV_PROJECT_ENVIRONMENT:-.venv}"
