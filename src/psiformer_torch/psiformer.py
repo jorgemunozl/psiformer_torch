@@ -83,16 +83,23 @@ class Layer(nn.Module):
 
 
 class Envelope(nn.Module):
-    def __init__(self, natom: int, out_dim: int, sigma_init: float = 1.0):
+    def __init__(self, natom: int, det_spin: int, sigma_init: float = 1.0):
         super().__init__()
-        self.pi = nn.Parameter(torch.ones(natom, out_dim))
+        self.pi = nn.Parameter(torch.ones(natom, det_spin))
+
         # Start with a configurable decay rate; learnable during training.
-        self.sigma = nn.Parameter(torch.full((natom, out_dim), sigma_init))
+        self.sigma = nn.Parameter(torch.full((natom, det_spin), sigma_init))
 
     def forward(self, r_ae: torch.Tensor) -> torch.Tensor:
-        # What the heck is atom?
-        # r_ae: [B, nelec, natom, 1] distances
-        # [B, nelec, out_dim]
+        """
+        n_spin: up/down
+        r_ae: (B, n_spin, natom, 1) distances between electrons and nuclei
+        return: (B, n_spin, det_spin).
+        The last dimension of r_ae is important for broadcasting.
+        1 -> n_spin
+        """
+
+        # Broadcasting for B, n_elec, _ , 1
         return torch.sum(torch.exp(-r_ae * self.sigma) * self.pi, dim=2)
 
 
@@ -105,7 +112,7 @@ class Orbital_Head(nn.Module):
         self.n_det = config.n_determinants
         self.n_spin_up = config.n_spin_up
         self.n_spin_down = config.n_spin_down
-        # Helium nucleus at origin -> natom = 1
+        # Atom: nucleus at origin -> natom = 1
         self.n_atom = 1
         self.envelope_up = Envelope(
             self.n_atom, self.n_det * self.n_spin_up
@@ -122,11 +129,12 @@ class Orbital_Head(nn.Module):
     def build_orbital_matrix(self, h: torch.Tensor,
                              r_ae: torch.Tensor, spin: str) -> torch.Tensor:
         """
-        h: (B, n_spin, n_embd)
+        n_spin = up / down
+        r_ae_up = (B, n_spin, n_atom, 1)
+        h_up/down: (B, n_spin, n_embd)
         return: (B, n_det, n_spin, n_spin)
         """
         # From where the H comes from.
-        # out shape: (B, N_spin, n_det * n_spin_up)
 
         # Take in account the spin
         if spin == "up":
@@ -139,6 +147,7 @@ class Orbital_Head(nn.Module):
             env = self.envelope_down
             n_spin = self.n_spin_down
 
+        # out: (B, N_spin, n_det * n_spin_up/down), no broadcasting
         out = out * env(r_ae)
 
         B, N, _ = out.shape
@@ -160,6 +169,10 @@ class Orbital_Head(nn.Module):
     def forward(self, h, spin_up_idx, spin_down_idx, r_ae_up, r_ae_down):
         """
         h: (B, n_elec, n_embd)
+        spin_up_idx: [n_up]
+        spin_down_idx: [n_down]
+        r_ae_up: (B, n_up_,n_atom,1)
+        r_ae_down: (B,n_down,n_atom,1)
         """
         h_up = h[:, spin_up_idx, :]
         h_down = h[:, spin_down_idx, :]
@@ -174,6 +187,7 @@ class Orbital_Head(nn.Module):
 class PsiFormer(nn.Module):
     """
     Generate the hidden dimensions for Orbital Head
+    Convention: The first spin are up, the last are down
     """
     def __init__(self, config: Model_Config):
         super().__init__()
@@ -183,9 +197,13 @@ class PsiFormer(nn.Module):
             [Layer(config) for _ in range(config.n_layer)]
         )
         self.orbital_head = Orbital_Head(config)
-        self.jastrow = Jastrow()
-        self.spin_up_idx = [0]
-        self.spin_down_idx = [1]
+        self.jastrow = Jastrow(config.n_spin_up, config.n_spin_down)
+        self.spin_up_idx = list(range(self.config.n_spin_up))
+        self.spin_down_idx = list(
+            range(self.config.n_spin_up,
+                  self.config.n_spin_up+self.config.n_spin_down)
+        )
+        assert set(self.spin_up_idx).isdisjoint(self.spin_down_idx)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -206,7 +224,9 @@ class PsiFormer(nn.Module):
 
         # Electron-nucleus distances
         # (nucleus assumed at origin): (B, n_elec, natom, 1)
-        r_ae = torch.linalg.norm(x[:, :, None, :], dim=-1, keepdim=True)
+        r_ae = torch.linalg.norm(x[:, :, None, :],
+                                 dim=-1, keepdim=True)  # |r-R|
+
         r_ae_up = r_ae[:, self.spin_up_idx, :, :]
         r_ae_down = r_ae[:, self.spin_down_idx, :, :]
 

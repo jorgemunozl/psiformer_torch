@@ -10,7 +10,9 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_CSV = PROJECT_ROOT / "assets" / "train_wandb" / "helium.csv"
 
 
-def _detect_metric_columns(fieldnames: List[str], requested: str | None = None) -> Tuple[str, str | None, str | None]:
+def _detect_metric_columns(fieldnames: List[str],
+                           requested: str | None = None
+                           ) -> Tuple[str, str | None, str | None]:
     """
     Infer metric column names. The csv headers look like:
       Step, <metric>, <metric>__MIN, <metric>__MAX
@@ -43,16 +45,21 @@ def _detect_metric_columns(fieldnames: List[str], requested: str | None = None) 
                 base_metric = n
                 break
         else:
-            raise ValueError(f"Metric '{requested}' not found. Available metrics: {', '.join(unique)}")
+            raise ValueError(
+                f"Metric '{requested}' not found."
+                )
     else:
         base_metric = unique[0]
 
-    min_key = f"{base_metric}__MIN" if f"{base_metric}__MIN" in fieldnames else None
-    max_key = f"{base_metric}__MAX" if f"{base_metric}__MAX" in fieldnames else None
+    min_key = f"{base_metric}__MIN"
+    max_key = f"{base_metric}__MAX"
     return base_metric, min_key, max_key
 
 
-def read_energy_csv(csv_path: Path, metric: str | None = None) -> Tuple[List[int], List[float], List[float], List[float], str]:
+def read_energy_csv(csv_path: Path,
+                    metric: str | None = None
+                    ) -> Tuple[List[int], List[float],
+                               List[float], List[float], str]:
     """
     Read the training csv exported from wandb.
 
@@ -68,8 +75,10 @@ def read_energy_csv(csv_path: Path, metric: str | None = None) -> Tuple[List[int
         if reader.fieldnames is None:
             raise ValueError("CSV has no header row.")
 
-        base_metric, min_key, max_key = _detect_metric_columns(reader.fieldnames, requested=metric)
-        step_key = "Step" if "Step" in reader.fieldnames else reader.fieldnames[0]
+        base_metric, min_key, max_key = _detect_metric_columns(
+            reader.fieldnames, requested=metric
+        )
+        step_key = "Step"
 
         for row in reader:
             steps.append(int(row[step_key]))
@@ -106,7 +115,8 @@ def plot_energy(
 
     Saves a png next to the csv (unless output_path is provided).
     """
-    steps, energy, energy_min, energy_max, metric_name = read_energy_csv(csv_path, metric=metric)
+    steps, energy, energy_min, energy_max, metric_name = read_energy_csv(
+        csv_path, metric=metric)
 
     fig, ax = plt.subplots(figsize=(9, 5))
     ax.plot(steps, energy, label=metric_name, color="tab:blue", linewidth=2)
@@ -125,7 +135,8 @@ def plot_energy(
     ax.set_xlabel("Step")
     ax.set_ylabel(metric_name)
     if target is not None:
-        ax.axhline(target, color="tab:red", linestyle="--", linewidth=1.4, label=f"Target {target}")
+        ax.axhline(target, color="tab:red",
+                   linestyle="--", linewidth=1.4, label=f"Target {target}")
 
     ax.grid(True, linestyle="--", linewidth=0.5, alpha=0.7)
     ax.legend()
@@ -180,7 +191,7 @@ def _parse_args() -> argparse.Namespace:
         "--metric",
         type=str,
         default=None,
-        help="Metric column to plot (defaults to the first metric column found).",
+        help="Metric column to plot (defaults to the first found).",
     )
     parser.add_argument(
         "target",

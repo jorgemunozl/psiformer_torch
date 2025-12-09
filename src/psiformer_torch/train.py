@@ -103,8 +103,8 @@ class Trainer():
 
 
 train_config = Train_Config(
-        run_name="Helium More Expressive",
-        checkpoint_name="helium_more_expressive.pth"
+        run_name="Litium",
+        checkpoint_name="Litium.pth"
     )
 
 if __name__ == "__main__":
