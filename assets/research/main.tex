@@ -23,7 +23,7 @@
 ]{geometry}
 \usepackage{braket}
 \usepackage{graphicx}
-\title{Development of a Transformed based architecture to solve the Time Independent Schrodinger Equation for many bodies}
+\title{PsiFormer: A Transformer Architecture for Many-Body Quantum Mechanics}
 \author[1]{Jorge Alvaro Munoz Laredo}
 \affil[1]{Faculty of Physics, Universidad Nacional de Ingeniería, Lima, Peru\\
 \texttt{jorge.munoz.l@uni.pe}
@@ -430,11 +430,11 @@ We obtain \(E_{L}(R_k)\) using:
 \begin{equation}
 E_{L}(\mathbf{R}_{k})=\frac{\hat{H}\psi(\mathbf{R}_{k})}{\psi(\mathbf{R}_{k})}=-\frac{1}{2}\frac{\nabla^{2}\psi(\mathbf{R_{k}})}{\psi(\mathbf{R}_{k})}+V(\mathbf{R}_{k})
 \end{equation}
-Calculus tell us that for a any derivable function \(f\).
+Since in practice is better to work in the log-space because is more numerically stable. We use the follow form of the kinetic term. For a any derivable function \(f\) we know that:
 \begin{equation}
-  \frac{\nabla^{2}f}{f}=[\nabla^{2}\log f+(\nabla f)^{2}]
+  \frac{\nabla^{2}f}{f}=[\nabla^{2}\log f+(\nabla \log f)^{2}]
 \end{equation}
-In practice is more numerically stable work using that form, thus:
+Thus we obtain:
 \begin{align}
 &E_{L}(\mathbf{R}_{k})= \notag\\& -\frac{1}{2}\sum_{i=1}^{N} \sum_{j=1}^{3} \left[ \frac{\partial ^{2} \log \lvert \Psi(x) \rvert }{\partial r_{ij}^{2}}+\left( \frac{\partial \log \lvert \Psi(x) \rvert }{\partial r_{ij}} \right)^{2} \right]+V(\mathbf{R_{k}})
 \end{align}
