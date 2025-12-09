@@ -51,16 +51,20 @@ def compute_energy(monte_carlo, burn_in, step_size) -> float:
     return float(E_mean)
 
 
-def monte_carlo_step_variation(start, end, step):
+def monte_carlo_step_dense(start, end, step):
+    """
+    In each step we init a completely new Markov Chain.
+    """
     montecarlos = np.arange(start, end, step)
     burn_in = 10
     step_size = 2
-    data = np.zeros_like(montecarlos)
+    data = []
     print("Number of steps: ", (end-start)/step)
     for i, montecarlo in enumerate(montecarlos):
         print("Computing step", montecarlo)
         E = compute_energy(montecarlo, burn_in, step_size)
-        data[i] = E
+        data.append(E)
+
     plt.plot(montecarlos, data)
     plt.xlabel("Monte Carlo Length")
     plt.ylabel("Energy (a.u)")
@@ -73,4 +77,4 @@ if __name__ == "__main__":
                         )
     logger = logging.getLogger("Evaluation")
     logger.info("Starting Evaluation")
-    monte_carlo_step_variation(1000, 6000, 200)
+    monte_carlo_step_dense(1000, 6000, 200)

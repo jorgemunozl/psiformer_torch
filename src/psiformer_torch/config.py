@@ -5,14 +5,14 @@ import wandb
 
 @dataclass
 class Model_Config():
-    n_layer: int = 2
+    n_layer: int = 1
     n_head: int = 16
     n_embd: int = 256
-    n_features: int = 3  # Hydrogen coordinates (x, y, z)
+    n_features: int = 3  # Electron Coordinates (x, y, z)
     n_determinants: int = 3
-    n_electron_num: int = 2
+    n_electron_num: int = 3
     n_spin_down: int = 1
-    n_spin_up: int = 1
+    n_spin_up: int = 2
 
 
 @dataclass
@@ -23,7 +23,7 @@ class Train_Config():
     checkpoint_name: str = ""
 
     dim: int = 3  # Three spatial cordinates
-    lr: float = 0.5e-3
+    lr: float = 1e-3
 
     # Wandb
     entity: str = "alvaro18ml-university-of-minnesota"
