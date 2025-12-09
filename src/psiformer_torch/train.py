@@ -102,6 +102,11 @@ class Trainer():
         run.finish()
 
 
+train_config = Train_Config(
+        run_name="Helium More Expressive",
+        checkpoint_name="helium_more_expressive.pth"
+    )
+
 if __name__ == "__main__":
     device = get_device()
     print(f"Using {device}")
@@ -109,12 +114,6 @@ if __name__ == "__main__":
     # Model
     model_config = Model_Config()
     model = PsiFormer(model_config)
-
-    # Train
-    train_config = Train_Config(
-        run_name="Helium More Expressive",
-        checkpoint_name="helium_more_expressive.pth"
-    )
 
     trainer = Trainer(model, train_config)
 

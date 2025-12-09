@@ -200,10 +200,7 @@ class PsiFormer(nn.Module):
         features = torch.cat([x, r], dim=-1)            # (B, n_electron, 4)
 
         h = self.l_0(features)  # (B, n_electron, n_embd)
-<<<<<<< HEAD
 
-=======
->>>>>>> 815b6a98b1d9c217ff507ffea644b4742544f885
         for layer in self.layers:
             h = layer(h)  # (B, n_electron, n_embd)
 
