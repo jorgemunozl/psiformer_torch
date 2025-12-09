@@ -96,7 +96,8 @@ class Trainer():
             }
             run.log(metrics)
         total_time = time.perf_counter() - train_start
-        logger.info(f"Total training time: {total_time/60:.2f} min ({total_time:.1f} sec)")
+        inf = f"Total train time:{total_time/60:.2f} min ({total_time:.1f}sec)"
+        logger.info(inf)
         run.log({"total_training_time_sec": total_time})
         run.finish()
 
