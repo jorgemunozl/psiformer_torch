@@ -56,13 +56,41 @@ class Trainer():
             # samples: (monte_carlo, B, n_e, 3)
             samples = mh.sampler().to(self.device)
 
-            # Local Energies: (monte)
-            local_energies = torch.stack(
-                [hamilton.local_energy(s) for s in samples]
-            )
+            valid_logpsi = []
+            valid_local_energies = []
+            for s in samples:
+                try:
+                    logpsi = self.log_psi(s)
+                except ValueError as e:
+                    logger.warning(
+                        f"Skipping sample due to log_psi error at step {step}: {e}"
+                    )
+                    continue
+                if not torch.isfinite(logpsi).all():
+                    logger.warning(
+                        f"Skipping sample with non-finite log_psi at step {step}"
+                    )
+                    continue
+                local_energy = hamilton.local_energy(s)
+                if not torch.isfinite(local_energy).all():
+                    logger.warning(
+                        f"Skipping sample with non-finite local_energy at step {step}"
+                    )
+                    continue
+                valid_logpsi.append(logpsi)
+                valid_local_energies.append(local_energy)
+
+            if len(valid_logpsi) == 0:
+                logger.warning(
+                    f"No valid samples at step {step}; resampling next step."
+                )
+                continue
+
+            # Local Energies: (monte_valid)
+            local_energies = torch.stack(valid_local_energies)
 
             # Log Psi
-            log_psi_vals = torch.stack([self.log_psi(s) for s in samples])
+            log_psi_vals = torch.stack(valid_logpsi)
 
             # Energy Local Expection
             E_mean = local_energies.mean().detach()
