@@ -3,7 +3,7 @@ tags:
   - idea
 author: Jorge
 date: 2025-09-16 08:53
-modified: 2025-12-09 18:56
+modified: 2025-12-10 14:41
 ---
 Google Deepmind's implementation with [[TensorFlow]] is a good guided. This work relies on [[PyTorch]]. You are going to learn a ton doing this or at least you are going to present it everywhere you can. So a strong basis is completely necessary, use [[Hugging Face Transformers]] is over-killed.
 
@@ -374,6 +374,15 @@ $$
 $$
 
 If we ignore the sign you are lossing antisymetry , Why?
+
+Then you simply multiplicate by the signs. 
+
+
+But that is just a issue compared to the real problem. For the `Nans`. The question is that when we are going to take the second derivative to the determinants you are going to obtain some problems. Because singular matrices. And that is something that they said on the paper but I completely forget.
+
+So we have to implement the backward sensivity, to try to dissapear those error. But is complicated, because you have to ask, how this fit in our code. I don't have slightly idea.
+
+I mean you don't have to go to the low level, just create a function an use it, don't use the ones that **Pytorch** give you.
 
 
 ## Optimization in the training

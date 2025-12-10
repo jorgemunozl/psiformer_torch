@@ -7,6 +7,7 @@ from mcmc import MH
 import logging
 from hamiltonian import Hamiltonian
 
+torch.autograd.set_detect_anomaly(True)
 
 logging.basicConfig(level=logging.INFO,
                     format="%(asctime)s %(name)s %(levelname)s: %(message)s"

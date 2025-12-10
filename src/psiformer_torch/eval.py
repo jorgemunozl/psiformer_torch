@@ -30,8 +30,14 @@ def load_checkpoint() -> PsiFormer:
     return model
 
 
-def compute_energy(monte_carlo, burn_in, step_size) -> float:
-    model = load_checkpoint()
+def compute_energy(flag: bool, model=PsiFormer, monte_carlo=100,
+                   burn_in=10, step_size=1) -> float:
+    """
+    from a checkpoint or init
+    True for use checkpoint
+    """
+    if flag:
+        model = load_checkpoint()
     eval_config = Train_Config(
        monte_carlo_length=monte_carlo,
        burn_in_steps=burn_in,

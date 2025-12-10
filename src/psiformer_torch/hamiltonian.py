@@ -36,6 +36,7 @@ class Hamiltonian():
     def local_energy(self, sample: torch.Tensor) -> torch.Tensor:
         # sample : (B, n_elec, 3)
         V = Potential(sample, self.Z).potential()
+        print("V: ", V)
         g = self.grad_log_psi(sample)
         lap = self.laplacian_log_psi(sample)
         # kinetic : (B, )
@@ -54,6 +55,7 @@ class Hamiltonian():
             y, x_req, grad_outputs=torch.ones_like(y),
             create_graph=True
         )
+        print("grad_log_psi", g)
         return g
 
     def laplacian_log_psi(self, x: torch.Tensor) -> torch.Tensor:
@@ -67,15 +69,17 @@ class Hamiltonian():
             y, x_req, grad_outputs=torch.ones_like(y),
             create_graph=True, retain_graph=True
         )
-
         # Compute Hessian diagonals more efficiently by summing per-dimension
         # gradients and differentiating once per dimension.
         g_flat = g.reshape(g.shape[0], -1)
+        print("first derivative for the laplacian: ", g)
         lap_terms = []
         for j in range(g_flat.shape[1]):
             second = grad(
                 g_flat[:, j].sum(), x_req, retain_graph=True
             )[0]
+            print("second for the laplacian", second)
             lap_terms.append(second.reshape(g.shape[0], -1)[:, j])
         lap = torch.stack(lap_terms, dim=1).sum(dim=1)
+        print("laplacian", lap)
         return lap

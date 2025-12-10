@@ -5,6 +5,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from config import Model_Config
 import math
+from eval import compute_energy
 
 
 def get_device():
@@ -103,9 +104,10 @@ class Envelope(nn.Module):
 
         sigma = F.softplus(self.raw_sigma) + 1e-6
         sigma = torch.clamp(sigma, min=1e-3, max=1e3)
+        pi = torch.clamp(self.pi, min=1e-3, max=1e3)
 
         # Broadcasting for B, n_elec, _ , 1
-        return torch.sum(torch.exp(-r_ae * sigma) * self.pi, dim=2)
+        return torch.sum(torch.exp(-r_ae * sigma) * pi, dim=2)
 
 
 class Orbital_Head(nn.Module):
@@ -130,6 +132,7 @@ class Orbital_Head(nn.Module):
         # Heads for up/down
         self.orb_up = nn.Linear(self.n_embd, self.n_det*self.n_spin_up)
         self.orb_down = nn.Linear(self.n_embd, self.n_det*self.n_spin_down)
+        nn.init.constant_(self.orb_up.bias, 1e-3)
         nn.init.constant_(self.orb_down.bias, 1e-3)
         self.det_logits = nn.Parameter(torch.zeros(self.n_det))
 
@@ -158,7 +161,7 @@ class Orbital_Head(nn.Module):
         out = out * env(r_ae)
 
         B, N, _ = out.shape
-
+        print("MATS: ", out)
         return out.view(B, N, self.n_det, n_spin).transpose(1, 2)
 
     def slogdet_sum(self, mats: torch.Tensor
@@ -167,19 +170,15 @@ class Orbital_Head(nn.Module):
         mats: (B, n_det, n_spin, n_spin)
         returns stable sum of determinants
         """
-        # Add a tiny, scaled diagonal to keep matrices nonsingular at init.
-        eps = 1e-5
-        eye = torch.eye(
-            mats.size(-1), device=mats.device, dtype=mats.dtype
-        ).unsqueeze(0).unsqueeze(0)
-        scale = mats.norm(dim=(-1, -2), keepdim=True) / mats.size(-1)
-        mats = mats + (eps * scale + eps)[:, :, None, None] * eye
 
         signs = []
         logabs = []
         for k in range(self.n_det):
             # (B, ndet)
+            # Here it is the problem, obtain the second derivative
+            # form this guy give us nan. 
             sign, logs_abs = torch.linalg.slogdet(mats[:, k])
+            print(logs_abs)
             signs.append(sign)
             logabs.append(logs_abs)
 
@@ -188,7 +187,7 @@ class Orbital_Head(nn.Module):
         logabs = torch.stack(logabs, dim=-1)
 
         weights = torch.softmax(self.det_logits, dim=0)
-        
+
         max_logabs, _ = logabs.max(dim=-1, keepdim=True)
         weighted = weights * signs * torch.exp(logabs - max_logabs)
         summed = weighted.sum(dim=-1)
@@ -196,6 +195,7 @@ class Orbital_Head(nn.Module):
         logabs_total = (max_logabs.squeeze(-1) +
                         torch.log(summed.abs() + 1e-12)
                         )
+        print("LOG ABS TOTAL: ", logabs_total)
         return sign_total, logabs_total
 
     def forward(self, h, spin_up_idx, spin_down_idx, r_ae_up, r_ae_down):
@@ -241,6 +241,10 @@ class PsiFormer(nn.Module):
         """
         x: (B, n_electron ,3)
         """
+        # Flatten any leading dims (e.g., monte_carlo, batch) into batch
+        if x.dim() > 3:
+            x = x.reshape(-1, x.size(-2), x.size(-1))
+
         if x.shape[1:] != (self.config.n_electron_num, self.config.n_features):
             error = f"x shape: {x.shape}"
             error += f"{self.config.n_electron_num, self.config.n_features}"
@@ -268,6 +272,9 @@ class PsiFormer(nn.Module):
         sign_up, logdet_up = sign_logdet_up
         sign_down, logdet_down = sign_logdet_down
 
+        print("logdet_up", logdet_up)
+        print("logdet_down", logdet_down)
+
         jastrow_term = self.jastrow(x)
         # Guard against singular determinant blocks
         if (not torch.isfinite(logdet_up).all()
@@ -275,8 +282,9 @@ class PsiFormer(nn.Module):
             raise ValueError("Non-finite log determinant detected")
 
         sum_det = logdet_up + logdet_down
-        log_sign = torch.log(sign_up * sign_down + 1e-12)
-        log_psi = sum_det + log_sign + jastrow_term
+        # log_sign = torch.log(sign_up * sign_down + 1e-12) add it somehow
+        # to maintain the variance
+        log_psi = sum_det + jastrow_term
 
         # log_psi: (B, )
         return log_psi
