@@ -5,7 +5,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from config import Model_Config
 import math
-from eval import compute_energy
+from reverse_mode import logabsdet
 
 
 def get_device():
@@ -176,8 +176,8 @@ class Orbital_Head(nn.Module):
         for k in range(self.n_det):
             # (B, ndet)
             # Here it is the problem, obtain the second derivative
-            # form this guy give us nan. 
-            sign, logs_abs = torch.linalg.slogdet(mats[:, k])
+            # form this guy give us nan.
+            logs_abs, sign = logabsdet(mats[:, k])
             print(logs_abs)
             signs.append(sign)
             logabs.append(logs_abs)
