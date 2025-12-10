@@ -63,32 +63,9 @@ class CofactorFn(Function):
         return A_bar
 
 
-import torch
-from torch.autograd import Function
-
-# your existing code
-class CofactorFn(Function):
-    @staticmethod
-    def forward(ctx, A):
-        U, S, Vh = torch.linalg.svd(A, full_matrices=False)
-        V = Vh.transpose(-2, -1)
-        n = S.shape[-1]
-        Gamma = torch.zeros_like(A)
-        for i in range(n):
-            mask = torch.ones(n, dtype=torch.bool, device=A.device)
-            mask[i] = False
-            Gamma[..., i, i] = torch.prod(S[..., mask], dim=-1)
-        C = torch.det(U) * torch.det(V) * (U @ Gamma @ V.transpose(-2, -1))
-        ctx.save_for_backward(A)
-        return C
-
-    @staticmethod
-    def backward(ctx, grad_C):
-        (A,) = ctx.saved_tensors
-        return cofactor_backward(A, grad_C)
-
 def cofactor(A):
     return CofactorFn.apply(A)
+
 
 class DetWithCofactor(Function):
     @staticmethod
@@ -104,12 +81,12 @@ class DetWithCofactor(Function):
         grad_A = grad_det[..., None, None] * adj.transpose(-2, -1)
         return grad_A
 
-determinant = DetWithCofactor.apply
 
 class LogAbsDet(Function):
     @staticmethod
     def forward(ctx, A, eps=1e-12):
-        sign, logabs = torch.linalg.slogdet(A)
+        sign, logabs = torch.linalg.slogdet(A)  # I guess that now is going 
+        # to ignore the slogdet built i
         ctx.save_for_backward(A, sign)
         ctx.eps = eps
         return logabs, sign
@@ -125,15 +102,3 @@ class LogAbsDet(Function):
         return grad_A, None  # eps has no grad
 
 logabsdet = LogAbsDet.apply
-
-A = torch.tensor([[1.0, 2.0],
-                  [2.0, 4.0]], requires_grad=True)
-B = CofactorFn.apply(A)
-
-print("A", A)
-print("B:", B)
-
-detA = torch.det(A)
-print("detA",detA)
-detA.backward()
-print("A.grad",A.grad)
