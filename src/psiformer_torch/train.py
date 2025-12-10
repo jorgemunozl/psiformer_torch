@@ -90,9 +90,9 @@ class Trainer():
                 "loss": loss,
                 "step_time_sec": time.perf_counter() - step_start,
                 "env_up_pi_norm": env_up.pi.detach().norm().item(),
-                "env_up_sigma_norm": env_up.sigma.detach().norm().item(),
+                "env_up_sigma_norm": env_up.raw_sigma.detach().norm().item(),
                 "env_down_pi_norm": env_down.pi.detach().norm().item(),
-                "env_down_sigma_norm": env_down.sigma.detach().norm().item(),
+                "env_down_sigma_n": env_down.raw_sigma.detach().norm().item(),
             }
             run.log(metrics)
         total_time = time.perf_counter() - train_start
@@ -104,7 +104,8 @@ class Trainer():
 
 train_config = Train_Config(
         run_name="Litium",
-        checkpoint_name="Litium.pth"
+        checkpoint_name="Litium.pth",
+        wand_mode="offline"
     )
 
 if __name__ == "__main__":
