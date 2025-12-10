@@ -83,12 +83,14 @@ class Layer(nn.Module):
 
 
 class Envelope(nn.Module):
-    def __init__(self, natom: int, det_spin: int, sigma_init: float = 1.0):
+    def __init__(self, natom: int, det_spin: int, sigma_init: float = 0.5):
         super().__init__()
         self.pi = nn.Parameter(torch.ones(natom, det_spin))
 
         # Start with a configurable decay rate; learnable during training.
-        self.sigma = nn.Parameter(torch.full((natom, det_spin), sigma_init))
+        self.raw_sigma = nn.Parameter(
+            torch.full((natom, det_spin), sigma_init)
+        )
 
     def forward(self, r_ae: torch.Tensor) -> torch.Tensor:
         """
@@ -99,8 +101,10 @@ class Envelope(nn.Module):
         1 -> n_spin
         """
 
+        sigma = F.softplus(self.raw_sigma) + 1e-6
+
         # Broadcasting for B, n_elec, _ , 1
-        return torch.sum(torch.exp(-r_ae * self.sigma) * self.pi, dim=2)
+        return torch.sum(torch.exp(-r_ae * sigma) * self.pi, dim=2)
 
 
 class Orbital_Head(nn.Module):
@@ -125,6 +129,7 @@ class Orbital_Head(nn.Module):
         # Heads for up/down
         self.orb_up = nn.Linear(self.n_embd, self.n_det*self.n_spin_up)
         self.orb_down = nn.Linear(self.n_embd, self.n_det*self.n_spin_down)
+        self.det_logits = nn.Parameter(torch.zeros(self.n_det))
 
     def build_orbital_matrix(self, h: torch.Tensor,
                              r_ae: torch.Tensor, spin: str) -> torch.Tensor:
@@ -154,17 +159,41 @@ class Orbital_Head(nn.Module):
 
         return out.view(B, N, self.n_det, n_spin).transpose(1, 2)
 
-    def slogdet_sum(self, mats: torch.Tensor) -> torch.Tensor:
+    def slogdet_sum(self, mats: torch.Tensor
+                    ) -> tuple[torch.Tensor, torch.Tensor]:
         """
         mats: (B, n_det, n_spin, n_spin)
         returns stable sum of determinants
         """
-        det_logs = []
+        # Add a tiny diagonal to keep matrices nonsingular at init.
+        eps = 1e-6
+        eye = torch.eye(
+            mats.size(-1), device=mats.device, dtype=mats.dtype
+        ).unsqueeze(0).unsqueeze(0)
+        mats = mats + eps * eye
+
+        signs = []
+        logabs = []
         for k in range(self.n_det):
-            sign, logs_abs = torch.linalg.slogdet(mats[:, k, :, :])
-            det_logs.append(logs_abs)
-        det_logs = torch.stack(det_logs, dim=-1)
-        return torch.logsumexp(det_logs, dim=-1)
+            # (B, ndet)
+            sign, logs_abs = torch.linalg.slogdet(mats[:, k])
+            signs.append(sign)
+            logabs.append(logs_abs)
+
+        # (B, n det)
+        signs = torch.stack(signs, dim=-1)
+        logabs = torch.stack(logabs, dim=-1)
+
+        weights = torch.softmax(self.det_logits, dim=0)
+        
+        max_logabs, _ = logabs.max(dim=-1, keepdim=True)
+        weighted = weights * signs * torch.exp(logabs - max_logabs)
+        summed = weighted.sum(dim=-1)
+        sign_total = torch.sign(summed + 1e-12)
+        logabs_total = (max_logabs.squeeze(-1) +
+                        torch.log(summed.abs() + 1e-12)
+                        )
+        return sign_total, logabs_total
 
     def forward(self, h, spin_up_idx, spin_down_idx, r_ae_up, r_ae_down):
         """
@@ -179,9 +208,9 @@ class Orbital_Head(nn.Module):
         phi_up = self.build_orbital_matrix(h_up, r_ae_up, "up")
         phi_down = self.build_orbital_matrix(h_down, r_ae_down, "down")
 
-        logdet_up = self.slogdet_sum(phi_up)
-        logdet_down = self.slogdet_sum(phi_down)
-        return logdet_up, logdet_down
+        sign_logdet_up = self.slogdet_sum(phi_up)
+        sign_logdet_down = self.slogdet_sum(phi_down)
+        return sign_logdet_up, sign_logdet_down
 
 
 class PsiFormer(nn.Module):
@@ -230,11 +259,15 @@ class PsiFormer(nn.Module):
         r_ae_up = r_ae[:, self.spin_up_idx, :, :]
         r_ae_down = r_ae[:, self.spin_down_idx, :, :]
 
-        logdet_up, logdet_down = self.orbital_head(
+        sign_logdet_up, sign_logdet_down = self.orbital_head(
             h, self.spin_up_idx, self.spin_down_idx, r_ae_up, r_ae_down
         )
+        sign_up, logdet_up = sign_logdet_up
+        sign_down, logdet_down = sign_logdet_down
 
         jastrow_term = self.jastrow(x)
-        log_psi = logdet_up + logdet_down + jastrow_term
+        sum_det = logdet_down + logdet_up
+        log_psi = sum_det + torch.log(sign_up*sign_down+1e-12) + jastrow_term
+
         # log_psi: (B, )
         return log_psi
