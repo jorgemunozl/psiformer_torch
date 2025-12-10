@@ -266,8 +266,14 @@ class PsiFormer(nn.Module):
         sign_down, logdet_down = sign_logdet_down
 
         jastrow_term = self.jastrow(x)
-        sum_det = logdet_down + logdet_up
-        log_psi = sum_det + torch.log(sign_up*sign_down+1e-12) + jastrow_term
+        # Guard against singular determinant blocks
+        if (not torch.isfinite(logdet_up).all()
+                or not torch.isfinite(logdet_down).all()):
+            raise ValueError("Non-finite log determinant detected")
+
+        sum_det = logdet_up + logdet_down
+        log_sign = torch.log(sign_up * sign_down + 1e-12)
+        log_psi = sum_det + log_sign + jastrow_term
 
         # log_psi: (B, )
         return log_psi
