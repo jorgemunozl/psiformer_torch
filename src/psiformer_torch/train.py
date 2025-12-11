@@ -103,8 +103,8 @@ class Trainer():
 
 
 train_config = Train_Config(
-        run_name="Litium",
-        checkpoint_name="Litium.pth"
+        run_name="UNI_PC_HELIUM_STABLE_LONG_GPU_NP",
+        checkpoint_name="UNI_PC_HELIUM_STABLE.pth"
     )
 
 if __name__ == "__main__":
