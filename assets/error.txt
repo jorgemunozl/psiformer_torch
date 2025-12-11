@@ -33,3 +33,5 @@ Until the determinants are numerically safe, guard the sampling loop by skipping
  with non‑finite log ψ to keep the chain (and the optimizer) from being poisoned.
 Once you stop torch.linalg.slogdet from ever seeing singular matrices, the Hamiltonian call will
  return finite energies and the NaNs in the logs disappear.
+
+ 
