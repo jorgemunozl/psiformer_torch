@@ -5,7 +5,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from config import Model_Config
 import math
-from reverse_mode import logabsdet
+from tf import logdet_matmul
 
 
 def get_device():
@@ -164,39 +164,18 @@ class Orbital_Head(nn.Module):
         print("MATS: ", out)
         return out.view(B, N, self.n_det, n_spin).transpose(1, 2)
 
-    def slogdet_sum(self, mats: torch.Tensor
+    def slogdet_sum(self,
+                    phi_up: torch.Tensor,
+                    phi_down: torch.Tensor
                     ) -> tuple[torch.Tensor, torch.Tensor]:
         """
-        mats: (B, n_det, n_spin, n_spin)
-        returns stable sum of determinants
+        phi_up/phi_down: (B, n_det, n_spin, n_spin)
+        returns sign and logabs of sum_k w_k det(phi_up_k)*det(phi_down_k)
         """
-
-        signs = []
-        logabs = []
-        for k in range(self.n_det):
-            # (B, ndet)
-            # Here it is the problem, obtain the second derivative
-            # form this guy give us nan.
-            logs_abs, sign = logabsdet(mats[:, k])
-            print(logs_abs)
-            signs.append(sign)
-            logabs.append(logs_abs)
-
-        # (B, n det)
-        signs = torch.stack(signs, dim=-1)
-        logabs = torch.stack(logabs, dim=-1)
-
-        weights = torch.softmax(self.det_logits, dim=0)
-
-        max_logabs, _ = logabs.max(dim=-1, keepdim=True)
-        weighted = weights * signs * torch.exp(logabs - max_logabs)
-        summed = weighted.sum(dim=-1)
-        sign_total = torch.sign(summed + 1e-12)
-        logabs_total = (max_logabs.squeeze(-1) +
-                        torch.log(summed.abs() + 1e-12)
-                        )
-        print("LOG ABS TOTAL: ", logabs_total)
-        return sign_total, logabs_total
+        weights = torch.softmax(self.det_logits, dim=0)          # (n_det,)
+        w = weights.unsqueeze(-1)                                # (n_det, 1)
+        log_out, sign_out = logdet_matmul(phi_up, phi_down, w)   # (B, 1)
+        return sign_out.squeeze(-1), log_out.squeeze(-1)
 
     def forward(self, h, spin_up_idx, spin_down_idx, r_ae_up, r_ae_down):
         """
@@ -211,9 +190,7 @@ class Orbital_Head(nn.Module):
         phi_up = self.build_orbital_matrix(h_up, r_ae_up, "up")
         phi_down = self.build_orbital_matrix(h_down, r_ae_down, "down")
 
-        sign_logdet_up = self.slogdet_sum(phi_up)
-        sign_logdet_down = self.slogdet_sum(phi_down)
-        return sign_logdet_up, sign_logdet_down
+        return self.slogdet_sum(phi_up, phi_down)
 
 
 class PsiFormer(nn.Module):
@@ -266,22 +243,17 @@ class PsiFormer(nn.Module):
         r_ae_up = r_ae[:, self.spin_up_idx, :, :]
         r_ae_down = r_ae[:, self.spin_down_idx, :, :]
 
-        sign_logdet_up, sign_logdet_down = self.orbital_head(
+        _sign_det, logdet = self.orbital_head(
             h, self.spin_up_idx, self.spin_down_idx, r_ae_up, r_ae_down
         )
-        sign_up, logdet_up = sign_logdet_up
-        sign_down, logdet_down = sign_logdet_down
-
-        print("logdet_up", logdet_up)
-        print("logdet_down", logdet_down)
+        print("logdet", logdet)
 
         jastrow_term = self.jastrow(x)
         # Guard against singular determinant blocks
-        if (not torch.isfinite(logdet_up).all()
-                or not torch.isfinite(logdet_down).all()):
+        if not torch.isfinite(logdet).all():
             raise ValueError("Non-finite log determinant detected")
 
-        sum_det = logdet_up + logdet_down
+        sum_det = logdet
         # log_sign = torch.log(sign_up * sign_down + 1e-12) add it somehow
         # to maintain the variance
         log_psi = sum_det + jastrow_term
