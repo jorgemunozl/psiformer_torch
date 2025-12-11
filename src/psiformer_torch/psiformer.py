@@ -246,7 +246,7 @@ class PsiFormer(nn.Module):
         _sign_det, logdet = self.orbital_head(
             h, self.spin_up_idx, self.spin_down_idx, r_ae_up, r_ae_down
         )
-        print("sign_det", _sign_det)
+        # print("sign_det", _sign_det)
         jastrow_term = self.jastrow(x)
 
         # Guard against singular determinant blocks

@@ -5,8 +5,7 @@ from typing import Callable
 
 class Potential():
     """
-    For the Helium atom, the only nucleous is fixed at (0,0,0).
-    Broadcast.
+    Single-nucleus system at the origin; supports arbitrary electron counts.
     """
     def __init__(self, coords: torch.Tensor, Z: int = 2):
         # coords: (B, n_elec, 3)
@@ -18,9 +17,19 @@ class Potential():
         r_sq = self.coords.pow(2).sum(dim=-1)
         r_i = torch.sqrt(r_sq + eps)  # (B, n_elec)
         nuc_term = -self.Z*(1/(r_i+eps)).sum(dim=-1)
-        diff = self.coords[:, 0, :] - self.coords[:, 1, :]
-        r_12 = torch.sqrt(diff.pow(2).sum() + eps)
-        e_e_term = 1/(r_12 + eps)
+
+        # Electron-electron repulsion over all unique pairs
+        n_elec = self.coords.size(1)
+        if n_elec < 2:
+            e_e_term = torch.zeros(self.coords.size(0),
+                                   device=self.coords.device)
+        else:
+            i, j = torch.triu_indices(
+                n_elec, n_elec, offset=1, device=self.coords.device
+            )
+            pair_diff = self.coords[:, i, :] - self.coords[:, j, :]
+            r_ij = torch.sqrt(pair_diff.pow(2).sum(dim=-1) + eps)
+            e_e_term = (1/(r_ij + eps)).sum(dim=-1)
 
         # (B, )
         return nuc_term + e_e_term
