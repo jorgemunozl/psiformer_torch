@@ -3,7 +3,7 @@ tags:
   - idea
 author: Jorge
 date: 2025-09-16 08:53
-modified: 2025-12-10 14:41
+modified: 2025-12-11 07:14
 ---
 Google Deepmind's implementation with [[TensorFlow]] is a good guided. This work relies on [[PyTorch]]. You are going to learn a ton doing this or at least you are going to present it everywhere you can. So a strong basis is completely necessary, use [[Hugging Face Transformers]] is over-killed.
 
@@ -390,6 +390,13 @@ I mean you don't have to go to the low level, just create a function an use it, 
 In the paper **A self attention mechanism** they use another form of the **Local Energy**. Using the clip function, a mean and some stuff like that. 
 
 Is about stabilize the training. And yeah sometimes is kind of tricky. How they do it? Google Deep Mind.
+
+
+## Branches
+
+I want to make a branch when the Helium was working and now.
+
+
 
 ---
 

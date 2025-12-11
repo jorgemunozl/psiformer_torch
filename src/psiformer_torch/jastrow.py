@@ -25,7 +25,9 @@ class Jastrow(nn.Module):
 
         # Pairwise distance with broadcasting
         diff = position[:, :, None, :] - position[:, None, :, :]
-        dists = diff.norm(dim=-1) + 1e-12
+        # Use a soft norm to avoid NaNs in higher-order derivatives when
+        # electrons coincide (norm gradient is undefined at zero).
+        dists = torch.sqrt(diff.pow(2).sum(dim=-1) + 1e-12)
 
         i, j = torch.triu_indices(n, n, offset=1, device=position.device)
         pair_dists = dists[:, i, j]  # (B, num_pairs)
@@ -47,7 +49,7 @@ class Jastrow(nn.Module):
             return up.new_zeros(batch_size)
 
         diff = up[:, :, None, :] - down[:, None, :, :]
-        dists = diff.norm(dim=-1) + 1e-12
+        dists = torch.sqrt(diff.pow(2).sum(dim=-1) + 1e-12)
 
         pair_dists = dists.reshape(batch_size, -1)
         terms = coeff * alpha.pow(2) / (alpha + pair_dists)
