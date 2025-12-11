@@ -14,13 +14,19 @@ class LogdetMatmulFn(Function):
     @staticmethod
     def forward(ctx, x1, x2, w, eps=1e-12):
         # x1, x2: [B, D, n, n], w: [D, Dout]
-        s1, u1, v1h = torch.linalg.svd(x1, full_matrices=False)
-        s2, u2, v2h = torch.linalg.svd(x2, full_matrices=False)
+        # torch.linalg.svd returns U, S, Vh; keep that ordering so the
+        # singular values stay in s* variables.
+        u1, s1, v1h = torch.linalg.svd(x1, full_matrices=False)
+        u2, s2, v2h = torch.linalg.svd(x2, full_matrices=False)
         v1 = v1h.transpose(-2, -1)
         v2 = v2h.transpose(-2, -1)
 
-        sign1 = torch.det(u1) * torch.det(v1)
-        sign2 = torch.det(u2) * torch.det(v2)
+        # Handle potentially rectangular orbital blocks by taking the square
+        # k x k (k = min(m, n)) factor from the orthonormal bases.
+        k1 = s1.shape[-1]
+        k2 = s2.shape[-1]
+        sign1 = torch.det(u1[..., :k1, :k1]) * torch.det(v1[..., :k1, :k1])
+        sign2 = torch.det(u2[..., :k2, :k2]) * torch.det(v2[..., :k2, :k2])
 
         logdet1 = s1.log().sum(dim=-1)          # shape [B, D]
         logdet2 = s2.log().sum(dim=-1)
@@ -62,8 +68,3 @@ class LogdetMatmulFn(Function):
         return dx1, dx2, dw, None
 
 logdet_matmul = LogdetMatmulFn.apply
-
-# Usage
-log_out, sign_out = logdet_matmul(x1, x2, w)
-loss = log_out.sum()
-loss.backward()
