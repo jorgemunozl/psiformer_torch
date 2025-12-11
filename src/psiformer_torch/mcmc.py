@@ -33,7 +33,7 @@ class MH():
             log_u = torch.log(torch.rand_like(alpha))
         return log_u < log_accept  # (B,)
 
-    @torch.no_grad()
+    @torch.inference_mode()
     def sampler(self) -> torch.Tensor:
         """
         Generate monte_carlo_size samples times batch

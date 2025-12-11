@@ -3,7 +3,7 @@ tags:
   - idea
 author: Jorge
 date: 2025-09-16 08:53
-modified: 2025-12-11 07:14
+modified: 2025-12-11 09:04
 ---
 Google Deepmind's implementation with [[TensorFlow]] is a good guided. This work relies on [[PyTorch]]. You are going to learn a ton doing this or at least you are going to present it everywhere you can. So a strong basis is completely necessary, use [[Hugging Face Transformers]] is over-killed.
 
@@ -338,6 +338,9 @@ So it should to converge with more montecarlo steps. To make the plot we are goi
 ## Numerical Matters
 
 First we are using the **LogSumExp** trick to avoid underflow overflow, when computing the determinants. In the `class Orbital_Head` inside the method.
+
+This is the more complicated part:
+[[Psiformer determinant]]
 
 ```python
    def slogdet_sum(self, mats: torch.Tensor) -> torch.Tensor:
