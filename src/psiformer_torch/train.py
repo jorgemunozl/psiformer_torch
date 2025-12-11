@@ -105,6 +105,8 @@ class Trainer():
         """
         run = self.config.init_wandb(self.model.config)
         train_start = time.perf_counter()
+        if torch.cuda.is_available():
+            torch.cuda.reset_peak_memory_stats(self.device)
         for step in range(self.config.train_steps):
             step_start = time.perf_counter()
             # samples: (monte_carlo, B, n_e, 3)
@@ -147,6 +149,22 @@ class Trainer():
                 "env_down_pi_norm": env_down.pi.detach().norm().item(),
                 "env_down_sigma_n": env_down.raw_sigma.detach().norm().item(),
             }
+            if torch.cuda.is_available():
+                torch.cuda.synchronize(self.device)
+                metrics.update(
+                    {
+                        "gpu/mem_allocated_mb": torch.cuda.memory_allocated(
+                            self.device
+                        ) / 2**20,
+                        "gpu/mem_reserved_mb": torch.cuda.memory_reserved(
+                            self.device
+                        ) / 2**20,
+                        "gpu/max_mem_allocated_mb": torch.cuda.max_memory_allocated(
+                            self.device
+                        ) / 2**20,
+                    }
+                )
+                torch.cuda.reset_peak_memory_stats(self.device)
             run.log(metrics)
         total_time = time.perf_counter() - train_start
         inf = f"Total train time:{total_time/60:.2f} min ({total_time:.1f}sec)"
