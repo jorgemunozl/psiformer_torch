@@ -5,21 +5,21 @@ import wandb
 
 @dataclass
 class Model_Config():
-    n_layer: int = 1
-    n_head: int = 16
+    n_layer: int = 4
+    n_head: int = 32
     n_embd: int = 256
     n_features: int = 3  # Electron Coordinates (x, y, z)
-    n_determinants: int = 3
-    n_electron_num: int = 3
+    n_determinants: int = 2
+    n_electron_num: int = 2
     n_spin_down: int = 1
-    n_spin_up: int = 2
+    n_spin_up: int = 1
 
 
 @dataclass
 class Train_Config():
-    train_steps: int = 130
-    checkpoint_step: int = 49
-    batch_size: int = 1
+    train_steps: int = 1000
+    checkpoint_step: int = 400
+    batch_size: int = 3
     checkpoint_name: str = ""
 
     dim: int = 3  # Three spatial cordinates
@@ -31,7 +31,7 @@ class Train_Config():
     run_name: str = "Train"
 
     # MCMC
-    monte_carlo_length: int = 3000  # Num samples
+    monte_carlo_length: int = 1500  # Num samples
     burn_in_steps: int = 100
     step_size: float = 1.0
 
