@@ -7,7 +7,7 @@ from mcmc import MH
 import logging
 from hamiltonian import Hamiltonian
 
-torch.autograd.set_detect_anomaly(True)
+#torch.autograd.set_detect_anomaly(True)
 
 logging.basicConfig(level=logging.INFO,
                     format="%(asctime)s %(name)s %(levelname)s: %(message)s"
@@ -49,7 +49,11 @@ class Trainer():
         """
         mh = MH(self.log_psi, self.config, self.model.config.n_electron_num,
                 device=self.device)
-        hamilton = Hamiltonian(self.log_psi)
+        hamilton = Hamiltonian(
+            self.log_psi,
+            n_elec=self.model.config.n_electron_num,
+            Z=self.model.config.nuclear_charge,
+        )
         run = self.config.init_wandb(self.model.config)
         train_start = time.perf_counter()
         for step in range(self.config.train_steps):
@@ -134,7 +138,7 @@ class Trainer():
 train_config = Train_Config(
         run_name="Litium",
         checkpoint_name="Litium.pth",
-        wand_mode="offline"
+        wand_mode="online"
     )
 
 if __name__ == "__main__":
