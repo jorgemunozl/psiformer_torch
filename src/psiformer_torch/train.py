@@ -174,8 +174,8 @@ class Trainer():
 
 
 train_config = Train_Config(
-        run_name="Litium",
-        checkpoint_name="Litium.pth",
+        run_name="Litium_gpu",
+        checkpoint_name="Litium_gpu.pth",
         wand_mode="online"
     )
 
