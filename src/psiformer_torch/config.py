@@ -21,6 +21,7 @@ class Train_Config():
     checkpoint_step: int = 30
     batch_size: int = 1
     checkpoint_name: str = ""
+    energy_batch_size: int = 256  # how many MCMC samples to score per GPU pass
 
     dim: int = 3  # Three spatial cordinates
     lr: float = 1e-3
