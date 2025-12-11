@@ -161,7 +161,7 @@ class Orbital_Head(nn.Module):
         out = out * env(r_ae)
 
         B, N, _ = out.shape
-        print("MATS: ", out)
+        #print("MATS: ", out)
         return out.view(B, N, self.n_det, n_spin).transpose(1, 2)
 
     def slogdet_sum(self,
@@ -246,15 +246,15 @@ class PsiFormer(nn.Module):
         _sign_det, logdet = self.orbital_head(
             h, self.spin_up_idx, self.spin_down_idx, r_ae_up, r_ae_down
         )
-        print("logdet", logdet)
-
+        print("sign_det", _sign_det)
         jastrow_term = self.jastrow(x)
+
         # Guard against singular determinant blocks
         if not torch.isfinite(logdet).all():
             raise ValueError("Non-finite log determinant detected")
 
         sum_det = logdet
-        # log_sign = torch.log(sign_up * sign_down + 1e-12) add it somehow
+        # log_sign = torch.log(_sign_det + 1e-12)
         # to maintain the variance
         log_psi = sum_det + jastrow_term
 

@@ -1,5 +1,8 @@
 import torch
 import torch.nn as nn
+import torchviz
+from graphviz.backend import ExecutableNotFound
+
 
 torch.set_default_dtype(torch.float64)  # better for derivatives
 
@@ -63,10 +66,9 @@ def main():
     n = 3  # size of the input matrix
     net = ToyNet(n)
 
-    # Create a random input matrix and tell PyTorch it's a variable
-    x = torch.randn(n, n, requires_grad=True)
+    # Create a deterministic input matrix and tell PyTorch it's a variable
     x = torch.tensor([[2.0, 4.0, 3.0],
-                      [1.0, 2.0, 1.5],
+                      [1.0, 2.0, 7.5],
                       [1.2, .3, .4]], requires_grad=True)
     # Forward pass: scalar output
     f = net(x)
@@ -79,6 +81,16 @@ def main():
     print("\nf(X) =", f.item())
     print("Laplacian Δ f(X) =", lap.item())
 
+    return f, net, x
+
 
 if __name__ == "__main__":
-    main()
+    f, net, x = main()
+    dot = torchviz.make_dot(f, params={"x": x, **dict(net.named_parameters())})
+    graph_path = "computation_graph"
+    dot.save(f"{graph_path}.gv")
+    try:
+        dot.render(graph_path, format="png", cleanup=False)
+        print(f"Saved {graph_path}.png")
+    except ExecutableNotFound:
+        print("Graphviz executable 'dot' not found; saved graph definition to computation_graph.gv")
