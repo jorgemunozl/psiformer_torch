@@ -17,9 +17,18 @@ class Potential():
         eps = 1e-5
         r_i = torch.linalg.norm(self.coords, dim=-1)  # (B, n_elec)
         nuc_term = -self.Z*(1/(r_i+eps)).sum(dim=-1)
-        diff = self.coords[:, 0, :] - self.coords[:, 1, :]
-        r_12 = torch.linalg.norm(diff)
-        e_e_term = 1/(r_12 + eps)
+
+        # Electron-electron repulsion: sum over pairwise distances per sample
+        n_elec = self.coords.size(1)
+        if n_elec < 2:
+            return nuc_term
+
+        diff = self.coords[:, :, None, :] - self.coords[:, None, :, :]
+        pairwise_dists = torch.linalg.norm(diff, dim=-1) + eps  # (B, n_elec, n_elec)
+        i, j = torch.triu_indices(n_elec, n_elec, offset=1,
+                                  device=self.coords.device)
+        r_ij = pairwise_dists[:, i, j]  # (B, n_pairs)
+        e_e_term = (1 / r_ij).sum(dim=-1)
 
         # (B, )
         return nuc_term + e_e_term
