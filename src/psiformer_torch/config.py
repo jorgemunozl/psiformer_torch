@@ -6,10 +6,10 @@ import wandb
 @dataclass
 class Model_Config():
     n_layer: int = 4
-    n_head: int = 32
+    n_head: int = 16
     n_embd: int = 256
     n_features: int = 3  # Electron Coordinates (x, y, z)
-    n_determinants: int = 2
+    n_determinants: int = 4
     n_electron_num: int = 2
     n_spin_down: int = 1
     n_spin_up: int = 1
@@ -18,24 +18,25 @@ class Model_Config():
 
 @dataclass
 class Train_Config():
-    train_steps: int = 1000
-    checkpoint_step: int = 400
-    batch_size: int = 3
+    train_steps: int = 500
+    checkpoint_step: int = 300
+    batch_size: int = 4
     checkpoint_name: str = ""
 
     dim: int = 3  # Three spatial cordinates
-    lr: float = 1e-3
+    lr: float = 0.5e-3
 
     # Wandb
     entity: str = "alvaro18ml-university-of-minnesota"
     project: str = "Psiformer"
     run_name: str = "Train"
+    wand_mode: str = "online"
 
     # MCMC
-    monte_carlo_length: int = 1500  # Num samples
-    burn_in_steps: int = 100
-    step_size: float = 1.0
-    energy_batch_size: int = 4
+    monte_carlo_length: int = 1028  # Num samples
+    burn_in_steps: int = 16
+    step_size: float = 0.8
+    energy_batch_size: int = 256
 
     def init_checkpoint(self):
         CHECKPOINT_DIR = "checkpoints/"
@@ -59,10 +60,11 @@ class Train_Config():
         model_dict = asdict(model_config)
         train_config = asdict(self)
         full = model_dict | train_config
-
+        options = ("online", "offline", "disabled")
         return wandb.init(
             entity=self.entity,
             project=self.project,
             name=self.run_name,
-            config=full
+            config=full,
+            mode=self.wand_mode if self.wand_mode in options else "online"
         )
