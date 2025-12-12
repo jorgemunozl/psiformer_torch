@@ -13,6 +13,7 @@ class Model_Config():
     n_electron_num: int = 2
     n_spin_down: int = 1
     n_spin_up: int = 1
+    nuclear_charge = 2
 
 
 @dataclass
@@ -34,6 +35,7 @@ class Train_Config():
     monte_carlo_length: int = 1500  # Num samples
     burn_in_steps: int = 100
     step_size: float = 1.0
+    energy_batch_size: int = 4
 
     def init_checkpoint(self):
         CHECKPOINT_DIR = "checkpoints/"
