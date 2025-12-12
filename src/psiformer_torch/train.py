@@ -129,7 +129,8 @@ class Trainer():
             self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()
-            self.save_checkpoint(step)
+
+            # self.save_checkpoint(step)
 
             # Print info
             logger.info(f"Step {step}: E_mean = {E_mean.item():.6f}")
@@ -174,9 +175,9 @@ class Trainer():
 
 
 train_config = Train_Config(
-        run_name="Litium_gpu",
-        checkpoint_name="Litium_gpu.pth",
-        wand_mode="online"
+        run_name="MANY_ELECTRONS",
+        checkpoint_name="MANY_ELECTRONS.pth",
+        wand_mode="offline"
     )
 
 if __name__ == "__main__":

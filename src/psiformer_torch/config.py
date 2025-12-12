@@ -5,9 +5,9 @@ import wandb
 
 @dataclass
 class Model_Config():
-    n_layer: int = 4
-    n_head: int = 32
-    n_embd: int = 256
+    n_layer: int = 1
+    n_head: int = 2
+    n_embd: int = 4
     n_features: int = 3  # Electron Coordinates (x, y, z)
     n_determinants: int = 1
     n_electron_num: int = 3
@@ -17,11 +17,11 @@ class Model_Config():
 
 @dataclass
 class Train_Config():
-    train_steps: int = 5000
-    checkpoint_step: int = 500
-    batch_size: int = 16
+    train_steps: int = 5
+    checkpoint_step: int = 1
+    batch_size: int = 1
     checkpoint_name: str = ""
-    energy_batch_size: int = 256  # how many MCMC samples to score per GPU pass
+    energy_batch_size: int = 1  # how many MCMC samples to score per GPU pass
 
     dim: int = 3  # Three spatial cordinates
     lr: float = 1e-3
@@ -33,8 +33,8 @@ class Train_Config():
     wand_mode: str = "online"
 
     # MCMC
-    monte_carlo_length: int = 1000  # Num samples
-    burn_in_steps: int = 10
+    monte_carlo_length: int = 3  # Num samples
+    burn_in_steps: int = 1
     step_size: float = 1.0
 
     def init_checkpoint(self):
