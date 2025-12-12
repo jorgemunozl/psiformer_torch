@@ -176,7 +176,7 @@ class Trainer():
 train_config = Train_Config(
         run_name="CUDA_BATCHED_HELIUM",
         checkpoint_name="CUDA_BATCHED_HELIUM.pth",
-        mode="offline",
+        wand_mode="online",
     )
 
 if __name__ == "__main__":
