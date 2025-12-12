@@ -8,8 +8,6 @@ import logging
 from hamiltonian import Hamiltonian
 
 
-torch.set_float32_matmul_precision("high")
-
 logging.basicConfig(level=logging.INFO,
                     format="%(asctime)s %(name)s %(levelname)s: %(message)s"
                     )
@@ -23,67 +21,12 @@ class Trainer():
         self.config = config
         self.optimizer = optim.Adam(self.model.parameters(), lr=config.lr)
         self.device = get_device()
-        self.mh = MH(
-            self.log_psi,
-            self.config,
-            self.model.config.n_electron_num,
-            device=self.device,
-        )
-        self.hamilton = Hamiltonian(
-            self.log_psi,
-            n_elec=self.model.config.n_electron_num,
-            Z=self.model.config.nuclear_charge,
-        )
         print(model.config.n_electron_num)
 
     def log_psi(self, x: torch.Tensor) -> torch.Tensor:
         # x: (B, n_elec, 3)
-        if x.device != self.device:
-            x = x.to(self.device)
+        x = x.to(self.device)
         return self.model(x)
-
-    def _batched_energy_eval(
-        self, samples: torch.Tensor
-    ) -> tuple[torch.Tensor | None, torch.Tensor | None]:
-        """
-        Score MCMC samples in larger batches to keep the GPU busy.
-        samples: (mc_steps, B, n_elec, 3)
-        """
-        flat = samples.reshape(-1, samples.size(-2), samples.size(-1))
-
-        logpsis: list[torch.Tensor] = []
-        local_es: list[torch.Tensor] = []
-
-        for chunk in flat.split(self.config.energy_batch_size):
-            try:
-                logpsi = self.log_psi(chunk)
-            except ValueError as e:
-                logger.warning(
-                    f"Skipping chunk due to log_psi error: {e}"
-                )
-                continue
-
-            if not torch.isfinite(logpsi).all():
-                logger.warning("Skipping chunk with non-finite log_psi")
-                continue
-
-            local_energy = self.hamilton.local_energy(chunk)
-            finite_mask = torch.isfinite(local_energy)
-            if not finite_mask.all():
-                logger.warning("Dropping non-finite local_energy entries")
-                logpsi = logpsi[finite_mask]
-                local_energy = local_energy[finite_mask]
-
-            if logpsi.numel() == 0:
-                continue
-
-            logpsis.append(logpsi)
-            local_es.append(local_energy)
-
-        if len(logpsis) == 0:
-            return None, None
-
-        return torch.cat(logpsis, dim=0), torch.cat(local_es, dim=0)
 
     def save_checkpoint(self, step):
         if step % self.config.checkpoint_step == 0:
@@ -103,21 +46,23 @@ class Trainer():
         Then using model carlo you can compute the derivative of the loss.
         Important the detach.
         """
+        mh = MH(self.log_psi, self.config, self.model.config.n_electron_num,
+                device=self.device)
+        hamilton = Hamiltonian(self.log_psi)
         run = self.config.init_wandb(self.model.config)
         train_start = time.perf_counter()
-        if torch.cuda.is_available():
-            torch.cuda.reset_peak_memory_stats(self.device)
         for step in range(self.config.train_steps):
             step_start = time.perf_counter()
             # samples: (monte_carlo, B, n_e, 3)
-            samples = self.mh.sampler()
+            samples = mh.sampler().to(self.device)
 
-            log_psi_vals, local_energies = self._batched_energy_eval(samples)
-            if log_psi_vals is None or local_energies is None:
-                logger.warning(
-                    f"No valid samples at step {step}; resampling next step."
-                )
-                continue
+            # Local Energies: (monte)
+            local_energies = torch.stack(
+                [hamilton.local_energy(s) for s in samples]
+            )
+
+            # Log Psi
+            log_psi_vals = torch.stack([self.log_psi(s) for s in samples])
 
             # Energy Local Expection
             E_mean = local_energies.mean().detach()
@@ -147,24 +92,8 @@ class Trainer():
                 "env_up_pi_norm": env_up.pi.detach().norm().item(),
                 "env_up_sigma_norm": env_up.sigma.detach().norm().item(),
                 "env_down_pi_norm": env_down.pi.detach().norm().item(),
-                "env_down_sigma_n": env_down.sigma.detach().norm().item(),
+                "env_down_sigma_norm": env_down.sigma.detach().norm().item(),
             }
-            if torch.cuda.is_available():
-                torch.cuda.synchronize(self.device)
-                metrics.update(
-                    {
-                        "gpu/mem_allocated_mb": torch.cuda.memory_allocated(
-                            self.device
-                        ) / 2**20,
-                        "gpu/mem_reserved_mb": torch.cuda.memory_reserved(
-                            self.device
-                        ) / 2**20,
-                        "gpu/max_mem_allocated_mb": torch.cuda.max_memory_allocated(
-                            self.device
-                        ) / 2**20,
-                    }
-                )
-                torch.cuda.reset_peak_memory_stats(self.device)
             run.log(metrics)
         total_time = time.perf_counter() - train_start
         inf = f"Total train time:{total_time/60:.2f} min ({total_time:.1f}sec)"
@@ -174,9 +103,8 @@ class Trainer():
 
 
 train_config = Train_Config(
-        run_name="CUDA_BATCHED_HELIUM",
-        checkpoint_name="CUDA_BATCHED_HELIUM.pth",
-        mode="offline",
+        run_name="UNI_PC_HELIUM_STABLE_LONG_GPU_NP",
+        checkpoint_name="UNI_PC_HELIUM_STABLE.pth"
     )
 
 if __name__ == "__main__":

@@ -5,7 +5,7 @@ import numpy as np
 
 from psiformer import PsiFormer
 from config import Model_Config, Train_Config
-from train import train_config
+from psiformer_torch.train2 import train_config
 from mcmc import MH
 from hamiltonian import Hamiltonian
 
