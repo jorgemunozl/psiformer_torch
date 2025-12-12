@@ -5,11 +5,11 @@ import wandb
 
 @dataclass
 class Model_Config():
-    n_layer: int = 1
-    n_head: int = 2
-    n_embd: int = 4
+    n_layer: int = 4
+    n_head: int = 16
+    n_embd: int = 256
     n_features: int = 3  # Electron Coordinates (x, y, z)
-    n_determinants: int = 1
+    n_determinants: int = 4
     n_electron_num: int = 3
     n_spin_up: int = 2
     n_spin_down: int = 1
@@ -17,11 +17,11 @@ class Model_Config():
 
 @dataclass
 class Train_Config():
-    train_steps: int = 5
-    checkpoint_step: int = 1
-    batch_size: int = 1
+    train_steps: int = 1000
+    checkpoint_step: int = 300
+    batch_size: int = 4
     checkpoint_name: str = ""
-    energy_batch_size: int = 1  # how many MCMC samples to score per GPU pass
+    energy_batch_size: int = 256  # how many MCMC samples to score per GPU pass
 
     dim: int = 3  # Three spatial cordinates
     lr: float = 1e-3
@@ -33,9 +33,10 @@ class Train_Config():
     wand_mode: str = "online"
 
     # MCMC
-    monte_carlo_length: int = 3  # Num samples
-    burn_in_steps: int = 1
-    step_size: float = 1.0
+    monte_carlo_length: int = 1025  # Num samples stored per update
+    burn_in_steps: int = 64
+    mh_steps_per_sample: int = 32  # MH transitions between stored samples
+    step_size: float = .8
 
     def init_checkpoint(self):
         CHECKPOINT_DIR = "checkpoints/"
