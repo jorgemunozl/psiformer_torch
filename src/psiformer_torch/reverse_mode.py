@@ -48,7 +48,9 @@ class CofactorFn(Function):
             mask[i] = False
             Gamma[..., i, i] = torch.prod(S[..., mask], dim=-1)
 
-        C = torch.det(U) * torch.det(V) * (U @ Gamma @ V.transpose(-2, -1))
+        detU = torch.det(U)[..., None, None]
+        detV = torch.det(V)[..., None, None]
+        C = detU * detV * (U @ Gamma @ V.transpose(-2, -1))
         ctx.save_for_backward(A)
         return C
 
@@ -94,24 +96,34 @@ class SLogDet(Function):
     """
     @staticmethod
     def forward(ctx, A, eps=1e-12):
-
         detA = DetWithCofactor.apply(A)
-        sign, logDetA = A.sign(), torch.log(detA.abs())
-        # to ignore the slogdet built i
-        ctx.save_for_backward(A, sign)
+        sign = torch.sign(detA)
+        logabs = torch.log(detA.abs().clamp_min(eps))
+        ctx.save_for_backward(A, detA)
         ctx.eps = eps
-        return sign, logDetA
+        return sign, logabs
 
     @staticmethod
-    def backward(ctx, grad_logabs, grad_sign):
-        """
-        This is not automatic? I don't know!!
-        """
-        A, sign = ctx.saved_tensors
-        del grad_sign  # not differentiable
+    def backward(ctx, grad_sign, grad_logabs):
+        del grad_sign  # sign is not differentiable
+        A, detA = ctx.saved_tensors
+        if grad_logabs is None:
+            return torch.zeros_like(A), None
         adj = cofactor(A)
-        det = torch.linalg.det(A)
-        safe_det = torch.where(det.abs() < ctx.eps, det.sign() * ctx.eps, det)
-        grad_A = grad_logabs[..., None, None] * adj.transpose(-2, -1) / safe_det[..., None, None]
+        safe_abs = torch.where(
+            detA.abs() < ctx.eps,
+            detA.new_full(detA.shape, ctx.eps),
+            detA.abs()
+        )
+        safe_sign = torch.where(
+            detA == 0,
+            torch.ones_like(detA),
+            detA.sign()
+        )
+        safe_det = safe_sign * safe_abs
+        grad_A = (
+            grad_logabs[..., None, None]
+            * adj.transpose(-2, -1)
+            / safe_det[..., None, None]
+        )
         return grad_A, None  # eps has no grad
-

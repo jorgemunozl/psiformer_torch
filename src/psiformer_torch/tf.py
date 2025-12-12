@@ -1,4 +1,5 @@
 import torch
+from reverse_mode import SLogDet
 
 
 def logdet_matmul(x1: torch.Tensor, x2: torch.Tensor,
@@ -13,8 +14,8 @@ def logdet_matmul(x1: torch.Tensor, x2: torch.Tensor,
     Returns:
         log_out, sign_out with shape [B, Dout]
     """
-    sign1, logdet1 = torch.linalg.slogdet(x1)         # [B, D]
-    sign2, logdet2 = torch.linalg.slogdet(x2)         # [B, D]
+    sign1, logdet1 = SLogDet.apply(x1, eps)           # [B, D]
+    sign2, logdet2 = SLogDet.apply(x2, eps)           # [B, D]
 
     logdet_max1 = logdet1.max(dim=-1, keepdim=True).values
     logdet_max2 = logdet2.max(dim=-1, keepdim=True).values
