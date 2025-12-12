@@ -96,34 +96,37 @@ class SLogDet(Function):
     """
     @staticmethod
     def forward(ctx, A, eps=1e-12):
-        detA = DetWithCofactor.apply(A)
-        sign = torch.sign(detA)
-        logabs = torch.log(detA.abs().clamp_min(eps))
-        ctx.save_for_backward(A, detA)
+        U, S, Vh = torch.linalg.svd(A, full_matrices=False)
+        logabs = torch.log(S.clamp_min(eps)).sum(dim=-1)
+        detU = torch.det(U)
+        detV = torch.det(Vh.transpose(-2, -1))
+        sign = detU * detV
+        min_sigma = S.min(dim=-1).values
+        sign = torch.where(
+            min_sigma > eps,
+            sign,
+            torch.zeros_like(sign),
+        )
+        ctx.save_for_backward(U, S, Vh)
         ctx.eps = eps
         return sign, logabs
 
     @staticmethod
     def backward(ctx, grad_sign, grad_logabs):
         del grad_sign  # sign is not differentiable
-        A, detA = ctx.saved_tensors
+        U, S, Vh = ctx.saved_tensors
         if grad_logabs is None:
-            return torch.zeros_like(A), None
-        adj = cofactor(A)
-        safe_abs = torch.where(
-            detA.abs() < ctx.eps,
-            detA.new_full(detA.shape, ctx.eps),
-            detA.abs()
+            grad_logabs = torch.zeros(
+                S.shape[:-1],
+                dtype=S.dtype,
+                device=S.device,
+            )
+        S_inv = torch.where(
+            S > ctx.eps,
+            1.0 / S,
+            torch.zeros_like(S),
         )
-        safe_sign = torch.where(
-            detA == 0,
-            torch.ones_like(detA),
-            detA.sign()
-        )
-        safe_det = safe_sign * safe_abs
-        grad_A = (
-            grad_logabs[..., None, None]
-            * adj.transpose(-2, -1)
-            / safe_det[..., None, None]
-        )
+        Sigma_inv = torch.diag_embed(S_inv)
+        a_inv_t = U @ Sigma_inv @ Vh
+        grad_A = grad_logabs[..., None, None] * a_inv_t
         return grad_A, None  # eps has no grad
