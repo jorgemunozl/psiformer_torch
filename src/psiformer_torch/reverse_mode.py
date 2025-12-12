@@ -68,6 +68,11 @@ def cofactor(A):
 
 
 class DetWithCofactor(Function):
+    """
+    Takes the Determinant from a matrix but
+    the gradient of the determinant is our Cofactor
+    Implementation from Google DeepMind.
+    """
     @staticmethod
     def forward(ctx, A):
         det = torch.linalg.det(A)
@@ -82,17 +87,26 @@ class DetWithCofactor(Function):
         return grad_A
 
 
-class LogAbsDet(Function):
+class SLogDet(Function):
+    """
+    Makes exactly the same that the PyTorch Built-In "torch.linalg.slogdte"
+    but it use our determinant implementation.
+    """
     @staticmethod
     def forward(ctx, A, eps=1e-12):
-        sign, logabs = torch.linalg.slogdet(A)  # I guess that now is going 
+
+        detA = DetWithCofactor.apply(A)
+        sign, logDetA = A.sign(), torch.log(detA.abs())
         # to ignore the slogdet built i
         ctx.save_for_backward(A, sign)
         ctx.eps = eps
-        return logabs, sign
+        return sign, logDetA
 
     @staticmethod
     def backward(ctx, grad_logabs, grad_sign):
+        """
+        This is not automatic? I don't know!!
+        """
         A, sign = ctx.saved_tensors
         del grad_sign  # not differentiable
         adj = cofactor(A)
@@ -101,4 +115,3 @@ class LogAbsDet(Function):
         grad_A = grad_logabs[..., None, None] * adj.transpose(-2, -1) / safe_det[..., None, None]
         return grad_A, None  # eps has no grad
 
-logabsdet = LogAbsDet.apply
