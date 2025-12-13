@@ -2,9 +2,9 @@ from __future__ import annotations
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from config import Model_Config
-from jastrow import Jastrow
-from logdet_matmul import logdet_matmul
+from psiformer_torch.config import Model_Config
+from psiformer_torch.jastrow import Jastrow
+from psiformer_torch.logdet_matmul import logdet_matmul
 import math
 
 

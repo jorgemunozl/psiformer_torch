@@ -128,6 +128,7 @@ class Trainer():
             # Optimizer Step
             self.optimizer.zero_grad()
             loss.backward()
+            torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=10.0)
             self.optimizer.step()
 
             # self.save_checkpoint(step)
