@@ -51,12 +51,15 @@ def compare_for_shape(batch_shape, n=3, device="cpu", tol=1e-5):
 
 if __name__ == "__main__":
     # Simple shapes
-    compare_for_shape((), n=2)          # (2, 2)
-    compare_for_shape((5,), n=3)        # (5, 3, 3)
-    compare_for_shape((2, 4), n=3)      # (2, 4, 3, 3)  e.g. (B, n_det, n, n)
+    # compare_for_shape((), n=2)          # (2, 2)
+    # compare_for_shape((5,), n=3)        # (5, 3, 3)
+    # compare_for_shape((2, 4), n=3)      # (2, 4, 3, 3)  e.g. (B, n_det, n, n)
 
-    # If you have CUDA:
-    if torch.cuda.is_available():
-        compare_for_shape((), n=2, device="cuda")
-        compare_for_shape((5,), n=3, device="cuda")
-        compare_for_shape((2, 4), n=3, device="cuda")
+    A = torch.tensor([[1.0, 2.0],
+                      [2.0, 4.0]], requires_grad=True)
+
+    print("Test")
+    (_, Y) = SLogDet.apply(A)
+    print(Y)
+    Y.backward()
+    print("A_grad", A.grad)
