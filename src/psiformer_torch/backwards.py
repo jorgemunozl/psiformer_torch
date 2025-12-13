@@ -39,7 +39,7 @@ class CofactorFn(Function):
     appears.
     """
     @staticmethod
-    def forward(ctx, A):
+    def forward(ctx, A: torch.Tensor) -> torch.Tensor:
         """
         A: (..., n, n)
         return Cofactor Matrix of A safely. Torch doesn't have
@@ -59,9 +59,12 @@ class CofactorFn(Function):
             mask[i] = False
             Gamma[..., i, i] = torch.prod(S[..., mask], dim=-1)
 
-        detU = torch.det(U)[..., None, None]
-        detV = torch.det(V)[..., None, None]
-        C = detU * detV * (U @ Gamma @ V.transpose(-2, -1))
+        detU = torch.linalg.det(U)
+        detV = torch.linalg.det(V)
+
+        prefac = (detU * detV)[..., None, None]
+
+        C = prefac * (U @ Gamma @ V.transpose(-2, -1))
         ctx.save_for_backward(A)
         return C
 
@@ -103,24 +106,28 @@ class SLogDet(Function):
     but it use our determinant implementation.
     """
     @staticmethod
-    def forward(ctx, A):
-
+    def forward(ctx, A: torch.Tensor):
+        # detA: shape (...,)
         detA = DetWithCofactor.apply(A)
-        sign, logDetA = detA.sign(), torch.log(torch.abs(detA))
-        # to ignore the slogdet built i
+        sign, logabs = detA.sign(), torch.log(detA.abs()+1e-20)
         ctx.save_for_backward(A, sign)
-        return sign, logDetA
+        return sign, logabs
 
     @staticmethod
     def backward(ctx, grad_sign, grad_logabs):
         A, detA = ctx.saved_tensors
-        # grad_sign is ignored (non-differentiable)
+
+        del grad_sign
+
+        C = CofactorFn.apply(A)
+
         eps = 1e-12
         det_safe = torch.where(detA.abs() < eps,
                                detA.sign() * eps,
                                detA)
         # Assuming CofactorFn returns adj(A)^T
-        cof = CofactorFn.apply(A)
-        grad_A = grad_logabs[..., None, None] * cof / det_safe
+
+        factor = grad_logabs[..., None, None] / det_safe[..., None, None]
+        grad_A = factor * C
 
         return grad_A
