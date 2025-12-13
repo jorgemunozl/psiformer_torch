@@ -28,7 +28,7 @@ class MHA(nn.Module):
         self.n_embd = config.n_embd
 
     def forward(self, x: torch.Tensor):
-        B, T, C = x.size()  # Batch, sequence length, Embedding dim
+        B, n_elec, C = x.size()  # Batch, sequence length, Embedding dim
         # Imposes that our x is 3D, i.e.,
         # (batch_size, seq_len=n_electrons, embedding_dim)
 
@@ -39,20 +39,23 @@ class MHA(nn.Module):
 
         head_dim = C // self.n_head
 
-        # dim (B, T    , heads, head_dim) -> trans
-        # dim (B, heads, T    , head_dim)
-        k = k.view(B, T, self.n_head, head_dim).transpose(1, 2)
-        q = q.view(B, T, self.n_head, head_dim).transpose(1, 2)
-        v = v.view(B, T, self.n_head, head_dim).transpose(1, 2)
+        # dim (B, n_elec , heads, head_dim) -> trans
+        # dim (B, heads, n_elec , head_dim)
+        k = k.view(B, n_elec, self.n_head, head_dim).transpose(1, 2)
+        q = q.view(B, n_elec, self.n_head, head_dim).transpose(1, 2)
+        v = v.view(B, n_elec, self.n_head, head_dim).transpose(1, 2)
 
-        # (B, heads, T, head_dim) x (B, heads, head_dim , T)->(B, head, T, T)
+        # (B, heads, n_elec, head_dim) x (B, heads, head_dim , n_elec)->
+        # (B, head, n_elec, n_elec)
         att = (q @ k.transpose(-2, -1)) / math.sqrt(head_dim)
         att = F.softmax(att, dim=-1)
-        # (B, heads, T, T) x (B, heads, T , head_dim)->(B, heads, T, head_dim)
+
+        # (B, heads, n_elec, n_elec) x (B, heads, n_elec , head_dim)->
+        # (B, heads, n_elec, head_dim)
         y = att @ v
 
-        # Back to (B, T, heads, head_dim)
-        y = y.transpose(1, 2).contiguous().view(B, T, C)
+        # Back to (B, n_elec, heads, head_dim)
+        y = y.transpose(1, 2).contiguous().view(B, n_elec, C)
         return self.c_proj(y)
 
 
