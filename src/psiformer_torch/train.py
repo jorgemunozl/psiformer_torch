@@ -175,9 +175,9 @@ class Trainer():
 
 
 train_config = Train_Config(
-        run_name="MANY_ELECTRONS",
-        checkpoint_name="MANY_ELECTRONS.pth",
-        wand_mode="offline"
+        run_name="MANY_ELECTRONS_STABLE_DET",
+        checkpoint_name="MANY_ELECTRONS_STABLE_DET.pth",
+        wand_mode="online"
     )
 
 if __name__ == "__main__":
