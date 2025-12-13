@@ -4,8 +4,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from config import Model_Config
+from backwards import SLogDet
 import math
-from tf import logdet_matmul
 
 
 def get_device():
@@ -161,21 +161,40 @@ class Orbital_Head(nn.Module):
         out = out * env(r_ae)
 
         B, N, _ = out.shape
-        #print("MATS: ", out)
         return out.view(B, N, self.n_det, n_spin).transpose(1, 2)
 
-    def slogdet_sum(self,
-                    phi_up: torch.Tensor,
-                    phi_down: torch.Tensor
+    def slogdet_sum(self, mats: torch.Tensor,
                     ) -> tuple[torch.Tensor, torch.Tensor]:
         """
-        phi_up/phi_down: (B, n_det, n_spin, n_spin)
-        returns sign and logabs of sum_k w_k det(phi_up_k)*det(phi_down_k)
+        mats: (B, n_det, n_spin, n_spin)
+        weights: (n_det,) or (B, n_det)
+        returns (sign_psi, logabs_psi)
+        such that psi = sign_psi * exp(logabs_psi)
+        if you want go to normal space
         """
-        weights = torch.softmax(self.det_logits, dim=0)          # (n_det,)
-        w = weights.unsqueeze(-1)                                # (n_det, 1)
-        log_out, sign_out = logdet_matmul(phi_up, phi_down, w)   # (B, 1)
-        return sign_out.squeeze(-1), log_out.squeeze(-1)
+        B, n_det, n_spin, _ = mats.shape
+
+        # slogdet over last two dims
+        sign, logabs = SLogDet.apply(mats)      # (B, n_det), (B, n_det)
+
+        weights = torch.softmax(self.det_logits, dim=-1)
+        # absorb weight sign into sign_k
+        weight_sign = torch.sign(weights)
+        weight_logabs = torch.log(torch.abs(weights))
+
+        sign_total = sign * weight_sign               # (B, n_det)
+        logabs_total = logabs + weight_logabs         # (B, n_det)
+
+        # stable signed log-sum-exp over determinants
+        max_logabs, _ = logabs_total.max(dim=-1, keepdim=True)  # (B, 1)
+        # move to linear domain but stabilized
+        contrib = sign_total * torch.exp(logabs_total - max_logabs)  # (B, n_det)
+        psi_linear = contrib.sum(dim=-1)                            # (B,)
+
+        sign_psi = torch.sign(psi_linear)
+        logabs_psi = max_logabs.squeeze(-1) + torch.log(torch.abs(psi_linear) + 1e-20)
+
+        return sign_psi, logabs_psi
 
     def forward(self, h, spin_up_idx, spin_down_idx, r_ae_up, r_ae_down):
         """
@@ -190,7 +209,10 @@ class Orbital_Head(nn.Module):
         phi_up = self.build_orbital_matrix(h_up, r_ae_up, "up")
         phi_down = self.build_orbital_matrix(h_down, r_ae_down, "down")
 
-        return self.slogdet_sum(phi_up, phi_down)
+        (_, log_up) = self.slogdet_sum(phi_up)
+        (_, log_down) = self.slogdet_sum(phi_down)
+
+        return log_up + log_down
 
 
 class PsiFormer(nn.Module):
@@ -243,7 +265,7 @@ class PsiFormer(nn.Module):
         r_ae_up = r_ae[:, self.spin_up_idx, :, :]
         r_ae_down = r_ae[:, self.spin_down_idx, :, :]
 
-        _sign_det, logdet = self.orbital_head(
+        logdet = self.orbital_head(
             h, self.spin_up_idx, self.spin_down_idx, r_ae_up, r_ae_down
         )
         # print("sign_det", _sign_det)
@@ -253,10 +275,9 @@ class PsiFormer(nn.Module):
         if not torch.isfinite(logdet).all():
             raise ValueError("Non-finite log determinant detected")
 
-        sum_det = logdet
-        # log_sign = torch.log(_sign_det + 1e-12)
-        # to maintain the variance
-        log_psi = sum_det + jastrow_term
+        # The _sign_det you can use later for whatever you want.
+
+        log_psi = logdet + jastrow_term
 
         # log_psi: (B, )
         return log_psi

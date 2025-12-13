@@ -101,52 +101,24 @@ class SLogDet(Function):
     but it use our determinant implementation.
     """
     @staticmethod
-    def forward(ctx, A, eps=1e-12):
+    def forward(ctx, A):
 
         detA = DetWithCofactor.apply(A)
-        sign, logDetA = A.sign(), torch.log(detA.abs())
+        sign, logDetA = detA.sign(), torch.log(torch.abs(detA))
         # to ignore the slogdet built i
         ctx.save_for_backward(A, sign)
-        ctx.eps = eps
         return sign, logDetA
 
     @staticmethod
-    def backward(ctx, grad_logabs, grad_sign):
-        """
-        This is not automatic? I don't know!!
-        """
-        A, sign = ctx.saved_tensors
-        del grad_sign  # not differentiable
-        det = torch.linalg.det(A)
-        safe_det = torch.where(det.abs() < ctx.eps, det.sign() * ctx.eps, det)
-        grad_A = grad_logabs[..., None, None] * adj.transpose(-2, -1) / safe_det[..., None, None]
-        return grad_A, None  # eps has no grad
+    def backward(ctx, grad_sign, grad_logabs):
+        A, detA = ctx.saved_tensors
+        # grad_sign is ignored (non-differentiable)
+        eps = 1e-12
+        det_safe = torch.where(detA.abs() < eps,
+                               detA.sign() * eps,
+                               detA)
+        # Assuming CofactorFn returns adj(A)^T
+        cof = CofactorFn.apply(A)
+        grad_A = grad_logabs[..., None, None] * cof / det_safe
 
-
-def logdet_matmul(x1: torch.Tensor, x2: torch.Tensor,
-                  w: torch.Tensor, eps: float = 1e-12):
-    """
-    Compute log(|det(x1) * det(x2)| @ w) in a numerically stable way.
-
-    Args:
-        x1, x2: tensors with shape [B, D, n, n]
-        w: weight matrix with shape [D, Dout]
-        eps: clamp to avoid log(0)
-    Returns:
-        log_out, sign_out with shape [B, Dout]
-    """
-    sign1, logdet1 = torch.linalg.slogdet(x1)         # [B, D]
-    sign2, logdet2 = torch.linalg.slogdet(x2)         # [B, D]
-
-    logdet_max1 = logdet1.max(dim=-1, keepdim=True).values
-    logdet_max2 = logdet2.max(dim=-1, keepdim=True).values
-
-    det1 = torch.exp(logdet1 - logdet_max1) * sign1   # [B, D]
-    det2 = torch.exp(logdet2 - logdet_max2) * sign2   # [B, D]
-
-    det = det1 * det2                                 # [B, D]
-    output = det @ w                                  # [B, Dout]
-
-    log_out = torch.log(torch.clamp(output.abs(), min=eps)) + logdet_max1 + logdet_max2
-    sign_out = output.sign()
-    return log_out, sign_out
+        return grad_A

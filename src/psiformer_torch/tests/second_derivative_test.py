@@ -34,6 +34,13 @@ def second_derivative(func, x):
     """
     Test for the second derivative
     """
+    return torch.autograd.functional.hessian(lambda t: func(t), x)
+
+
+def eval_second(func, x):
+    x = x.clone().requires_grad_()
+    hess = second_derivative(func, x)
+    print("Hession", hess)
 
 
 if __name__ == "__main__":
@@ -45,6 +52,14 @@ if __name__ == "__main__":
 
     X_n_singular = torch.tensor([[3.0, 2.0],
                                 [2.0, 2.0]], requires_grad=True)
+
+    print("Using my Tweaked Function (second derivative)")
+    eval_second(my_function, X_n_singular)
+    eval_second(my_function, X_singular)
+
+    print("Using torch built in (second derivative)")
+    eval_second(function, X_n_singular)
+    eval_second(function, X_singular)
 
     # dot = make_dot(Y, params={"X": X})
     # dot.render("det_trace_graph", format="png", cleanup=True)

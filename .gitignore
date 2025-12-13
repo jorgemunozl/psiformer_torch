@@ -19,3 +19,4 @@ __pycache__/
 *.fdb_latexmk
 *.ilg
 *.ind
+.pytest_cache/
