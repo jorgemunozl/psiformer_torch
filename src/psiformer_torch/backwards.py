@@ -59,7 +59,9 @@ class CofactorFn(Function):
             mask[i] = False
             Gamma[..., i, i] = torch.prod(S[..., mask], dim=-1)
 
-        C = torch.det(U) * torch.det(V) * (U @ Gamma @ V.transpose(-2, -1))
+        detU = torch.det(U)[..., None, None]
+        detV = torch.det(V)[..., None, None]
+        C = detU * detV * (U @ Gamma @ V.transpose(-2, -1))
         ctx.save_for_backward(A)
         return C
 
