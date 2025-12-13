@@ -7,7 +7,7 @@ from mcmc import MH
 import logging
 from hamiltonian import Hamiltonian
 
-#torch.autograd.set_detect_anomaly(True)
+# torch.autograd.set_detect_anomaly(True)
 torch.set_float32_matmul_precision("high")
 
 logging.basicConfig(level=logging.INFO,

@@ -1,8 +1,13 @@
+"""
+Test laplacian implementation from Hamiltonian.local energy
+Compare to analytical solutions and stability.
+"""
+
+
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
 from typing import Callable
-from torch.autograd.functional import jacobian, hessian
 
 
 def vectorial_function(x: torch.Tensor) -> torch.Tensor:
