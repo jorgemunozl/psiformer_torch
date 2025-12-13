@@ -5,9 +5,9 @@ import wandb
 
 @dataclass
 class Model_Config():
-    n_layer: int = 6
-    n_head: int = 16
-    n_embd: int = 256
+    n_layer: int = 4
+    n_head: int = 32
+    n_embd: int = 512
     n_features: int = 3  # Electron Coordinates (x, y, z)
     n_determinants: int = 4
     n_electron_num: int = 3
@@ -19,8 +19,8 @@ class Model_Config():
 @dataclass
 class Train_Config():
     train_steps: int = 1000
-    checkpoint_step: int = 600
-    batch_size: int = 1
+    checkpoint_step: int = 333
+    batch_size: int = 2
     checkpoint_name: str = ""
     energy_batch_size: int = 128  # how many MCMC samples to score per GPU pass
     dim: int = 3  # Three spatial cordinates

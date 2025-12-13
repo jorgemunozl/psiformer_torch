@@ -1,10 +1,10 @@
 from __future__ import annotations
-from jastrow import Jastrow
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from config import Model_Config
-from backwards import SLogDet
+from jastrow import Jastrow
+from logdet_matmul import logdet_matmul
 import math
 
 
@@ -163,39 +163,6 @@ class Orbital_Head(nn.Module):
         B, N, _ = out.shape
         return out.view(B, N, self.n_det, n_spin).transpose(1, 2)
 
-    def slogdet_sum(self, mats: torch.Tensor,
-                    ) -> tuple[torch.Tensor, torch.Tensor]:
-        """
-        mats: (B, n_det, n_spin, n_spin)
-        weights: (n_det,) or (B, n_det)
-        returns (sign_psi, logabs_psi)
-        such that psi = sign_psi * exp(logabs_psi)
-        if you want go to normal space
-        """
-        B, n_det, n_spin, _ = mats.shape
-
-        # slogdet over last two dims
-        sign, logabs = SLogDet.apply(mats)      # (B, n_det), (B, n_det)
-
-        weights = torch.softmax(self.det_logits, dim=-1)
-        # absorb weight sign into sign_k
-        weight_sign = torch.sign(weights)
-        weight_logabs = torch.log(torch.abs(weights))
-
-        sign_total = sign * weight_sign               # (B, n_det)
-        logabs_total = logabs + weight_logabs         # (B, n_det)
-
-        # stable signed log-sum-exp over determinants
-        max_logabs, _ = logabs_total.max(dim=-1, keepdim=True)  # (B, 1)
-        # move to linear domain but stabilized
-        contrib = sign_total * torch.exp(logabs_total - max_logabs)  # (B, n_det)
-        psi_linear = contrib.sum(dim=-1)                            # (B,)
-
-        sign_psi = torch.sign(psi_linear)
-        logabs_psi = max_logabs.squeeze(-1) + torch.log(torch.abs(psi_linear) + 1e-20)
-
-        return sign_psi, logabs_psi
-
     def forward(self, h, spin_up_idx, spin_down_idx, r_ae_up, r_ae_down):
         """
         h: (B, n_elec, n_embd)
@@ -209,10 +176,10 @@ class Orbital_Head(nn.Module):
         phi_up = self.build_orbital_matrix(h_up, r_ae_up, "up")
         phi_down = self.build_orbital_matrix(h_down, r_ae_down, "down")
 
-        (_, log_up) = self.slogdet_sum(phi_up)
-        (_, log_down) = self.slogdet_sum(phi_down)
+        weights = torch.softmax(self.det_logits, dim=-1).unsqueeze(-1)
+        log_out, _ = logdet_matmul(phi_up, phi_down, weights)
 
-        return log_up + log_down
+        return log_out.squeeze(-1)
 
 
 class PsiFormer(nn.Module):
