@@ -19,3 +19,5 @@ __pycache__/
 *.fdb_latexmk
 *.ilg
 *.ind
+*.pth
+*.pdf
