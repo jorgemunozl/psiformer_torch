@@ -1170,7 +1170,7 @@ explicit \(|\mathbf{r}_i-\mathbf{r}_j|\) dependence lives in
 
 
 Conceptually as shown on \cref{fig:psif}, Psiformer is ``FermiNet with the two-electron stream
-replaced by self-attention''. It only uses \textbf{electron--nuclear} features (plus spin) as
+replaced by self-attention''. It only uses \textbf{electron-nuclear} features (plus spin) as
 input to the attention stack. For each electron \(i\): 1. Let
 \(\mathbf{R}_I\) be nuclear positions. 2. Build raw features by
 concatenating for all \(I\):  some function of
@@ -1178,7 +1178,7 @@ concatenating for all \(I\):  some function of
 \(|\mathbf{r}_i - \mathbf{R}_I|\) (distance),  and the spin as a scalar
 (e.g.~\(\sigma_i = +1\) for \(\uparrow\), \(-1\) for \(\downarrow\)).
 
-In the paper they rescale the electron--nucleus vectors so that large
+In the paper they rescale the electron-nucleus vectors so that large
 distances grow only logarithmically \cite{vonglehn2023selfattentionansatzabinitioquantum}, but at the level of notation we can
 just write \[
 \mathbf{f}_i^{0} \in \mathbb{R}^{d_{\text{in}}}
@@ -1188,7 +1188,7 @@ layer \[
 \mathbf{h}_{i}^{0} = \mathbf{W}^{0}\,\mathbf{f}_{i}^{0},
 \] where \(\mathbf{W}^0 \in \mathbb{R}^{d \times d_{\text{in}}}\) is
 learned. So:  index \(i\) is ``which electron'',  superscript \(0\)
-means ``before any attention layers.''
+means before any attention layers.
 
 At layer \(\ell\), we have all electron hidden states \[
 \mathbf{h}_1^{\ell},\dots,\mathbf{h}_N^{\ell}.
@@ -1230,7 +1230,7 @@ is \[
 
 \begin{itemize}
 \item
-  \(j\) runs over ``all other electrons,'' so electron \(i\) ``looks''
+  \(j\) runs over ``all other electrons, so electron \(i\) ``looks''
   at all others via attention.
 \item
   \(d_k\) is the key/query dimension (usually \(d_k = d/H\) or similar).
@@ -1321,10 +1321,12 @@ The final spin-orbital entries are \[
 \Omega^{k}_{ij}\,
 \tilde{\phi}^{k}_i(x_j).
 \]
-Collecting these into the matrix \[
+Collecting these into the matrix 
+\[
 \boldsymbol{\Phi}^k(\mathbf{x}) =
 \big[\Phi^{k}_{ij}\big]_{i,j=1}^N,
-\] we form the determinant \[
+\]
+ we form the determinant \[
 \det[\boldsymbol{\Phi}^k(\mathbf{x})]
 =
 \det\big[\Phi^{k}_{ij}\big]
@@ -1345,15 +1347,44 @@ cusp conditions.
 
 \section{Methodology}\label{methodology}
 
+The language code is Python
 
-The implementation of PsiFormer requires a computational framework capable of expressing flexible neural architectures while remaining efficient on large-scale parallel hardware. Modern deep-learning ecosystems offer several possibilities, most notably JAX, TensorFlow, and PyTorch. Each provides automatic differentiation and GPU/TPU support. PyTorch, widely adopted across research domains, offers a dynamic computation graph and a rich ecosystem of scientific tooling. Prior work in variational Monte Carlo, including FermiNet, has motivated similar design principles, although its original implementation relied on TensorFlow \cite{Paszke2019PyTorch, vonglehn2023selfattentionansatzabinitioquantum, Pfau_2020}. Given the broader community support, debugging simplicity, and availability of open-source implementations of attention-based architectures, PyTorch is chosen as the primary framework.
+The implementation of PsiFormer requires a computational framework capable of expressing
+flexible neural architectures while remaining efficient on large-scale parallel hardware.
+Modern deep-learning ecosystems offer several possibilities: JAX, TensorFlow, and PyTorch.
+Each provides automatic differentiation and GPU/TPU support. PyTorch, widely adopted across 
+research domains, offers a dynamic computation graph and a rich ecosystem of scientific tooling \cite{Paszke2019PyTorch}.
 
-Additionally, the HuggingFace Transformers library provides a modular reference for attention layers, layer norms, initialization schemes, and efficient training utilities.
+Given the broader community support, debugging simplicity, and availability of open-source 
+implementations of attention-based architectures, PyTorch is chosen as 
+the primary framework.
+
+Training models in the PsiFormer family requires significant computational
+resources, as reported by the original authors. Electronic-structure 
+wavefunctions demand repeated sampling, expensive determinant evaluations,
+and long optimization horizons, pushing typical training times into several 
+days or weeks depending on molecular complexity, something that is normal for Quantum systems.
+
+To address these requirements, we rely on GPU-accelerated environments 
+with CUDA support. While cloud notebook platforms such as Google Colab offer
+accessible GPUs, their instability, session limits, and restricted runtimes
+make them unsuitable for long-range experiments. Instead, the project uses
+rented GPU instances (e.g., RunPod or comparable providers).
+
+The repository implementation is availaible on (link to repo) the training of the models was using 
+the weigths and bias. Page web.
+
+And the model parameters are being saved on the Hugging face.
+
+\section{Analysis}\label{analysis}
+
+After the z
+
+\section{Observation}\label{}
 
 
-Training models in the PsiFormer family requires significant computational resources, as reported by the original authors. Electronic-structure wavefunctions demand repeated sampling, expensive determinant evaluations, and long optimization horizons, pushing typical training times into several days or weeks depending on molecular complexity.
+\section{Conclusion}\label{}
 
-To address these requirements, we rely on GPU-accelerated environments with CUDA support. While cloud notebook platforms such as Google Colab offer accessible GPUs, their instability, session limits, and restricted runtimes make them unsuitable for long-range experiments. Instead, the project uses rented GPU instances (e.g., RunPod or comparable providers).
 
 \bibliographystyle{unsrt}
 \bibliography{references}
