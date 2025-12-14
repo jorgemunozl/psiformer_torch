@@ -21,7 +21,16 @@ class Trainer():
     def __init__(self, model: PsiFormer, config: Train_Config):
         self.model = model.to(get_device())
         self.config = config
-        self.optimizer = optim.Adam(self.model.parameters(), lr=config.lr)
+        self.optimizer = optim.AdamW(
+            self.model.parameters(),
+            lr=config.lr,
+            betas=(0.9, 0.95),
+            weight_decay=1e-4,
+            amsgrad=True,
+        )
+        self.scheduler = optim.lr_scheduler.CosineAnnealingLR(
+            self.optimizer, T_max=config.train_steps, eta_min=config.lr * 0.1
+        )
         self.device = get_device()
         self.mh = MH(
             self.log_psi,
@@ -128,8 +137,9 @@ class Trainer():
             # Optimizer Step
             self.optimizer.zero_grad()
             loss.backward()
-            torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=10.0)
+            grad_norm = torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=10.0)
             self.optimizer.step()
+            self.scheduler.step()
 
             # self.save_checkpoint(step)
 
@@ -146,6 +156,8 @@ class Trainer():
                 "Energy": E_mean,
                 "loss": loss,
                 "step_time_sec": time.perf_counter() - step_start,
+                "grad_norm": grad_norm.item() if grad_norm is not None else 0.0,
+                "lr": self.optimizer.param_groups[0]["lr"],
                 "env_up_pi_norm": env_up.pi.detach().norm().item(),
                 "env_up_sigma_norm": env_up.raw_sigma.detach().norm().item(),
                 "env_down_pi_norm": env_down.pi.detach().norm().item(),

@@ -79,10 +79,13 @@ class Layer(nn.Module):
         super().__init__()
         self.attn = MHA(config)
         self.mlp = MLP(config)
+        self.ln_1 = nn.LayerNorm(config.n_embd)
+        self.ln_2 = nn.LayerNorm(config.n_embd)
 
     def forward(self, x):
-        x = x + self.attn(x)
-        x = x + self.mlp(x)
+        # Pre-norm residual blocks to reduce exploding activations.
+        x = x + self.attn(self.ln_1(x))
+        x = x + self.mlp(self.ln_2(x))
         return x
 
 

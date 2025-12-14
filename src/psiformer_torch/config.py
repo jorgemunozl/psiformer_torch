@@ -9,7 +9,7 @@ class Model_Config():
     n_head: int = 32
     n_embd: int = 512
     n_features: int = 3  # Electron Coordinates (x, y, z)
-    n_determinants: int = 4
+    n_determinants: int = 1
     n_electron_num: int = 3
     n_spin_up: int = 2
     n_spin_down: int = 1
@@ -24,7 +24,7 @@ class Train_Config():
     checkpoint_name: str = ""
     energy_batch_size: int = 128  # how many MCMC samples to score per GPU pass
     dim: int = 3  # Three spatial cordinates
-    lr: float = 1e-3
+    lr: float = 3e-4
 
     # Wandb
     entity: str = "alvaro18ml-university-of-minnesota"
