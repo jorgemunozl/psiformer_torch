@@ -1378,16 +1378,28 @@ And the model parameters are being saved on the Hugging face.
 
 \section{Analysis}\label{analysis}
 
-After the z
+After the training we can observe how the energy predicted of the model is goes to 
+the energy prodyced by, this tell us how 
 
-\section{Observation}\label{}
 
 
-\section{Conclusion}\label{}
+\section{Observation}\label{Observation}
+
+The training of the model could be quite unstable because when computing the Laplacian
+of because the second derivative is nearly singular and the det becomes zero, 
+we can fix this by using.
+
+If we want to leverage all the computaional power from the GPU,
+we need to make some tricks.
+
+
+\section{Conclusion}\label{Conclusion}
+
+We conclude by saying that Psiformer was able to obtain the ground state energy for the 
+atoms Hidrogen Helium 
 
 
 \bibliographystyle{unsrt}
 \bibliography{references}
-
 
 \end{document}
