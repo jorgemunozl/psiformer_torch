@@ -6,8 +6,9 @@ from typing import Iterable, List, Tuple
 import matplotlib.pyplot as plt
 
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_CSV = PROJECT_ROOT / "assets" / "train_wandb" / "helium.csv"
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
+DEFAULT_CSV_DIR = PROJECT_ROOT / "assets" / "train_wandb_csv"
+DEFAULT_PLOTS_DIR = PROJECT_ROOT / "assets" / "plots"
 
 
 def _detect_metric_columns(fieldnames: List[str],
@@ -173,8 +174,14 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--csv",
         type=Path,
-        default=DEFAULT_CSV,
-        help=f"Path to csv file (default: {DEFAULT_CSV})",
+        default=None,
+        help=f"Path to csv file or directory (default: {DEFAULT_CSV_DIR})",
+    )
+    parser.add_argument(
+        "--outdir",
+        type=Path,
+        default=None,
+        help=f"Directory to write plots when processing a directory (default: {DEFAULT_PLOTS_DIR})",
     )
     parser.add_argument(
         "--out",
@@ -203,13 +210,41 @@ def _parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
+def _collect_csv_paths(csv_arg: Path | None) -> List[Path]:
+    """
+    Resolve the csv paths to process.
+    If a directory is provided (or no arg), collects all *.csv files inside.
+    """
+    base = csv_arg if csv_arg is not None else DEFAULT_CSV_DIR
+
+    if base.is_dir():
+        csv_paths = sorted(base.glob("*.csv"))
+        if not csv_paths:
+            raise FileNotFoundError(f"No .csv files found in {base}")
+        return csv_paths
+    if base.is_file():
+        return [base]
+    raise FileNotFoundError(f"{base} does not exist")
+
+
 if __name__ == "__main__":
     args = _parse_args()
-    png_path = plot_energy(
-        args.csv,
-        args.out,
-        show_range=not args.no_range,
-        metric=args.metric,
-        target=args.target,
-    )
-    print(f"Saved plot to {png_path}")
+    csv_paths = _collect_csv_paths(args.csv)
+
+    output_dir = args.outdir or DEFAULT_PLOTS_DIR
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    for csv_path in csv_paths:
+        if args.out is not None and len(csv_paths) == 1:
+            png_path = args.out
+        else:
+            png_path = output_dir / csv_path.with_suffix(".png").name
+
+        png_path = plot_energy(
+            csv_path,
+            png_path,
+            show_range=not args.no_range,
+            metric=args.metric,
+            target=args.target,
+        )
+        print(f"Saved plot to {png_path}")
