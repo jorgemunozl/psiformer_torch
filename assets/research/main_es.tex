@@ -379,8 +379,8 @@ Es claro que encontrar soluciones analíticas es prácticamente imposible, por l
  Además, debido a sus cargas opuestas, existe una fuerza atractiva mutua que actúa sobre un núcleo atómico y un electrón. Esta fuerza provoca
  que ambas partículas se aceleren. Como la magnitud de la aceleración es inversamente proporcional a la masa, \(a = f/m\) \cite{Newton1687},
  la aceleración de los electrones es grande y la aceleración de los núcleos atómicos es pequeña; la diferencia es un factor mayor que 1000.
- En consecuencia, los electrones se mueven y responden a las fuerzas muy rápidamente, mientras que los núcleos no. 
-Entonces fijamos los núcleos: \(\mathbf{R}_{I}\) pasa a ser una constante, por lo que el término cinético de los núcleos se vuelve cero. 
+ En consecuencia, los electrones se mueven y responden a las fuerzas muy rápidamente, mientras que los núcleos no.
+Entonces fijamos los núcleos: \(\mathbf{R}_{I}\) pasa a ser una constante, por lo que el término cinético de los núcleos se vuelve cero.
 Además, la energía potencial debida a la repulsión entre núcleos se vuelve una constante.
 
 
@@ -551,7 +551,7 @@ Esta subsección introduce los conceptos centrales de aprendizaje profundo que s
 
 Un perceptrón multicapa (MLP) es un mapeo no lineal \(\mathcal{F}:\mathbb{R}^{\text{in}}\to \mathbb{R}^{\text{out}}\) desde un patrón de entrada \(\mathbf{x}\) hacia un vector de salida \(\mathbf{y}\) \cite{RumelhartHintonWilliams1986}, y es la composición de
   \(L\) capas: la primera se llama capa de entrada, la última, capa de salida, y las intermedias, capas ocultas. En cada capa
-  encontramos un número arbitrario de neuronas y una transformación afín \(\mathbf{z}^{(l)}\), \(l\in \{ L,L-1,\dots,2 \}\) (con \(l=1\) 
+  encontramos un número arbitrario de neuronas y una transformación afín \(\mathbf{z}^{(l)}\), \(l\in \{ L,L-1,\dots,2 \}\) (con \(l=1\)
 como la capa de entrada) de la forma siguiente.
 
 
@@ -1529,21 +1529,10 @@ Además de la energía final, analizamos el comportamiento dinámico del entrena
 
 \begin{figure}[htbp]
   \centering
-  \includegraphics[width=0.75\textwidth]{img/energy_curve_placeholder.png}
+  \includegraphics[width=0.52\textwidth]{img/paper_composite.png}
   \caption{Curva típica de entrenamiento: energía estimada (y barras de incertidumbre) vs iteraciones. Sustituir por resultados.}
   \label{fig:energy_curve}
 \end{figure}
-
-\subsection{Ablaciones}\label{subsec:ablaciones}
-
-Para entender qué componentes aportan más, realizamos (o proponemos realizar) las siguientes ablaciones:
-
-\begin{itemize}
-  \item \textbf{Jastrow:} con y sin \(\mathcal{J}_\theta\), comparando varianza de \(E_L\) y estabilidad cerca de coalescencias electrón--electrón.
-  \item \textbf{Atención:} variar \(H\) y \(L\), observando saturación (mejoras marginales) vs costo computacional.
-  \item \textbf{Preacondicionamiento:} Adam vs KFAC (o gradiente natural aproximado), evaluando rapidez de convergencia y sensibilidad al \(\eta\).
-  \item \textbf{Número de determinantes:} barrido en \(N_{\det}\), midiendo trade-off precisión/costo.
-\end{itemize}
 
 
 \section{Análisis y discusión}\label{sec:analisis}
@@ -1558,27 +1547,6 @@ En particular:
   \item \textbf{Cúspides:} la inclusión explícita de \(\mathcal{J}_\theta\) alivia la carga de la red, al imponer condiciones de cúspide electrón--electrón de manera analítica (o al menos controlada).
   \item \textbf{Largo alcance:} los factores \emph{envelope} fuerzan el decaimiento correcto, reduciendo extrapolaciones no físicas a grandes distancias.
 \end{itemize}
-
-\subsection{Muestreo MCMC y sesgos prácticos}\label{subsec:mcmc}
-
-Un detalle crucial (y fácil de subestimar) es que el entrenamiento no optimiza una pérdida determinista: depende de muestras correlacionadas de una cadena de Markov. En la práctica observamos que:
-
-\begin{itemize}
-  \item Tasas de aceptación muy bajas suelen indicar \(\sigma_{\mathrm{MH}}\) demasiado grande; tasas muy altas pueden implicar exploración lenta. Un rango moderado mejora el tamaño de muestra efectivo.
-  \item La autocorrelación afecta los intervalos de confianza: reportar únicamente la desviación estándar de \(E_L\) puede subestimar la incertidumbre si no se corrige por correlación.
-  \item Cambios bruscos en \(\psi_\theta\) entre iteraciones pueden desestabilizar la cadena (``\emph{drift}'' del target). Estrategias comunes incluyen reusar estados con cuidado, ajustar \(\sigma_{\mathrm{MH}}\), o introducir \emph{burn-in} corto por iteración.
-\end{itemize}
-
-\subsection{Efecto del preacondicionamiento (gradiente natural/KFAC)}\label{subsec:kfac_disc}
-
-Cuando el objetivo depende de una distribución \(p_\theta\), el gradiente natural es geométricamente más adecuado que el gradiente euclidiano. En términos prácticos, el beneficio esperado es:
-
-\begin{itemize}
-  \item \textbf{Convergencia más rápida:} menos iteraciones para alcanzar una energía comparable.
-  \item \textbf{Menor sensibilidad a escalas:} el preacondicionamiento compensa direcciones mal escaladas del espacio de parámetros.
-\end{itemize}
-
-Sin embargo, el costo adicional (estimación/inversión aproximada de factores) puede no ser rentable en regímenes pequeños. La comparación debe reportarse en términos de \emph{energía vs tiempo de cómputo} (no solo vs iteración).
 
 \subsection{Limitaciones}\label{subsec:limitaciones}
 
