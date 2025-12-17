@@ -6,25 +6,25 @@ import wandb
 @dataclass
 class Model_Config():
     n_layer: int = 4
-    n_head: int = 16
-    n_embd: int = 256
+    n_head: int = 32
+    n_embd: int = 512
     n_features: int = 3  # Electron Coordinates (x, y, z)
-    n_determinants: int = 4
-    n_electron_num: int = 2
+    n_determinants: int = 1
+    n_electron_num: int = 3
+    n_spin_up: int = 2
     n_spin_down: int = 1
-    n_spin_up: int = 1
-    nuclear_charge = 2
+    nuclear_charge: int = 3  # Z for single nucleus (default: Lithium)
 
 
 @dataclass
 class Train_Config():
-    train_steps: int = 500
-    checkpoint_step: int = 300
-    batch_size: int = 4
+    train_steps: int = 1000
+    checkpoint_step: int = 333
+    batch_size: int = 2
     checkpoint_name: str = ""
-
+    energy_batch_size: int = 128  # how many MCMC samples to score per GPU pass
     dim: int = 3  # Three spatial cordinates
-    lr: float = 0.5e-3
+    lr: float = 3e-4
 
     # Wandb
     entity: str = "alvaro18ml-university-of-minnesota"
@@ -33,10 +33,11 @@ class Train_Config():
     wand_mode: str = "online"
 
     # MCMC
-    monte_carlo_length: int = 1028  # Num samples
-    burn_in_steps: int = 16
-    step_size: float = 0.8
-    energy_batch_size: int = 256
+    monte_carlo_length: int = 1024  # Num samples
+    burn_in_steps: int = 4
+    step_size: float = 1.0
+    mh_steps_per_sample: int = 32  # MH transitions between stored samples
+    step_size: float = .8
 
     def init_checkpoint(self):
         CHECKPOINT_DIR = "checkpoints/"
@@ -61,10 +62,11 @@ class Train_Config():
         train_config = asdict(self)
         full = model_dict | train_config
         options = ("online", "offline", "disabled")
+
         return wandb.init(
             entity=self.entity,
             project=self.project,
             name=self.run_name,
             config=full,
-            mode=self.wand_mode if self.wand_mode in options else "online"
+            mode=self.wand_mode if self.wand_mode in options else "online",
         )

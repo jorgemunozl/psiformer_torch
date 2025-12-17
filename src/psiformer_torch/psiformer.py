@@ -1,9 +1,10 @@
 from __future__ import annotations
-from jastrow import Jastrow
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from config import Model_Config
+from psiformer_torch.config import Model_Config
+from psiformer_torch.jastrow import Jastrow
+from psiformer_torch.logdet_matmul import logdet_matmul
 import math
 
 
@@ -27,7 +28,7 @@ class MHA(nn.Module):
         self.n_embd = config.n_embd
 
     def forward(self, x: torch.Tensor):
-        B, T, C = x.size()  # Batch, sequence length, Embedding dim
+        B, n_elec, C = x.size()  # Batch, sequence length, Embedding dim
         # Imposes that our x is 3D, i.e.,
         # (batch_size, seq_len=n_electrons, embedding_dim)
 
@@ -38,20 +39,23 @@ class MHA(nn.Module):
 
         head_dim = C // self.n_head
 
-        # dim (B, T    , heads, head_dim) -> trans
-        # dim (B, heads, T    , head_dim)
-        k = k.view(B, T, self.n_head, head_dim).transpose(1, 2)
-        q = q.view(B, T, self.n_head, head_dim).transpose(1, 2)
-        v = v.view(B, T, self.n_head, head_dim).transpose(1, 2)
+        # dim (B, n_elec , heads, head_dim) -> trans
+        # dim (B, heads, n_elec , head_dim)
+        k = k.view(B, n_elec, self.n_head, head_dim).transpose(1, 2)
+        q = q.view(B, n_elec, self.n_head, head_dim).transpose(1, 2)
+        v = v.view(B, n_elec, self.n_head, head_dim).transpose(1, 2)
 
-        # (B, heads, T, head_dim) x (B, heads, head_dim , T)->(B, head, T, T)
+        # (B, heads, n_elec, head_dim) x (B, heads, head_dim , n_elec)->
+        # (B, head, n_elec, n_elec)
         att = (q @ k.transpose(-2, -1)) / math.sqrt(head_dim)
         att = F.softmax(att, dim=-1)
-        # (B, heads, T, T) x (B, heads, T , head_dim)->(B, heads, T, head_dim)
+
+        # (B, heads, n_elec, n_elec) x (B, heads, n_elec , head_dim)->
+        # (B, heads, n_elec, head_dim)
         y = att @ v
 
-        # Back to (B, T, heads, head_dim)
-        y = y.transpose(1, 2).contiguous().view(B, T, C)
+        # Back to (B, n_elec, heads, head_dim)
+        y = y.transpose(1, 2).contiguous().view(B, n_elec, C)
         return self.c_proj(y)
 
 
@@ -75,20 +79,25 @@ class Layer(nn.Module):
         super().__init__()
         self.attn = MHA(config)
         self.mlp = MLP(config)
+        self.ln_1 = nn.LayerNorm(config.n_embd)
+        self.ln_2 = nn.LayerNorm(config.n_embd)
 
     def forward(self, x):
-        x = x + self.attn(x)
-        x = x + self.mlp(x)
+        # Pre-norm residual blocks to reduce exploding activations.
+        x = x + self.attn(self.ln_1(x))
+        x = x + self.mlp(self.ln_2(x))
         return x
 
 
 class Envelope(nn.Module):
-    def __init__(self, natom: int, det_spin: int, sigma_init: float = 1.0):
+    def __init__(self, natom: int, det_spin: int, sigma_init: float = 0.5):
         super().__init__()
         self.pi = nn.Parameter(torch.ones(natom, det_spin))
 
         # Start with a configurable decay rate; learnable during training.
-        self.sigma = nn.Parameter(torch.full((natom, det_spin), sigma_init))
+        self.raw_sigma = nn.Parameter(
+            torch.full((natom, det_spin), sigma_init)
+        )
 
     def forward(self, r_ae: torch.Tensor) -> torch.Tensor:
         """
@@ -99,8 +108,12 @@ class Envelope(nn.Module):
         1 -> n_spin
         """
 
+        sigma = F.softplus(self.raw_sigma) + 1e-6
+        sigma = torch.clamp(sigma, min=1e-3, max=1e3)
+        pi = torch.clamp(self.pi, min=1e-3, max=1e3)
+
         # Broadcasting for B, n_elec, _ , 1
-        return torch.sum(torch.exp(-r_ae * self.sigma) * self.pi, dim=2)
+        return torch.sum(torch.exp(-r_ae * sigma) * pi, dim=2)
 
 
 class Orbital_Head(nn.Module):
@@ -125,6 +138,9 @@ class Orbital_Head(nn.Module):
         # Heads for up/down
         self.orb_up = nn.Linear(self.n_embd, self.n_det*self.n_spin_up)
         self.orb_down = nn.Linear(self.n_embd, self.n_det*self.n_spin_down)
+        nn.init.constant_(self.orb_up.bias, 1e-3)
+        nn.init.constant_(self.orb_down.bias, 1e-3)
+        self.det_logits = nn.Parameter(torch.zeros(self.n_det))
 
     def build_orbital_matrix(self, h: torch.Tensor,
                              r_ae: torch.Tensor, spin: str) -> torch.Tensor:
@@ -151,20 +167,7 @@ class Orbital_Head(nn.Module):
         out = out * env(r_ae)
 
         B, N, _ = out.shape
-
         return out.view(B, N, self.n_det, n_spin).transpose(1, 2)
-
-    def slogdet_sum(self, mats: torch.Tensor) -> torch.Tensor:
-        """
-        mats: (B, n_det, n_spin, n_spin)
-        returns stable sum of determinants
-        """
-        det_logs = []
-        for k in range(self.n_det):
-            sign, logs_abs = torch.linalg.slogdet(mats[:, k, :, :])
-            det_logs.append(logs_abs)
-        det_logs = torch.stack(det_logs, dim=-1)
-        return torch.logsumexp(det_logs, dim=-1)
 
     def forward(self, h, spin_up_idx, spin_down_idx, r_ae_up, r_ae_down):
         """
@@ -179,9 +182,10 @@ class Orbital_Head(nn.Module):
         phi_up = self.build_orbital_matrix(h_up, r_ae_up, "up")
         phi_down = self.build_orbital_matrix(h_down, r_ae_down, "down")
 
-        logdet_up = self.slogdet_sum(phi_up)
-        logdet_down = self.slogdet_sum(phi_down)
-        return logdet_up, logdet_down
+        weights = torch.softmax(self.det_logits, dim=-1).unsqueeze(-1)
+        log_out, _ = logdet_matmul(phi_up, phi_down, weights)
+
+        return log_out.squeeze(-1)
 
 
 class PsiFormer(nn.Module):
@@ -209,6 +213,10 @@ class PsiFormer(nn.Module):
         """
         x: (B, n_electron ,3)
         """
+        # Flatten any leading dims (e.g., monte_carlo, batch) into batch
+        if x.dim() > 3:
+            x = x.reshape(-1, x.size(-2), x.size(-1))
+
         if x.shape[1:] != (self.config.n_electron_num, self.config.n_features):
             error = f"x shape: {x.shape}"
             error += f"{self.config.n_electron_num, self.config.n_features}"
@@ -230,11 +238,19 @@ class PsiFormer(nn.Module):
         r_ae_up = r_ae[:, self.spin_up_idx, :, :]
         r_ae_down = r_ae[:, self.spin_down_idx, :, :]
 
-        logdet_up, logdet_down = self.orbital_head(
+        logdet = self.orbital_head(
             h, self.spin_up_idx, self.spin_down_idx, r_ae_up, r_ae_down
         )
-
+        # print("sign_det", _sign_det)
         jastrow_term = self.jastrow(x)
-        log_psi = logdet_up + logdet_down + jastrow_term
+
+        # Guard against singular determinant blocks
+        if not torch.isfinite(logdet).all():
+            raise ValueError("Non-finite log determinant detected")
+
+        # The _sign_det you can use later for whatever you want.
+
+        log_psi = logdet + jastrow_term
+
         # log_psi: (B, )
         return log_psi
