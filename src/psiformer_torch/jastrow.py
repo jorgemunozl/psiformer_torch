@@ -56,6 +56,7 @@ class Jastrow(nn.Module):
             return up.new_zeros(batch_size)
 
         diff = up[:, :, None, :] - down[:, None, :, :]
+        # Soft norm, equal than same_spin
         dists = diff.norm(dim=-1) + 1e-12
 
         # dists: (B, n**2)

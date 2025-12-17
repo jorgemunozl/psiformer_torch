@@ -3,7 +3,7 @@ Test of determinant first and second derivative using implementation from
 backwards.py
 """
 import torch
-from psiformer_torch.backwards import DetWithCofactor
+from psiformer_torch.personalized_op.backwards import DetWithCofactor
 
 
 def f1(X: torch.Tensor) -> torch.Tensor:

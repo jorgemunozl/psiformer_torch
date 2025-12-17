@@ -32,7 +32,8 @@ def _sign_det(x: Tensor) -> Tensor:
     return torch.sign(torch.linalg.det(x))
 
 
-def _logdet_matmul_value(x1: Tensor, x2: Tensor, w: Tensor) -> tuple[Tensor, Tensor]:
+def _logdet_matmul_value(x1: Tensor, x2: Tensor,
+                         w: Tensor) -> tuple[Tensor, Tensor]:
     """
     Compute log|sum_d w_d det(x1_d) det(x2_d)| in a numerically stable way.
     Returns (log_abs, sign).
@@ -64,7 +65,8 @@ def _logdet_matmul_value(x1: Tensor, x2: Tensor, w: Tensor) -> tuple[Tensor, Ten
     output = det @ w
 
     sign_out = torch.sign(output)
-    log_out = torch.log(torch.clamp(torch.abs(output), min=_OUTPUT_FLOOR)) + logdet_max1 + logdet_max2
+    log_out = torch.log(torch.clamp(torch.abs(output), min=_OUTPUT_FLOOR))
+    log_out += logdet_max1 + logdet_max2
     return log_out, sign_out
 
 

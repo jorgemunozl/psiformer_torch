@@ -2,13 +2,6 @@ from typing import Any
 import torch
 from torch.autograd import Function
 
-from logdet_matmul import logdet_matmul
-
-
-def logdet_mul(x1, x2, w):
-    """Alias for the torch logdet_matmul implementation."""
-    return logdet_matmul(x1, x2, w)
-
 
 def cofactor_backward(A, C_bar, eps=1e-12):
     """
@@ -130,8 +123,6 @@ class SLogDet(Function):
 
         print("GRAD_LOGABS", grad_logabs)
         print("DET", detA)
-
-
         print("COFACTOR", C)
         factor = grad_logabs[..., None, None] / detA[..., None, None]
         grad_A = factor * C

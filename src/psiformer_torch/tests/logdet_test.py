@@ -1,7 +1,9 @@
 import torch
 
 # Adjust this import to match your actual project structure
-from psiformer_torch.backwards import SLogDet  # your custom autograd Function
+# your custom autograd Function
+
+from psiformer_torch.personalized_op.backwards import SLogDet
 
 torch.manual_seed(0)
 
@@ -13,8 +15,8 @@ def random_invertible(batch_shape, n, eps=1e-2):
     """
     A = torch.randn(*batch_shape, n, n)
     # Make it "more invertible-ish"
-    I = torch.eye(n).expand(batch_shape + (n, n))
-    return A + eps * I
+    Identity = torch.eye(n).expand(batch_shape + (n, n))
+    return A + eps * Identity
 
 
 def compare_for_shape(batch_shape, n=3, device="cpu", tol=1e-5):
