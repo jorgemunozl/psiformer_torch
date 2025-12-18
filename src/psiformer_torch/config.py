@@ -10,10 +10,10 @@ class Model_Config():
     n_embd: int = 512
     n_features: int = 3  # Electron Coordinates (x, y, z)
     n_determinants: int = 1
-    n_electron_num: int = 3
-    n_spin_up: int = 2
-    n_spin_down: int = 1
-    nuclear_charge: int = 3  # Z for single nucleus (default: Lithium)
+    n_electron_num: int = 6
+    n_spin_up: int = 4
+    n_spin_down: int = 2
+    nuclear_charge: int = 6  # Z for single nucleus (default: Lithium)
 
 
 @dataclass
@@ -76,10 +76,10 @@ Psiformer_Torch_Small_Model = Model_Config(
     n_head=16,
     n_embd=64,
     n_determinants=1,
-    n_electron_num=3,
-    n_spin_up=2,
+    n_electron_num=2,
+    n_spin_up=1,
     n_spin_down=1,
-    nuclear_charge=3  # Change depends on the atom
+    nuclear_charge=2  # Change depends on the atom
 )
 
 Psiformer_Torch_Small_Conf = Train_Config(
@@ -98,14 +98,14 @@ Psiformer_Torch_Small_Conf = Train_Config(
 
 
 Psiformer_Torch_Large_Model = Model_Config(
-    n_layer=2,
+    n_layer=4,
     n_head=32,
     n_embd=256,
-    n_determinants=2,
-    n_electron_num=3,
-    n_spin_up=2,
-    n_spin_down=1,
-    nuclear_charge=3  # Change depends on the atom
+    n_determinants=4,
+    n_electron_num=6,
+    n_spin_up=4,
+    n_spin_down=2,
+    nuclear_charge=6  # Change depends on the atom
 )
 
 Psiformer_Torch_Large_Conf = Train_Config(
@@ -113,10 +113,10 @@ Psiformer_Torch_Large_Conf = Train_Config(
     batch_size=2,
     checkpoint_step=50,
     train_steps=175,
-    energy_batch_size=512,
+    energy_batch_size=1024,
 
     # MCMC
-    monte_carlo_length=512,
+    monte_carlo_length=1024,
     burn_in_steps=4,
     step_size=0.8,
     mh_steps_per_sample=128,

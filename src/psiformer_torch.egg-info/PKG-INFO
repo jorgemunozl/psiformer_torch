@@ -4,6 +4,7 @@ Version: 0.1.0
 Summary: Add your description here
 Requires-Python: >=3.11
 Description-Content-Type: text/markdown
+Requires-Dist: huggingface-hub>=1.2.3
 Requires-Dist: matplotlib>=3.10.7
 Requires-Dist: numpy>=2.3.3
 Requires-Dist: pytest>=9.0.2

@@ -202,16 +202,17 @@ def wrapper(type,
         model_config = large_conf[0]
         train_config = large_conf[1]
         run_name = "_LARGE"
-    elif type == '':
+    if type == '':
         print("Training Debug")
         model_config = debug_conf[0]
         train_config = debug_conf[1]
         run_name = ''
-    else:
+    if type == 'small':
         print("Training Small")
         model_config = small_conf[0]
         train_config = small_conf[1]
         run_name = "_SMALL"
+    print(model_config)
 
     # Train Config Update
     train_config.run_name = run_name + run_name
@@ -226,9 +227,9 @@ if __name__ == "__main__":
     print(f"Using {device}")
 
     # Model
-    model_configs = wrapper("small",
-                            run_name="HELIUM_FAST",
-                            checkpoint_name="HELIUM_FAST",
+    model_configs = wrapper("large",
+                            run_name="CArbonl",
+                            checkpoint_name="CArbonL",
                             wand_mode="online",)
     model = PsiFormer(model_configs[0])
 
