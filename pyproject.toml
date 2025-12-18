@@ -5,6 +5,7 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+    "huggingface-hub>=1.2.3",
     "matplotlib>=3.10.7",
     "numpy>=2.3.3",
     "pytest>=9.0.2",
@@ -28,7 +29,7 @@ laptop = [
 # CUDA 12.8 wheels from the official PyTorch index
 [[tool.uv.index]]
 name = "pytorch-cu128"
-url = "https://download.pytorch.org/whl/cu128"
+url = "https://download.pytorch.org/whl/cpu"
 explicit = true
 
 [tool.uv.sources]

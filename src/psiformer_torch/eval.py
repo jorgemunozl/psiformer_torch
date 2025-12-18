@@ -3,11 +3,11 @@ import torch
 import matplotlib.pyplot as plt
 import numpy as np
 
-from psiformer import PsiFormer
-from config import Model_Config, Train_Config
-from psiformer_torch.train2 import train_config
-from mcmc import MH
-from hamiltonian import Hamiltonian
+from psiformer_torch.psiformer import PsiFormer
+from psiformer_torch.config import Model_Config, Train_Config
+from psiformer_torch.train import train_config
+from psiformer_torch.mcmc import MH
+from psiformer_torch.hamiltonian import Hamiltonian
 
 
 def load_checkpoint() -> PsiFormer:

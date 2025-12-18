@@ -2,10 +2,12 @@ from __future__ import annotations
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from huggingface_hub import PyTorchModelHubMixin
+import math
+
 from psiformer_torch.config import Model_Config
 from psiformer_torch.jastrow import Jastrow
 from psiformer_torch.logdet_matmul import logdet_matmul
-import math
 
 
 def get_device():
@@ -188,7 +190,10 @@ class Orbital_Head(nn.Module):
         return log_out.squeeze(-1)
 
 
-class PsiFormer(nn.Module):
+class PsiFormer(nn.Module,
+                PyTorchModelHubMixin,
+                repo_url="",
+                ):
     """
     Generate the hidden dimensions for Orbital Head
     Convention: The first spin are up, the last are down

@@ -1,7 +1,7 @@
 import torch
 from typing import Callable
-from config import Train_Config
-from psiformer import get_device
+from psiformer_torch.config import Train_Config
+from psiformer_torch.psiformer import get_device
 
 
 class MH():

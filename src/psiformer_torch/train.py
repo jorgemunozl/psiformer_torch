@@ -1,11 +1,15 @@
 import torch
 import time
-from psiformer import get_device, PsiFormer
-from config import Train_Config, Model_Config
 import torch.optim as optim
-from mcmc import MH
 import logging
-from hamiltonian import Hamiltonian
+
+from psiformer_torch.psiformer import get_device, PsiFormer
+from psiformer_torch.config import Train_Config
+from psiformer_torch.mcmc import MH
+from psiformer_torch.hamiltonian import Hamiltonian
+from psiformer_torch.config import debug_conf, small_conf, large_conf
+from psiformer_torch.utils.UPLOAD_HF import REPO_ID
+
 
 # torch.autograd.set_detect_anomaly(True)
 torch.set_float32_matmul_precision("high")
@@ -18,7 +22,8 @@ logger.info("Starting")
 
 
 class Trainer():
-    def __init__(self, model: PsiFormer, config: Train_Config):
+    def __init__(self, model: PsiFormer, config: Train_Config,
+                 push: bool):
         self.model = model.to(get_device())
         self.config = config
         self.optimizer = optim.AdamW(
@@ -184,22 +189,51 @@ class Trainer():
         run.log({"total_training_time_sec": total_time})
         run.finish()
 
+        if self.push:
+            self.model.push_to_hub(REPO_ID)
 
-train_config = Train_Config(
-        run_name="MANY_ELECTRONS_STABLE_DET",
-        checkpoint_name="MANY_ELECTRONS_STABLE_DET.pth",
-        wand_mode="online"
-    )
+
+def wrapper(type,
+            run_name='',
+            checkpoint_name='',
+            wand_mode=''):
+    if type == "large":
+        print("Training Large")
+        model_config = large_conf[0]
+        train_config = large_conf[1]
+        run_name = "_LARGE"
+    elif type == '':
+        print("Training Debug")
+        model_config = debug_conf[0]
+        train_config = debug_conf[1]
+        run_name = ''
+    else:
+        print("Training Small")
+        model_config = small_conf[0]
+        train_config = small_conf[1]
+        run_name = "_SMALL"
+
+    # Train Config Update
+    train_config.run_name = run_name + run_name
+    train_config.checkpoint_name = checkpoint_name + run_name
+    train_config.wand_mode = wand_mode
+
+    return model_config, train_config
+
 
 if __name__ == "__main__":
     device = get_device()
     print(f"Using {device}")
 
     # Model
-    model_config = Model_Config()
-    model = PsiFormer(model_config)
+    model_configs = wrapper("small",
+                            run_name="HELIUM_FAST",
+                            checkpoint_name="HELIUM_FAST",
+                            wand_mode="online",)
+    model = PsiFormer(model_configs[0])
 
-    trainer = Trainer(model, train_config)
+    # Train
+    trainer = Trainer(model, model_configs[1], True)
 
     # train the model
     trainer.train()

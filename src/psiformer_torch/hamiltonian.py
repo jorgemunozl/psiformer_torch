@@ -46,7 +46,6 @@ class Hamiltonian():
     def local_energy(self, sample: torch.Tensor) -> torch.Tensor:
         # sample : (B, n_elec, 3)
         V = Potential(sample, self.Z).potential()
-        #print("V: ", V)
         g = self.grad_log_psi(sample)
         lap = self.laplacian_log_psi(sample)
         # kinetic : (B, )

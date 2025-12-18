@@ -31,7 +31,7 @@ class Jastrow(nn.Module):
         diff = position[:, :, None, :] - position[:, None, :, :]
         # Using a soft norm
         # diff: (B, n, n,3) -> (B, n, n)
-        dists = torch.sqrt(diff.pow(2).sum(dim=-1)) + 1e-12
+        dists = torch.sqrt(diff.pow(2).sum(dim=-1) + 1e-12)
 
         i, j = torch.triu_indices(n, n, offset=1, device=position.device)
 
@@ -57,7 +57,7 @@ class Jastrow(nn.Module):
 
         diff = up[:, :, None, :] - down[:, None, :, :]
         # Soft norm, equal than same_spin
-        dists = diff.norm(dim=-1) + 1e-12
+        dists = torch.sqrt(diff.pow(2).sum(dim=-1) + 1e-12)
 
         # dists: (B, n**2)
         pair_dists = dists.reshape(batch_size, -1)

@@ -37,7 +37,6 @@ class Train_Config():
     burn_in_steps: int = 4
     step_size: float = 1.0
     mh_steps_per_sample: int = 32  # MH transitions between stored samples
-    step_size: float = .8
 
     def init_checkpoint(self):
         CHECKPOINT_DIR = "checkpoints/"
@@ -70,3 +69,85 @@ class Train_Config():
             config=full,
             mode=self.wand_mode if self.wand_mode in options else "online",
         )
+
+
+Psiformer_Torch_Small_Model = Model_Config(
+    n_layer=1,
+    n_head=16,
+    n_embd=64,
+    n_determinants=1,
+    n_electron_num=3,
+    n_spin_up=2,
+    n_spin_down=1,
+    nuclear_charge=3  # Change depends on the atom
+)
+
+Psiformer_Torch_Small_Conf = Train_Config(
+    # train
+    batch_size=2,
+    checkpoint_step=33,
+    train_steps=301,
+    energy_batch_size=2048,
+
+    # MCMC
+    monte_carlo_length=128,
+    burn_in_steps=4,
+    step_size=1.0,
+    mh_steps_per_sample=128,
+)
+
+
+Psiformer_Torch_Large_Model = Model_Config(
+    n_layer=2,
+    n_head=32,
+    n_embd=256,
+    n_determinants=2,
+    n_electron_num=3,
+    n_spin_up=2,
+    n_spin_down=1,
+    nuclear_charge=3  # Change depends on the atom
+)
+
+Psiformer_Torch_Large_Conf = Train_Config(
+    # train
+    batch_size=2,
+    checkpoint_step=50,
+    train_steps=175,
+    energy_batch_size=512,
+
+    # MCMC
+    monte_carlo_length=512,
+    burn_in_steps=4,
+    step_size=0.8,
+    mh_steps_per_sample=128,
+)
+
+
+Psiformer_Torch_Debug_Model = Model_Config(
+    n_layer=1,
+    n_head=2,
+    n_embd=4,
+    n_determinants=1,
+    n_electron_num=3,
+    n_spin_up=2,
+    n_spin_down=1,
+    nuclear_charge=3  # Change depends on the atom
+)
+
+Psiformer_Torch_Debug_Conf = Train_Config(
+    # train
+    batch_size=1,
+    checkpoint_step=2,
+    train_steps=10,
+    energy_batch_size=4,
+
+    # MCMC
+    monte_carlo_length=4,
+    burn_in_steps=4,
+    step_size=1.0,
+    mh_steps_per_sample=4,
+)
+
+large_conf = (Psiformer_Torch_Large_Model, Psiformer_Torch_Large_Conf)
+small_conf = (Psiformer_Torch_Small_Model, Psiformer_Torch_Small_Conf)
+debug_conf = (Psiformer_Torch_Debug_Model, Psiformer_Torch_Debug_Conf)
