@@ -9,7 +9,6 @@ from psiformer_torch.config import Train_Config
 from psiformer_torch.mcmc import MH
 from psiformer_torch.hamiltonian import Hamiltonian
 from psiformer_torch.config import debug_conf, small_conf, large_conf
-from psiformer_torch.utils.UPLOAD_HF import REPO_ID
 
 
 # torch.autograd.set_detect_anomaly(True)
@@ -191,9 +190,6 @@ class Trainer():
         run.log({"total_training_time_sec": total_time})
         run.finish()
 
-        if self.push:
-            self.model.push_to_hub(REPO_ID)
-
 
 def wrapper(
     preset: str,
@@ -243,6 +239,7 @@ def wrapper(
         train_config.run_name,
         train_config.checkpoint_name,
     )
+    print(model_config)
     return model_config, train_config
 
 
@@ -255,7 +252,7 @@ if __name__ == "__main__":
     model_configs = wrapper("large",
                             run_name="Carbon",
                             checkpoint_name="Carbon",
-                            wand_mode="online",)
+                            wand_mode="offline",)
     model = PsiFormer(model_configs[0])
 
     # Train

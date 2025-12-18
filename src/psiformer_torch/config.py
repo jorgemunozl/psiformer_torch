@@ -38,6 +38,9 @@ class Train_Config():
     step_size: float = 1.0
     mh_steps_per_sample: int = 32  # MH transitions between stored samples
 
+    # HF
+
+
     def init_checkpoint(self):
         CHECKPOINT_DIR = "checkpoints/"
         os.makedirs(CHECKPOINT_DIR, exist_ok=True)

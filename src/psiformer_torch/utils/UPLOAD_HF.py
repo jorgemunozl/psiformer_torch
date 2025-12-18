@@ -3,7 +3,6 @@ from __future__ import annotations
 import os
 from huggingface_hub import HfApi
 
-REPO_ID = "jorgemunozl/psiformer_torch"
 
 
 def upload_checkpoints(
