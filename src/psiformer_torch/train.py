@@ -2,6 +2,7 @@ import torch
 import time
 import torch.optim as optim
 import logging
+from dataclasses import replace
 
 from psiformer_torch.psiformer import get_device, PsiFormer
 from psiformer_torch.config import Train_Config
@@ -26,6 +27,7 @@ class Trainer():
                  push: bool):
         self.model = model.to(get_device())
         self.config = config
+        self.push = push
         self.optimizer = optim.AdamW(
             self.model.parameters(),
             lr=config.lr,
@@ -193,43 +195,66 @@ class Trainer():
             self.model.push_to_hub(REPO_ID)
 
 
-def wrapper(type,
-            run_name='',
-            checkpoint_name='',
-            wand_mode=''):
-    if type == "large":
-        print("Training Large")
-        model_config = large_conf[0]
-        train_config = large_conf[1]
-        run_name = "_LARGE"
-    if type == '':
-        print("Training Debug")
-        model_config = debug_conf[0]
-        train_config = debug_conf[1]
-        run_name = ''
-    if type == 'small':
-        print("Training Small")
-        model_config = small_conf[0]
-        train_config = small_conf[1]
-        run_name = "_SMALL"
-    print(model_config)
+def wrapper(
+    preset: str,
+    run_name: str = "",
+    checkpoint_name: str = "",
+    wand_mode: str = "",
+) -> tuple:
+    """
+    Select a (model_config, train_config) pair by preset name.
 
-    # Train Config Update
-    train_config.run_name = run_name + run_name
-    train_config.checkpoint_name = checkpoint_name + run_name
-    train_config.wand_mode = wand_mode
+    Important: returns *copies* of the preset configs so per-run overrides
+    don't mutate the module-level singletons in `psiformer_torch.config`.
+    """
+    key = (preset or "debug").lower()
+    if key == "large":
+        base_model_config, base_train_config = large_conf
+        suffix = "_LARGE"
+    elif key == "small":
+        base_model_config, base_train_config = small_conf
+        suffix = "_SMALL"
+    elif key in ("debug", ""):
+        base_model_config, base_train_config = debug_conf
+        suffix = "_DEBUG"
+    else:
+        raise ValueError(
+            f"Unknown preset {preset!r}; expected 'debug', 'small' or 'large'."
+        )
 
+    model_config = replace(base_model_config)
+    train_config = replace(base_train_config)
+
+    base_run_name = run_name or train_config.run_name
+    train_config.run_name = f"{base_run_name}{suffix}"
+
+    base_checkpoint_name = checkpoint_name or train_config.checkpoint_name
+    if base_checkpoint_name:
+        train_config.checkpoint_name = f"{base_checkpoint_name}{suffix}"
+    else:
+        train_config.checkpoint_name = f"{train_config.run_name}"
+
+    if wand_mode:
+        train_config.wand_mode = wand_mode
+
+    logger.info(
+        "Selected preset=%s run_name=%s checkpoint_name=%s",
+        key,
+        train_config.run_name,
+        train_config.checkpoint_name,
+    )
     return model_config, train_config
 
 
 if __name__ == "__main__":
+    # Get device
     device = get_device()
     print(f"Using {device}")
 
     # Model
     model_configs = wrapper("large",
-                            run_name="CArbonl",
-                            checkpoint_name="CArbonL",
+                            run_name="Carbon",
+                            checkpoint_name="Carbon",
                             wand_mode="online",)
     model = PsiFormer(model_configs[0])
 

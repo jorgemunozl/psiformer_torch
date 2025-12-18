@@ -1,26 +1,33 @@
-from huggingface_hub import HfApi
-import os
+from __future__ import annotations
 
+import os
+from huggingface_hub import HfApi
 
 REPO_ID = "jorgemunozl/psiformer_torch"
 
-#REPO_ID = "your-username/my-model-weights"
-REPO_TYPE = "model"
-PRIVATE = False
 
-api = HfApi(token=os.getenv("HF_TOKEN"))  # optional; if None, uses huggingface-cli cached login
-url = api.create_repo(
-    repo_id=REPO_ID,
-    repo_type=REPO_TYPE,
-    private=PRIVATE,
-    exist_ok=True,  # don't fail if it already exists
-)
+def upload_checkpoints(
+    repo_id: str = REPO_ID,
+    folder_path: str = "checkpoints",
+    repo_type: str = "model",
+    private: bool = False,
+) -> str:
+    api = HfApi(token=os.getenv("HF_TOKEN"))
+    url = api.create_repo(
+        repo_id=repo_id,
+        repo_type=repo_type,
+        private=private,
+        exist_ok=True,
+    )
+    api.upload_folder(
+        repo_id=repo_id,
+        folder_path=folder_path,
+        repo_type=repo_type,
+        path_in_repo=folder_path,
+    )
+    return str(url)
 
-api.upload_folder(
-    repo_id=REPO_ID,
-    folder_path="checkpoints",
-    repo_type="model",
-    path_in_repo="checkpoints",
-)
 
-print("Repo ready:", url)
+if __name__ == "__main__":
+    url = upload_checkpoints()
+    print("Repo ready:", url)
