@@ -1,4 +1,4 @@
-from mcmc import MH
+from psiformer_torch.mcmc import MH
 import torch
 import matplotlib.pyplot as plt
 

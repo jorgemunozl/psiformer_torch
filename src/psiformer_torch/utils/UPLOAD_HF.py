@@ -1,12 +1,12 @@
 from __future__ import annotations
-
 import os
-from huggingface_hub import HfApi
+from huggingface_hub import HfApi, snapshot_download
 
+from psiformer_torch.config import Train_Config
 
 
 def upload_checkpoints(
-    repo_id: str = REPO_ID,
+    repo_id: str = Train_Config.repo_id,
     folder_path: str = "checkpoints",
     repo_type: str = "model",
     private: bool = False,
@@ -27,6 +27,18 @@ def upload_checkpoints(
     return str(url)
 
 
+def main(mode=''):
+    if mode == "upload":
+        upload_url = upload_checkpoints()
+        print(f"Checkpoints uploaded to: {upload_url}")
+    else:
+        snapshot_download(
+            repo_id=Train_Config.repo_id,
+            local_dir=Train_Config.checkpoint_dir,
+            local_dir_use_symlinks=False,
+            allow_patterns=["*.pth"],   # only .pth
+        )
+
+
 if __name__ == "__main__":
-    url = upload_checkpoints()
-    print("Repo ready:", url)
+    main()

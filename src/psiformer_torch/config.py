@@ -39,10 +39,11 @@ class Train_Config():
     mh_steps_per_sample: int = 32  # MH transitions between stored samples
 
     # HF
-
+    repo_id: str = "jorgemunozl/psiformer_torch"
+    checkpoint_dir: str = "./checkpoints"
 
     def init_checkpoint(self):
-        CHECKPOINT_DIR = "checkpoints/"
+        CHECKPOINT_DIR = self.checkpoint_dir
         os.makedirs(CHECKPOINT_DIR, exist_ok=True)
         check_path = os.path.join(CHECKPOINT_DIR, self.checkpoint_name)
         return check_path

@@ -23,4 +23,3 @@ def test_wrapper_does_not_mutate_preset_singletons():
 def test_wrapper_rejects_unknown_preset():
     with pytest.raises(ValueError):
         wrapper("not_a_real_preset")
-

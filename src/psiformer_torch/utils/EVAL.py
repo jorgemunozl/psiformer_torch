@@ -1,3 +1,7 @@
+"""
+Generate a plot
+"""
+
 import logging
 import torch
 import matplotlib.pyplot as plt

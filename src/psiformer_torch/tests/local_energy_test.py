@@ -1,5 +1,5 @@
 import torch
-from hamiltonian import Hamiltonian
+from psiformer_torch.hamiltonian import Hamiltonian
 
 
 def log_psi_100(x: torch.Tensor) -> torch.Tensor:
