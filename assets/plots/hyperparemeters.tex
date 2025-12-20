@@ -1,0 +1,23 @@
+\documentclass[border=2pt]{standalone}
+\usepackage{booktabs}
+\usepackage{siunitx}
+\sisetup{detect-weight=true, detect-family=true}
+
+\begin{document}
+
+\begin{tabular}{lcc}
+\toprule
+\textbf{Hyperparameter} & \textbf{Small} & \textbf{Large} \\
+\midrule
+Layers $L$ & 2 & 4 \\
+Heads $H$ & 4 & 8 \\
+Model Dim $d$ & 256 & 512 \\
+MLP Dim $d_{\mathrm{ff}}$ & 1024 & 2048 \\
+Determinants $K$ & 1 & 2 \\
+MCMC walkers $N_w$ & 1024 & 2048 \\
+MCMC steps / iter & 10 & 10 \\
+Learning rate & \num{2e-4} & \num{1e-4} \\
+Total parameters &  &  \\
+\bottomrule
+\end{tabular}
+\end{document}

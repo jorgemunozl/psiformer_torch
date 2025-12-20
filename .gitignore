@@ -20,6 +20,5 @@ __pycache__/
 *.ilg
 *.ind
 *.pth
-*.pdf
 build/
 *.csv

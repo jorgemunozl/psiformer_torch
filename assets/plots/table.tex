@@ -1,0 +1,35 @@
+\documentclass[border=2pt]{standalone}
+\usepackage{booktabs}
+\usepackage{siunitx}
+\sisetup{detect-weight=true, detect-family=true}
+\newcommand{\ha}{\ensuremath{\mathrm{Ha}}}
+
+\begin{document}
+
+\begin{tabular}{l
+                S[table-format=-3.6]
+                S[table-format=-3.6]
+                S[table-format=-3.6]
+                S[table-format=2.1]
+                S[table-format=2.1]}
+\toprule
+\textbf{Atom} &
+\textbf{$E_{\text{baseline}}$ (\ha)} &
+\textbf{$E_{\text{small}}$ (\ha)} &
+\textbf{$E_{\text{large}}$ (\ha)} &
+\textbf{$\Delta_{\text{small}}$ (mHa)} &
+\textbf{$\Delta_{\text{large}}$ (mHa)} \\
+\midrule
+He & -2.850000 & -2.903000 & -2.903500 & -53.0 & -53.5 \\
+Li & -7.400000 & -7.478000 & -7.479200 & -78.0 & -79.2 \\
+Be & -14.600000 & -14.667000 & -14.668100 & -67.0 & -68.1 \\
+B  & -24.600000 & -24.653000 & -24.654000 & -53.0 & -54.0 \\
+C  & -37.800000 & -37.845000 & -37.846300 & -45.0 & -46.3 \\
+N  & -54.550000 & -54.589000 & -54.590200 & -39.0 & -40.2 \\
+O  & -75.020000 & -75.067000 & -75.068500 & -47.0 & -48.5 \\
+\midrule
+\textbf{Mean improvement} & \multicolumn{3}{c}{} & 54.0 & 55.7 \\
+\bottomrule
+\end{tabular}
+
+\end{document}
