@@ -5,7 +5,8 @@ from __future__ import annotations
 
 from pathlib import Path
 import csv
-from typing import Iterable, List, Tuple
+from typing import Iterable, List, Tuple, Optional
+import math
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -132,34 +133,55 @@ def render_grid(
     csv_root: Path,
     plot_root: Path,
     xscale: str,
+    xscale_base: Optional[float],
     yscale: str,
+    yscale_base: Optional[float],
     ylim: tuple[float, float] | None,
     output_name: str,
     title: str,
 ) -> None:
     elements = [
+        {"fast": "3_fast.csv", "large": "3_large.csv", "title": "Li", "ref": -7.478},
         {"fast": "4_fast.csv", "large": "4_large.csv", "title": "Be", "ref": -14.667},
         {"fast": "5_fast.csv", "large": "5_large.csv", "title": "B", "ref": -24.653},
         {"fast": "6_fast.csv", "large": "6_large.csv", "title": "C", "ref": -37.845},
         {"fast": "7_fast.csv", "large": "7_large.csv", "title": "N", "ref": -54.589},
+        {"fast": "8_fast.csv", "large": "8_large.csv", "title": "O", "ref": -75.067},
     ]
 
-    fig, axes = plt.subplots(2, 2, figsize=(10, 9), sharex=False, sharey=True)
-    for idx, (ax, element) in enumerate(zip(axes.flat, elements)):
+    ncols = 3 if len(elements) > 4 else 2
+    nrows = math.ceil(len(elements) / ncols)
+    fig_width = 3.3 * ncols + 1.0
+    fig_height = 3.5 * nrows + 0.8
+    fig, axes = plt.subplots(nrows, ncols, figsize=(fig_width, fig_height), sharex=False, sharey=True)
+    axes_array = np.atleast_1d(axes).flatten()
+
+    for idx, (ax, element) in enumerate(zip(axes_array, elements)):
         plot_element(ax, csv_root, element["fast"], element["large"], element["title"], element["ref"])
-        ax.set_yscale(yscale)
+        if yscale == "log":
+            ax.set_yscale(yscale, base=yscale_base or 10)
+        else:
+            ax.set_yscale(yscale)
         if ylim is not None:
             ax.set_ylim(*ylim)
         elif yscale == "linear":
             ax.set_ylim(bottom=0.0)
-        ax.set_xscale(xscale)
+        if xscale == "log":
+            ax.set_xscale(xscale, base=xscale_base or 10)
+        else:
+            ax.set_xscale(xscale)
         ax.grid(alpha=0.3, linestyle="--", linewidth=0.5, which="both")
-        if idx // 2 == 1:
+        row = idx // ncols
+        if row == nrows - 1:
             ax.set_xlabel("Iterations")
         else:
             ax.tick_params(labelbottom=False)
-        if idx % 2 == 0:
+        if idx % ncols == 0:
             ax.set_ylabel("Correlation energy error (%)")
+
+    # Hide any unused subplot slots
+    for ax in axes_array[len(elements) :]:
+        ax.axis("off")
 
     fig.tight_layout(rect=[0, 0.04, 1, 0.94])
     fig.suptitle(title, fontsize=14, fontweight="bold")
@@ -191,7 +213,9 @@ def main() -> None:
         csv_root,
         plot_root,
         xscale="linear",
+        xscale_base=None,
         yscale="log",
+        yscale_base=10,
         ylim=(1.0, 1e2),
         output_name="convergence_fast_vs_large.pdf",
         title="Fast vs. Large correlation energy error",
@@ -202,7 +226,9 @@ def main() -> None:
         csv_root,
         plot_root,
         xscale="log",
+        xscale_base=10,
         yscale="log",
+        yscale_base=10,
         ylim=(1.0, 1e2),
         output_name="convergence_fast_vs_large_log_iter.pdf",
         title="Fast vs. Large correlation energy error (log iterations)",
@@ -213,11 +239,44 @@ def main() -> None:
         csv_root,
         plot_root,
         xscale="linear",
+        xscale_base=None,
         yscale="linear",
+        yscale_base=None,
         ylim=(0.0, 60.0),
         output_name="convergence_fast_vs_large_linear_axes.pdf",
         title="Fast vs. Large correlation energy error (linear axes)",
     )
+
+    # Log iterations with alternative bases (linear y capped at 60%)
+    base_candidates = [1.5, 2.0, 3.0, 5.0, 10.0]
+    for base in base_candidates:
+        base_label = str(base).replace(".", "p")
+        render_grid(
+            csv_root,
+            plot_root,
+            xscale="log",
+            xscale_base=base,
+            yscale="linear",
+            yscale_base=None,
+            ylim=(0.0, 60.0),
+            output_name=f"convergence_fast_vs_large_log_iter_base{base_label}.pdf",
+            title=f"Fast vs. Large correlation energy error (log iterations, base {base})",
+        )
+
+    # Log-y with alternative bases (linear x, y capped at 60%)
+    for base in base_candidates:
+        base_label = str(base).replace(".", "p")
+        render_grid(
+            csv_root,
+            plot_root,
+            xscale="linear",
+            xscale_base=None,
+            yscale="log",
+            yscale_base=base,
+            ylim=(1.0, 60.0),
+            output_name=f"convergence_fast_vs_large_logy_base{base_label}.pdf",
+            title=f"Fast vs. Large correlation energy error (log y, base {base})",
+        )
 
 
 if __name__ == "__main__":
