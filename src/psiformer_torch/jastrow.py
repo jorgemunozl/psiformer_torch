@@ -8,8 +8,11 @@ class Jastrow(nn.Module):
     """
     def __init__(self, spin_up: int, spin_down: int):
         super().__init__()
+        # Learnable Parameters
         self.alpha_anti = nn.Parameter(torch.rand(1))
         self.alpha_par = nn.Parameter(torch.rand(1))
+
+        # Index
         self.spin_up = spin_up
         self.spin_down = spin_down
 
@@ -17,18 +20,24 @@ class Jastrow(nn.Module):
     def _same_spin_sum(position: torch.Tensor,
                        coeff: float, alpha: torch.Tensor) -> torch.Tensor:
         """
-        position: (B, n, 3) n: up or down
+        position: (B, n, 3), n: up or down
         """
         batch_size, n, _ = position.shape
         if n < 2:
             return position.new_zeros(batch_size)
 
         # Pairwise distance with broadcasting
+        # diff : (B, n, 1, 3) - (B, 1, n ,3)
         diff = position[:, :, None, :] - position[:, None, :, :]
-        dists = diff.norm(dim=-1) + 1e-12
+        # Using a soft norm
+        # diff: (B, n, n,3) -> (B, n, n)
+        dists = torch.sqrt(diff.pow(2).sum(dim=-1) + 1e-12)
 
         i, j = torch.triu_indices(n, n, offset=1, device=position.device)
+
         pair_dists = dists[:, i, j]  # (B, num_pairs)
+
+        # Pointwise
         terms = coeff * alpha.pow(2) / (alpha+pair_dists)
         return terms.sum(dim=1)
 
@@ -47,8 +56,10 @@ class Jastrow(nn.Module):
             return up.new_zeros(batch_size)
 
         diff = up[:, :, None, :] - down[:, None, :, :]
-        dists = diff.norm(dim=-1) + 1e-12
+        # Soft norm, equal than same_spin
+        dists = torch.sqrt(diff.pow(2).sum(dim=-1) + 1e-12)
 
+        # dists: (B, n**2)
         pair_dists = dists.reshape(batch_size, -1)
         terms = coeff * alpha.pow(2) / (alpha + pair_dists)
         return terms.sum(dim=1)

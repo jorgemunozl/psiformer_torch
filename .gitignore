@@ -20,4 +20,6 @@ __pycache__/
 *.ilg
 *.ind
 *.pth
+build/
+*.csv
 *.pdf

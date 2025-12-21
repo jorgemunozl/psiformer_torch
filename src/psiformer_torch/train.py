@@ -1,13 +1,17 @@
 import torch
 import time
-from psiformer import get_device, PsiFormer
-from config import Train_Config, Model_Config
 import torch.optim as optim
-from mcmc import MH
 import logging
-from hamiltonian import Hamiltonian
+from dataclasses import replace
+
+from psiformer_torch.psiformer import get_device, PsiFormer
+from psiformer_torch.config import Train_Config
+from psiformer_torch.mcmc import MH
+from psiformer_torch.hamiltonian import Hamiltonian
+from psiformer_torch.config import debug_conf, small_conf, large_conf
 
 
+# torch.autograd.set_detect_anomaly(True)
 torch.set_float32_matmul_precision("high")
 
 logging.basicConfig(level=logging.INFO,
@@ -18,10 +22,21 @@ logger.info("Starting")
 
 
 class Trainer():
-    def __init__(self, model: PsiFormer, config: Train_Config):
+    def __init__(self, model: PsiFormer, config: Train_Config,
+                 push: bool):
         self.model = model.to(get_device())
         self.config = config
-        self.optimizer = optim.Adam(self.model.parameters(), lr=config.lr)
+        self.push = push
+        self.optimizer = optim.AdamW(
+            self.model.parameters(),
+            lr=config.lr,
+            betas=(0.9, 0.95),
+            weight_decay=1e-4,
+            amsgrad=True,
+        )
+        self.scheduler = optim.lr_scheduler.CosineAnnealingLR(
+            self.optimizer, T_max=config.train_steps, eta_min=config.lr * 0.1
+        )
         self.device = get_device()
         self.mh = MH(
             self.log_psi,
@@ -128,8 +143,12 @@ class Trainer():
             # Optimizer Step
             self.optimizer.zero_grad()
             loss.backward()
+            grad_norm = torch.nn.utils.clip_grad_norm_(self.model.parameters(),
+                                                       max_norm=10.0)
             self.optimizer.step()
-            self.save_checkpoint(step)
+            self.scheduler.step()
+
+            # self.save_checkpoint(step)
 
             # Print info
             logger.info(f"Step {step}: E_mean = {E_mean.item():.6f}")
@@ -144,10 +163,12 @@ class Trainer():
                 "Energy": E_mean,
                 "loss": loss,
                 "step_time_sec": time.perf_counter() - step_start,
+                "grad_norm": grad_norm.item() if grad_norm is not None else .0,
+                "lr": self.optimizer.param_groups[0]["lr"],
                 "env_up_pi_norm": env_up.pi.detach().norm().item(),
-                "env_up_sigma_norm": env_up.sigma.detach().norm().item(),
+                "env_up_sigma_norm": env_up.raw_sigma.detach().norm().item(),
                 "env_down_pi_norm": env_down.pi.detach().norm().item(),
-                "env_down_sigma_n": env_down.sigma.detach().norm().item(),
+                "env_down_sigma_n": env_down.raw_sigma.detach().norm().item(),
             }
             if torch.cuda.is_available():
                 torch.cuda.synchronize(self.device)
@@ -157,9 +178,6 @@ class Trainer():
                             self.device
                         ) / 2**20,
                         "gpu/mem_reserved_mb": torch.cuda.memory_reserved(
-                            self.device
-                        ) / 2**20,
-                        "gpu/max_mem_allocated_mb": torch.cuda.max_memory_allocated(
                             self.device
                         ) / 2**20,
                     }
@@ -173,21 +191,72 @@ class Trainer():
         run.finish()
 
 
-train_config = Train_Config(
-        run_name="CUDA_BATCHED_HELIUM",
-        checkpoint_name="CUDA_BATCHED_HELIUM.pth",
-        wand_mode="online",
+def wrapper(
+    preset: str,
+    run_name: str = "",
+    checkpoint_name: str = "",
+    wand_mode: str = "",
+) -> tuple:
+    """
+    Select a (model_config, train_config) pair by preset name.
+
+    Important: returns *copies* of the preset configs so per-run overrides
+    don't mutate the module-level singletons in `psiformer_torch.config`.
+    """
+    key = (preset or "debug").lower()
+    if key == "large":
+        base_model_config, base_train_config = large_conf
+        suffix = "_LARGE"
+    elif key == "small":
+        base_model_config, base_train_config = small_conf
+        suffix = "_SMALL"
+    elif key in ("debug", ""):
+        base_model_config, base_train_config = debug_conf
+        suffix = "_DEBUG"
+    else:
+        raise ValueError(
+            f"Unknown preset {preset!r}; expected 'debug', 'small' or 'large'."
+        )
+
+    model_config = replace(base_model_config)
+    train_config = replace(base_train_config)
+
+    base_run_name = run_name or train_config.run_name
+    train_config.run_name = f"{base_run_name}{suffix}"
+
+    base_checkpoint_name = checkpoint_name or train_config.checkpoint_name
+    if base_checkpoint_name:
+        train_config.checkpoint_name = f"{base_checkpoint_name}{suffix}"
+    else:
+        train_config.checkpoint_name = f"{train_config.run_name}"
+
+    if wand_mode:
+        train_config.wand_mode = wand_mode
+
+    logger.info(
+        "Selected preset=%s run_name=%s checkpoint_name=%s",
+        key,
+        train_config.run_name,
+        train_config.checkpoint_name,
     )
+    print(model_config)
+    return model_config, train_config
+
 
 if __name__ == "__main__":
+    # Get device
     device = get_device()
     print(f"Using {device}")
 
     # Model
-    model_config = Model_Config()
-    model = PsiFormer(model_config)
+    model_configs = wrapper("large",
+                            run_name="Carbon",
+                            checkpoint_name="Carbon",
+                            wand_mode="offline",)
+    model = PsiFormer(model_configs[0])
 
-    trainer = Trainer(model, train_config)
+    # Train
+    trainer = Trainer(model, model_configs[1], True)
 
     # train the model
     trainer.train()

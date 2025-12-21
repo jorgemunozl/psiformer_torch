@@ -5,8 +5,7 @@ from typing import Callable
 
 class Potential():
     """
-    For the Helium atom, the only nucleous is fixed at (0,0,0).
-    Broadcast.
+    Single-nucleus system at the origin; supports arbitrary electron counts.
     """
     def __init__(self, coords: torch.Tensor, Z: int = 2):
         # coords: (B, n_elec, 3)
@@ -15,20 +14,22 @@ class Potential():
 
     def potential(self) -> torch.Tensor:
         eps = 1e-5
-        r_i = torch.linalg.norm(self.coords, dim=-1)  # (B, n_elec)
+        r_sq = self.coords.pow(2).sum(dim=-1)
+        r_i = torch.sqrt(r_sq + eps)  # (B, n_elec)
         nuc_term = -self.Z*(1/(r_i+eps)).sum(dim=-1)
 
-        # Electron-electron repulsion: sum over pairwise distances per sample
+        # Electron-electron repulsion over all unique pairs
         n_elec = self.coords.size(1)
         if n_elec < 2:
-            return nuc_term
-
-        diff = self.coords[:, :, None, :] - self.coords[:, None, :, :]
-        pairwise_dists = torch.linalg.norm(diff, dim=-1) + eps  # (B, n_elec, n_elec)
-        i, j = torch.triu_indices(n_elec, n_elec, offset=1,
-                                  device=self.coords.device)
-        r_ij = pairwise_dists[:, i, j]  # (B, n_pairs)
-        e_e_term = (1 / r_ij).sum(dim=-1)
+            e_e_term = torch.zeros(self.coords.size(0),
+                                   device=self.coords.device)
+        else:
+            i, j = torch.triu_indices(
+                n_elec, n_elec, offset=1, device=self.coords.device
+            )
+            pair_diff = self.coords[:, i, :] - self.coords[:, j, :]
+            r_ij = torch.sqrt(pair_diff.pow(2).sum(dim=-1) + eps)
+            e_e_term = (1/(r_ij + eps)).sum(dim=-1)
 
         # (B, )
         return nuc_term + e_e_term
@@ -63,6 +64,7 @@ class Hamiltonian():
             y, x_req, grad_outputs=torch.ones_like(y),
             create_graph=True
         )
+        # print("grad_log_psi", g)
         return g
 
     def laplacian_log_psi(self, x: torch.Tensor) -> torch.Tensor:
@@ -76,15 +78,17 @@ class Hamiltonian():
             y, x_req, grad_outputs=torch.ones_like(y),
             create_graph=True, retain_graph=True
         )
-
         # Compute Hessian diagonals more efficiently by summing per-dimension
         # gradients and differentiating once per dimension.
         g_flat = g.reshape(g.shape[0], -1)
+        # print("first derivative for the laplacian: ", g)
         lap_terms = []
         for j in range(g_flat.shape[1]):
             second = grad(
                 g_flat[:, j].sum(), x_req, retain_graph=True
             )[0]
+            # print("second for the laplacian", second)
             lap_terms.append(second.reshape(g.shape[0], -1)[:, j])
         lap = torch.stack(lap_terms, dim=1).sum(dim=1)
+        # print("laplacian", lap)
         return lap

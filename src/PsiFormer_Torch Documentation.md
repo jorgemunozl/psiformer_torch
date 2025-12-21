@@ -3,7 +3,7 @@ tags:
   - idea
 author: Jorge
 date: 2025-09-16 08:53
-modified: 2025-12-09 09:25
+modified: 2025-12-11 09:04
 ---
 Google Deepmind's implementation with [[TensorFlow]] is a good guided. This work relies on [[PyTorch]]. You are going to learn a ton doing this or at least you are going to present it everywhere you can. So a strong basis is completely necessary, use [[Hugging Face Transformers]] is over-killed.
 
@@ -334,6 +334,71 @@ Complicated,but it just optimization
 ## Eval
 
 So it should to converge with more montecarlo steps. To make the plot we are going to make something 
+
+## Numerical Matters
+
+First we are using the **LogSumExp** trick to avoid underflow overflow, when computing the determinants. In the `class Orbital_Head` inside the method.
+
+This is the more complicated part:
+[[Psiformer determinant]]
+
+```python
+   def slogdet_sum(self, mats: torch.Tensor) -> torch.Tensor:
+        """
+        mats: (B, n_det, n_spin, n_spin)
+        returns stable sum of determinants
+        """
+        det_logs = []
+        for k in range(self.n_det):
+            sign, logs_abs = torch.linalg.slogdet(mats[:, k, :, :])
+            det_logs.append(logs_abs)
+        det_logs = torch.stack(det_logs, dim=-1)
+        return torch.logsumexp(det_logs, dim=-1)
+```
+
+But naively do this brings some problems!. Because when training explodes!
+
+```python
+     logdet_up, logdet_down = self.orbital_head(
+            h, self.spin_up_idx, self.spin_down_idx, r_ae_up, r_ae_down
+        )
+
+        if not torch.isfinite(logdet_down):
+            print("logdet_down not finite")
+        if not torch.isfinite(logdet_up):
+            print("logdet_up not finite")
+```
+
+So how we are going to fix this? First recall that we are working in the log space! Determinants have sign. How they are computed? No idea.
+
+And we are going to use the follow fact:
+$$
+\det(A)=\text{sign}A\exp(\log|\det A|)
+$$
+
+If we ignore the sign you are lossing antisymetry , Why?
+
+Then you simply multiplicate by the signs. 
+
+
+But that is just a issue compared to the real problem. For the `Nans`. The question is that when we are going to take the second derivative to the determinants you are going to obtain some problems. Because singular matrices. And that is something that they said on the paper but I completely forget.
+
+So we have to implement the backward sensivity, to try to dissapear those error. But is complicated, because you have to ask, how this fit in our code. I don't have slightly idea.
+
+I mean you don't have to go to the low level, just create a function an use it, don't use the ones that **Pytorch** give you.
+
+
+## Optimization in the training
+
+In the paper **A self attention mechanism** they use another form of the **Local Energy**. Using the clip function, a mean and some stuff like that. 
+
+Is about stabilize the training. And yeah sometimes is kind of tricky. How they do it? Google Deep Mind.
+
+
+## Branches
+
+I want to make a branch when the Helium was working and now.
+
 
 
 ---

@@ -1,13 +1,17 @@
+"""
+Generate a plot
+"""
+
 import logging
 import torch
 import matplotlib.pyplot as plt
 import numpy as np
 
-from psiformer import PsiFormer
-from config import Model_Config, Train_Config
-from psiformer_torch.train2 import train_config
-from mcmc import MH
-from hamiltonian import Hamiltonian
+from psiformer_torch.psiformer import PsiFormer
+from psiformer_torch.config import Model_Config, Train_Config
+from psiformer_torch.train import train_config
+from psiformer_torch.mcmc import MH
+from psiformer_torch.hamiltonian import Hamiltonian
 
 
 def load_checkpoint() -> PsiFormer:
@@ -30,8 +34,14 @@ def load_checkpoint() -> PsiFormer:
     return model
 
 
-def compute_energy(monte_carlo, burn_in, step_size) -> float:
-    model = load_checkpoint()
+def compute_energy(flag: bool, model=PsiFormer, monte_carlo=100,
+                   burn_in=10, step_size=1) -> float:
+    """
+    from a checkpoint or init
+    True for use checkpoint
+    """
+    if flag:
+        model = load_checkpoint()
     eval_config = Train_Config(
        monte_carlo_length=monte_carlo,
        burn_in_steps=burn_in,

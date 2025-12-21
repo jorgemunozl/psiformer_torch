@@ -1,0 +1,27 @@
+README.md
+pyproject.toml
+src/psiformer_torch/__init__.py
+src/psiformer_torch/config.py
+src/psiformer_torch/eval.py
+src/psiformer_torch/hamiltonian.py
+src/psiformer_torch/jastrow.py
+src/psiformer_torch/logdet_matmul.py
+src/psiformer_torch/mcmc.py
+src/psiformer_torch/psiformer.py
+src/psiformer_torch/train.py
+src/psiformer_torch.egg-info/PKG-INFO
+src/psiformer_torch.egg-info/SOURCES.txt
+src/psiformer_torch.egg-info/dependency_links.txt
+src/psiformer_torch.egg-info/requires.txt
+src/psiformer_torch.egg-info/top_level.txt
+src/psiformer_torch/personalized_op/backwards.py
+src/psiformer_torch/personalized_op/backwards_strong.py
+src/psiformer_torch/tests/laplacian_test.py
+src/psiformer_torch/tests/local_energy_test.py
+src/psiformer_torch/tests/logdet_matmul_stability_test.py
+src/psiformer_torch/tests/logdet_test.py
+src/psiformer_torch/tests/metropolis_hasting_test.py
+src/psiformer_torch/tests/second_derivative_test copy.py
+src/psiformer_torch/utils/CONVERT_SF.py
+src/psiformer_torch/utils/METRICS.py
+src/psiformer_torch/utils/UPLOAD_HF.py

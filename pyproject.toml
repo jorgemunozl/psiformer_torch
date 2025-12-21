@@ -5,8 +5,10 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+    "huggingface-hub>=1.2.3",
     "matplotlib>=3.10.7",
     "numpy>=2.3.3",
+    "pytest>=9.0.2",
     "torchviz>=0.0.3",
     "wandb>=0.23.0",
 ]
@@ -23,17 +25,11 @@ laptop = [
     "torch>=2.9.1",
 ]
 
-# You can actually omit this; uv already uses PyPI by default,
-# but having it explicit is harmless.
-[[tool.uv.index]]
-name = "pypi"
-url = "https://pypi.org/simple"
-default = true
 
 # CUDA 12.8 wheels from the official PyTorch index
 [[tool.uv.index]]
 name = "pytorch-cu128"
-url = "https://download.pytorch.org/whl/cpu"
+url = "https://download.pytorch.org/whl/cu128"
 explicit = true
 
 [tool.uv.sources]
