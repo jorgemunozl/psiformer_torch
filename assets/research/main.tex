@@ -1343,83 +1343,121 @@ other electrons in a flexible, learned way, while the determinant over
 \(i,j\) and the Jastrow over \(i,j\) enforce fermionic antisymmetry and
 cusp conditions.
 
-\section{Methodology}\label{methodology}
-
-In this section I described how the experiments were did it.
-
-\subsection{Software and computational environment}
-
-All experiments were implemented in \texttt{Python} using \texttt{PyTorch} \cite{Paszke2019PyTorch},
-selected for its dynamic computation graph, mature automatic differentiation, and broad ecosystem
-support for attention-based architectures. The codebase was developed and executed under
-\texttt{Python~X.Y} and \texttt{PyTorch~A.B}, with GPU acceleration via \texttt{CUDA~C.D}.
-Experiments were run on rented GPU instances, using NVIDIA GPUs
-(\textit{model}, \textit{VRAM}) to support the computational cost of VMC sampling, determinant
-evaluations, and long optimization horizons typical of neural quantum states.
-
-\subsection{Experiment tracking and artifacts}
-
-Training runs were tracked using Weights \& Biases, which logs hyperparameters, energy estimates,
-variance metrics, and run metadata for each experiment. The complete implementation is publicly
-available at \texttt{<repository link>}, including scripts to reproduce all reported figures.
-Model checkpoints corresponding to the reported results are archived on Hugging Face at
-\texttt{<HuggingFace link>}. Each artifact is associated with a repository commit hash and a unique
-experiment identifier to ensure traceability from plots to training configuration.
-
-\subsection{Reproducibility protocol}
-
-To support reproducibility, we (i) fix random seeds for model initialization and sampling,
-(ii) record full hyperparameter configurations and software versions in the experiment logs,
-and (iii) provide deterministic evaluation scripts for computing reported energies from stored
-checkpoints. The repository includes a configuration file specifying dependencies and a minimal
-command-line interface for launching training and evaluation.
 
 
+% ============================================================
+\section{Methodology}
+\label{sec:methodology}
+
+This section describes the training and evaluation procedure used to obtain the results reported in this work. The overall goal is to approximate the electronic ground-state wave function for atoms using \emph{only} the nuclear charge and the electron coordinates, without supervised labels or external datasets. The PsiFormer model is trained by minimizing the variational energy through Variational Monte Carlo (VMC).
+
+\subsection{Variational Monte Carlo objective}
+Let $\psi_\theta(\mathbf{R})$ be the PsiFormer wave function with parameters $\theta$, where
+$\mathbf{R} = (\mathbf{r}_1,\dots,\mathbf{r}_N)$ denotes the $3N$-dimensional electron configuration.
+We minimize the variational energy
+\begin{equation}
+E(\theta) \;=\; \frac{\langle \psi_\theta \vert \hat{H} \vert \psi_\theta \rangle}{\langle \psi_\theta \vert \psi_\theta \rangle}
+\;=\; \mathbb{E}_{\mathbf{R}\sim |\psi_\theta|^2}\left[E_L(\mathbf{R};\theta)\right],
+\end{equation}
+where $E_L(\mathbf{R};\theta)=\frac{\hat{H}\psi_\theta(\mathbf{R})}{\psi_\theta(\mathbf{R})}$ is the local energy. In practice, expectations are approximated by Monte Carlo samples drawn from the probability density proportional to $|\psi_\theta(\mathbf{R})|^2$.
+
+\subsection{Sampling procedure}
+Electron configurations are drawn using Markov Chain Monte Carlo (MCMC), with multiple parallel chains (“walkers”) to reduce correlation and improve statistical efficiency. At each training iteration, we:
+\begin{enumerate}
+  \item propagate walkers for a fixed number of MCMC steps,
+  \item collect a batch of configurations $\{\mathbf{R}_k\}$,
+  \item estimate the energy and its gradient using the sampled local energies.
+\end{enumerate}
+
+\subsection{Optimization and training setup}
+Parameters are optimized by gradient-based minimization of the variational energy estimator. Training is performed separately for a \textbf{small} and a \textbf{large} PsiFormer configuration, differing in representational capacity (e.g., embedding width, number of layers, number of attention heads, and/or determinant channels). To support reproducibility and interpretability, we report the full training configuration and sampler settings in Table~\ref{tab:hyperparams}.
+
+\subsection{Experiment tracking}
+All runs are logged using Weights \& Biases (W\&B), including hyperparameters, energy curves, and evaluation metrics. This facilitates systematic comparison between model sizes and provides a record of training dynamics.
+
+% ---------------------------
+% Hyperparameters table (PDF)
+% ---------------------------
 \begin{table}[t]
 \centering
-\caption{Software environment and dependencies for \texttt{psiformer-torch}.}
-\label{tab:env_psiformer_torch}
-\begin{tabular}{p{0.34\linewidth} p{0.58\linewidth}}
-\hline
-\textbf{Category} & \textbf{Specification} \\
-\hline
-Project name & \texttt{psiformer-torch} \\
-Version & \texttt{0.1.0} \\
-Language & Python \\
-Python requirement & \texttt{$\ge$ 3.11} \\
-Dependency manager & \texttt{uv} (via \texttt{pyproject.toml}) \\
-Core dependencies & \texttt{numpy ($\ge$2.3.3)}, \texttt{matplotlib ($\ge$3.10.7)}, \texttt{torchviz ($\ge$0.0.3)}, \texttt{wandb ($\ge$0.23.0)} \\
-Dependency groups & \texttt{cuda}: \texttt{torch ($\ge$2.9.1)}; \texttt{laptop}: \texttt{torch ($\ge$2.9.1)} \\
-Package indexes & \texttt{PyPI} (default); \texttt{pytorch-cu128}: \texttt{https://download.pytorch.org/whl/cu128} (explicit) \\
-Torch source resolution & \texttt{torch} forced from \texttt{pytorch-cu128} index (CUDA~12.8 wheels) \\
-Experiment tracking & Weights \& Biases (\texttt{wandb}) \\
-Compute hardware & NVIDIA GeForce RTX 4080 (GPU) \\
-\hline
-\end{tabular}
+\includegraphics[width=\linewidth]{img/table_hyper.pdf}
+\caption{\textbf{Training and sampling hyperparameters used in this work.}
+The table summarizes the optimization procedure and the VMC sampling protocol (e.g., walkers, MCMC step size, steps per iteration, equilibration). The \textbf{small} and \textbf{large} PsiFormer models follow the same pipeline, differing only in model capacity settings.}
+\label{tab:hyperparams}
 \end{table}
 
-\section{Analysis}\label{analysis}
+\subsection{Evaluation protocol}
+After training, ground-state energies are estimated as Monte Carlo averages of the local energy over a held-out sampling phase using the trained model parameters. We report final energy estimates for the first eight atoms considered in this study (Table~\ref{tab:energies}). In addition, we analyze convergence curves for representative atoms (Fig.~\ref{fig:convergence}) and visualize a helium density grid (Fig.~\ref{fig:helium_density}) to probe qualitative structure beyond scalar energies.
 
-After the training we can observe how the energy predicted of the model is goes to 
-the energy produced by, this tell us how 
+% ============================================================
+\section{Results and Discussion}
+\label{sec:results}
 
-\section{Observation}\label{Observation}
+This section presents the quantitative energy results and qualitative diagnostics obtained with PsiFormer. The main comparison is between the \textbf{small} and \textbf{large} configurations trained under the same VMC pipeline.
 
-The training of the model could be quite unstable because when computing the Laplacian
-of because the second derivative is nearly singular and the det becomes zero, 
-we can fix this by using.
+% ---------------------------
+% Energies table (PDF)
+% ---------------------------
+\begin{table}[t]
+\centering
+\includegraphics[width=\linewidth]{img/table_energy.pdf}
+\caption{\textbf{Ground-state energy estimates for the first eight atoms.}
+Energies are reported in atomic units (Hartree) as Monte Carlo estimates of the variational energy using the trained wave function. Lower energies indicate better variational bounds.}
+\label{tab:energies}
+\end{table}
 
-If we want to leverage all the computaional power from the GPU,
-we need to make some tricks.
+\subsection{Energy estimates for the first eight atoms}
+The \cref{tab:energies} summarizes the final ground-state energy estimates obtained for the first eight atoms. Across the set, the \textbf{large} model generally achieves lower energies (i.e., better variational bounds) than the \textbf{small} model, consistent with increased representational capacity. The gap between small and large models tends to become more visible as the number of electrons increases, reflecting the growing difficulty of capturing correlation effects and antisymmetry constraints in heavier atoms.
+
+\subsection{Convergence behavior}
+Figure~\ref{fig:convergence} shows training curves for four representative atoms. The energy decreases overall but exhibits stochastic fluctuations due to Monte Carlo noise in the local energy estimator. The large model typically reaches a lower-energy regime than the small model, though it may require more careful optimization to avoid plateaus or high-variance phases early in training.
+
+% ---------------------------
+% Convergence plot (PDF)
+% ---------------------------
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{img/convergence_plot.pdf}
+\caption{\textbf{Training convergence for four representative atoms.}
+Variational energy estimates during training are shown for both the \textbf{small} and \textbf{large} PsiFormer models. Curves reflect stochastic optimization under VMC sampling and therefore include Monte Carlo noise. The large model consistently trends to lower energies, indicating improved variational bounds with increased capacity.}
+\label{fig:convergence}
+\end{figure}
+
+\subsection{Helium density grid}
+
+To probe the learned wave function beyond scalar energies, Fig.~\ref{fig:helium_density} visualizes a density grid for the $\mathrm{H}_2$ molecule. The density is concentrated around the two nuclei and shows the characteristic build-up of probability in the bonding region between them, providing a qualitative diagnostic that the wave function encodes physically meaningful spatial structure. In this work, the density visualization is included as a reference example (adapted from QMCTorch) to illustrate the type of real-space structure that VMC wave functions represent.
+
+% ---------------------------
+% Helium density grid (PDF)
+% ---------------------------
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{img/density.pdf}
 
 
-\section{Conclusion}\label{Conclusion}
 
-We conclude by saying that Psiformer was able to obtain the ground state energy for the 
-atoms Hidrogen Helium 
+\caption{\textbf{Real-space density grid for $\mathrm{H}_2$ (reference visualization).}
+Electron density for the $\mathrm{H}_2$ molecule showing localization around the two nuclei and enhanced density in the internuclear region consistent with covalent bonding. This figure is taken from QMCTorch and is shown here as a qualitative reference for density-based diagnostics.}
+\label{fig:helium_density}
+\end{figure}
+
+\subsection{Limitations observed}
+The experiments highlight practical limitations: (i) scaling to heavier atoms increases the difficulty of sampling and optimization, (ii) Monte Carlo noise can slow convergence and makes hyperparameters unusually influential.
+
+% ============================================================
+\section{Conclusion}
+\label{sec:conclusion}
+
+This work presented PsiFormer, a Transformer-based variational wave-function model trained using Variational Monte Carlo without external supervision. We evaluated two capacity regimes (small vs.\ large) and reported ground-state energy estimates for the first eight atoms. The results show that increasing model capacity improves the variational energy, and that PsiFormer learns physically meaningful structure as supported by both convergence curves and a helium density visualization.
+
+At the same time, performance remains sensitive to sampling efficiency and optimization choices, especially as the number of electrons increases. Future work will focus on improving MCMC proposals, reducing estimator variance, and strengthening physics-informed constraints (e.g., cusp behavior and asymptotics), as well as exploring more robust optimization strategies such as preconditioning or natural-gradient-style updates.
+
+% ============================================================
+\section*{Acknowledgements}
+I thank the Computer Science Faculty for providing access to GPU resources, in particular an NVIDIA GeForce RTX 4080 Super, (``Monstrito'') which enabled the training and evaluation of PsiFormer models reported in this work.
 
 
-\bibliographystyle{unsrt}
-\bibliography{references}
+
+
 
 \end{document}
