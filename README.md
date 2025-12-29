@@ -1,5 +1,5 @@
 <div align="center">
-  <h1>Solving the many-electron Schrödinger equation with transformers</h1>
+  <h1>Solving the many-electron Schrödinger equation with Transformers</h1>
   <p>
     <a href="https://pytorch.org/"><img alt="PyTorch" src="https://img.shields.io/badge/PyTorch-ready-EE4C2C?logo=pytorch&logoColor=white"></a>
     <a href="https://www.python.org/"><img alt="Python" src="https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white"></a>
@@ -11,9 +11,9 @@
   </p>
 </div>
 
-> Acknolwedge to Angel Aaron Flores Alberca and
+This repository demonstrates an experimental approach to approximating solutions to the many-electron Schrödinger equation using transformer architectures. It contains reference code and utilities to build and run scale experiments, for more details on how this repository works and was created look [PsiFormer](src/PsiFormer_Torch%20Documentation.md) for the full documentation.  Watch the [paper](assets/research/main.pdf) for a detailed theoretical framework result,the [beamer](assets/research/beamer.pdf) for a more friendly explanation or the [poster](assets/research/poster.pdf) for a resume of this work.
 
-For a mental model on how this repository was created look [PsiFormer](PsiFormer.md)
+> My sincerest thanks to Angel A. Flores and Alejandro D. Paredes for their feedback and helpful technical discussion. I would also like to thank the Faculty of Computer Science at UNI for the GPU used to make this project.
 
 ## Table of contents
 
@@ -28,19 +28,13 @@ For a mental model on how this repository was created look [PsiFormer](PsiFormer
 - [References and further reading](#references-and-further-reading)
 - [License](#license)
 
-This repository demonstrates an experimental approach to approximating solutions to the many-electron Schrödinger equation using transformer architectures.
-It contains reference code and utilities to build and run small-scale
-experiments on CPU (no CUDA required).
 
 ## What this does
 
 - Uses transformer-style attention to model electronic wavefunction structure.
-- Provides utilities and example scripts to run toy problems and evaluate
-	model performance against simple quantum chemistry references.
+- Provides utilities and example scripts to run  problems and evaluate model performance against simple quantum chemistry references.
 
-This project is intended for research and learning. It is not production-ready
-for large-scale quantum chemistry simulations but can be used to prototype
-ideas and compare modeling choices.
+This project is intended for research .It is not production-ready for large-scale quantum chemistry simulations but can be used to prototype ideas and compare modeling choices.
 
 ## Key ideas (short)
 
@@ -60,22 +54,14 @@ other dependencies like this:
 # install uv if you don't have it
 pip install -U uv
 
-# install CPU-only pytorch (from official PyTorch CPU index)
-uv install torch --index-url https://download.pytorch.org/whl/cpu
-
-# install other lightweight deps (edit as needed)
-uv install -r requirements.txt || pip install -r requirements.txt
+# Sync dependencies
+uv sync
 ```
 
-If you prefer plain pip for CPU-only PyTorch:
-
+Then, install PyTorch CPU-only version:
 ```bash
-pip install --index-url https://download.pytorch.org/whl/cpu torch
-pip install -r requirements.txt
+uv pip install --index-url https://download.pytorch.org/whl/cpu torch
 ```
-
-Note: The code in this repo sets PyTorch's default device to CPU; no CUDA
-setup is required.
 
 ## Usage
 
@@ -83,10 +69,6 @@ setup is required.
 2. Edit `config.py` to set model size, number of heads, block (sequence)
 	 length, and training hyperparameters.
 3. Run the training/experiment script (example):
-
-```bash
-python src/main.py --config configs/toy_system.yaml
-```
 
 Replace the example command above with your own runner or flags as needed.
 
@@ -103,8 +85,7 @@ Replace the example command above with your own runner or flags as needed.
 
 1. Choose a small system (2–10 electrons) and a compact basis set.
 2. Build sequence encodings for orbitals/electron coordinates.
-3. Train the transformer to predict minimal-energy coefficients or
-	 approximate the wavefunction amplitude for sampled configurations.
+3. Train the transformer to predict minimal-energy coefficients or approximate the wavefunction amplitude for sampled configurations.
 4. Evaluate energy and compare against reference (Hartree–Fock, small CI).
 
 ## Tips and caveats
@@ -116,17 +97,10 @@ Replace the example command above with your own runner or flags as needed.
 	basis sizes and toy molecules.
 - Use physics-informed losses wherever possible to improve sample efficiency.
 
-## Reproducibility
-
-- Pin dependencies in `requirements.txt` if you need strict reproducibility.
-- Seed RNGs at the start of experiments (`torch.manual_seed`, `random.seed`).
 
 ## References and further reading
 
-- Vaswani et al., "Attention Is All You Need" (transformers)
-- Recent literature on machine learning for quantum chemistry and wavefunction
-	modeling (e.g., Neural quantum states, FermiNet, PauliNet).
-
-## License
-
-This project is provided under the repository license.
+- Vaswani et al., "Attention Is All You Need" (transformers).
+- A Self Attention Ansatz for Quantum Chemistry
+- Ab-Initio Solution of the Many-Electron Schrodinger Equation With Deep Neural Networks
+- QMC Torch Molecular Wave functions with Neural Components for energy and force calculations.
