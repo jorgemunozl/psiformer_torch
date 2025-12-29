@@ -1,10 +1,3 @@
----
-tags:
-  - idea
-author: Jorge
-date: 2025-09-16 08:53
-modified: 2025-12-18 06:55
----
 Implementation on [[PyTorch]] from DeepMind's Fermi Net. Their work was implemented on [[TensorFlow]]. 
 
 # Model
