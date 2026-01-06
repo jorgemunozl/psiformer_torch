@@ -62,8 +62,6 @@
 \end{itemize}
 
 \begin{block}{Hamiltonian}
-In the position basis:
-
 \begin{equation}
 \hat{H}=\frac{\hat{\vec{{P}}}^{2}}{2m}+\hat{V} =-\frac{\hbar^{2}}{2m}\nabla^{2}+\hat{V}
 \end{equation}
@@ -96,7 +94,7 @@ With $\mathbf{x}_{i}=\{ \mathbf{r}_{i},\sigma \}$, where $\mathbf{r}_{i}\in \mat
 \begin{align}
    \hat H  =
 -\sum_{i=1}^{N}\frac{1}{2}\nabla_i^{2}
--\sum_{i=1}^{N}\frac{Z_I}{|\mathbf r_i-\mathbf R_I|} 
+-\sum_{i=1}^{N}\frac{Z_I}{|\mathbf r_i-\mathbf R_I|}
  +\sum_{1\le i<j\le N}\frac{1}{|\mathbf r_i-\mathbf r_j|}
 \end{align}
 
@@ -105,14 +103,12 @@ With $\mathbf{x}_{i}=\{ \mathbf{r}_{i},\sigma \}$, where $\mathbf{r}_{i}\in \mat
 \subsection{Physical laws and conditions}
 
 \begin{frame}{Fermi-Dirac statistics}
-
 All the fermions follow the Fermi-Dirac Statistics, this is.
-
-  \begin{itemize}
+ \begin{itemize}
         \item Exchanging two electrons flips the wavefunction's sign: $\Psi(\dots i,j \dots) = -\,\Psi(\dots j,i \dots)$.
-    \end{itemize}
+ \end{itemize}
 
-    \begin{block}{Slater Determinant}
+ \begin{block}{Slater Determinant}
 Enforce it using a determinant.
 \begin{equation}
 \psi=
@@ -129,7 +125,6 @@ Where $\phi$ are called spin orbitals
 \begin{frame}{Kato cusp conditions, Jastrow Factor}
 The potential are:
  $$\sum\frac{1}{|\mathbf r_i-\mathbf r_j|}$$
-
 \begin{itemize}
 \item Coulomb potentials cause a sharp cusp in $\Psi$ when particles overlaps.
     \end{itemize}
@@ -138,11 +133,12 @@ In this work we are going to use this specific form:
 \begin{equation}
  \mathcal{J}_{\theta}(x)=\sum_{i<j;\sigma_{i}=\sigma_{j}}-\frac{1}{4}\frac{\alpha^{2}_{par}}{\alpha_{par}+\lvert \mathbf{r}_{i}-\mathbf{r}_{j} \rvert }+\sum_{i,j;\sigma_{i}\neq \sigma_{j}}-\frac{1}{2}\frac{\alpha^{2}_{anti}}{\alpha_{anti}+\lvert \mathbf{r}_{i}-\mathbf{r}_{j} \rvert }
 \end{equation}
-
 \end{block}
 \end{frame}
 
 \subsection{Optimizing an Ansatz}
+
+
 \begin{frame}
 
 \frametitle{Loss: Variational Principle}
@@ -153,88 +149,88 @@ $$E[\Psi] = \displaystyle \frac{\langle \Psi \mid H \mid \Psi \rangle}{\langle \
 
 Minimizing $E[\Psi]$ drives the ansatz toward the ground state.
 $$
-E[\Psi]=\mathcal{L}(\Psi_\theta)=\frac{\bra{\Psi_{\theta}} \hat{H}\ket{\Psi_{\theta}} }{\braket{ \Psi_{\theta}} }=\frac{\int d\mathbf{r}\Psi ^{*}(\mathbf{r})\hat{H}\Psi(\mathbf{r})}{\int d\mathbf{r}\Psi ^{*}(\mathbf{r})\Psi(\mathbf{r})}
+E[\Psi]=\mathcal{L}(\Psi_\theta)=\frac{\bra{\Psi_{\theta}} \hat{H}\ket{\Psi_{\theta}} }{\braket{ \Psi_{\theta}} }=\frac{\int d\mathbf{R}\Psi ^{*}(\mathbf{R})\hat{H}\Psi(\mathbf{R})}{\int d\mathbf{R}\Psi ^{*}(\mathbf{R})\Psi(\mathbf{R})}
 $$
 Define:
-$$p_{\theta}(x)=\Psi^{2}_{\theta}(x)\frac{1}{\int  dx'\Psi^{2}_{\theta}(x')}\land E_{L}(x)=\Psi ^{-1}_{\theta}(x)\hat{H}\Psi_{\theta}(x)
+$$p_{\theta}(\mathbf{R})=|\Psi_{\theta}(\mathbf{R})|^{2}\frac{1}{\int  d\mathbf{R}'\Psi^{2}_{\theta}(\mathbf{R}')}\land E_{L}(\mathbf{R})=\Psi ^{-1}_{\theta}(\mathbf{R})\hat{H}\Psi_{\theta}(\mathbf{R})
 $$
 Then:
 \begin{equation}
-\mathcal{L}_{\theta}=\mathbb{E}_{x\sim p_{\theta}}[E_{L}(x)]
+\mathcal{L}_{\theta}=\mathbb{E}_{\mathbf{R}\sim p_{\theta}}[E_{L}(\mathbf{R})]
 \end{equation}
 \end{frame}
-\begin{frame}{Quantum Monte Carlo}
-  \begin{block}{Variational Monte Carlo}
+
+\begin{frame}{Variational Monte Carlo}
+  \begin{block}{Quantum Monte Carlo}
 With the samples $\mathbf{R}_{1},\dots,\mathbf{R}_{M}\sim p_{\theta}(\mathbf{R})$ we can make:
 
 \begin{equation}
-\mathcal{L}_{\theta}=\mathbb{E}_{x\sim p_{\theta}}[E_{L}(x)]\approx \frac{1}{M}\sum_{i=1}^{m} E_{L}(\mathbf{R}_{k})
+\mathcal{L}_{\theta}=\mathbb{E}_{x\sim p_{\theta}}[E_{L}(x)]\approx \frac{1}{M}\sum_{i=1}^{M} E_{L}(\mathbf{R}_{k})
 \end{equation}
 \end{block}
-
 With:
-
 $$E_{L}(\mathbf{R}_{k})=\frac{\hat{H}\psi(\mathbf{R}_{k})}{\psi(\mathbf{R}_{k})}=-\frac{1}{2}\frac{\nabla^{2}\psi(\mathbf{R_{k}})}{\psi(\mathbf{R}_{k})}+V(\mathbf{R}_{k})
 $$
+\textbf{Obtain $\mathbf{R}_k$} $\to$ \textbf{Metropolis-Hastings Algorithm}
+\end{frame}
+\begin{frame}
+  \frametitle{Metropolis-Hastings Algorithm}
+\textbf{Goal: Generate many samples} $\mathbf{R}\sim \rho$, Requirement: $C\rho$
 
-Obtain $\mathbf{R}_k$ $\to$ \textbf{Metropolis-Hastings Algorithm}.
+1. $\mathbf{X}_{0}\in E$ arbitrary:
 
+2. Propose $\mathbf{X}'=\mathbf{X}_{0}+\eta$ ,where $\eta \sim q(\eta)$, (Normal Gaussian)
+
+3. Compute the quantity:
+$$
+A(\mathbf{X_{0}}, \mathbf{X}')=\text{min}\left( 1,\frac{\rho(\mathbf{X}')}{\rho(\mathbf{X}_{0})} \right)
+$$
+4. Generate a uniform number $U\in[0,1]$. If: $U<A(\mathbf{X}_{0} ,\mathbf{X'})$ then $\mathbf{X_{1}}=\mathbf{X}'$, otherwise try another $\mathbf{X}'$. Accept or decline.
 
 \end{frame}
 
 \begin{frame}{Metropolis-Hastings Algorithm}
   \begin{figure}
     \centering
-    \includegraphics[width=0.50\linewidth]{img/mcmc.png}
-    \caption{Metropolis-Hastings Algorithm}
+    \includegraphics[width=0.65\linewidth]{img/mcmc.png}
+    \caption{Metropolis-Hastings Walkers}
     \label{fig:placeholder}
   \end{figure}
+The model is able to obtain its own data (no dataset $\mathcal{D}$), able to compute:
+$$ \mathcal{L}_{\theta}=\mathbb{E}_{\mathbf{R}\sim |\Psi_{\theta}|^{2}}[E_{L}(\mathbf{R})]$$,
 \end{frame}
 
+\begin{frame}{Loss function problems}
+$$ \mathcal{L}_{\theta}=\mathbb{E}_{\mathbf{R}\sim |\Psi_{\theta}|^{2}}[E_{L}(\mathbf{R})]$$,
+\begin{itemize}
+\item Three Backpropagations
+\item $|\Psi_{\theta}|^{2}$ changes over time.
+\item You are just optimizing just the \textbf{energy}, not the wave function itself.
+\end{itemize}
+Solution: \textbf{Log Derivative Trick}
 
-\begin{frame}
-  \frametitle{Metropolis-Hastings Algorithm}
-  \textbf{Goal: Obtain $\rho$, Requirement: $C\rho$}
-1. Take a initial configuration $\mathbf{X}_{0}\in E$ arbitrary:
-
-2. Propose $\mathbf{X}'=\mathbf{X}_{0}+\eta$ ,where $\eta \sim q(\eta)$, $q$ is a probability density on $E$ called proposal kernel.(Normal Gaussian)
-
-3. Compute the quantity:
+$$\qquad \, \nabla _{\theta}\mathcal{L}=2\mathbb{E}_{\mathbf{R}\sim \Psi^{2}}[ (E_{L}(\mathbf{R})-\mathbb{E}_{p}[E_L])\nabla _{\theta}\log \psi]$$
+REINFORCE!
 $$
-A(\mathbf{X_{0}}, \mathbf{X}')=\text{min}\left( 1,\frac{\rho(\mathbf{X}')}{\rho(\mathbf{X}_{0})} \frac{q(\mathbf{X}'-\mathbf{X}_{0})}{q(\mathbf{X}_{0}-\mathbf{X}')}\right)
+\nabla_{\theta}J(\theta)=\mathbb{E}_{\tau \sim \pi}[({R(\tau)}-b)\nabla_{\theta}\log \pi_{\theta}(\tau)]
 $$
-Where $\rho$ is the target distribution where we want sample, In the case where $q$ is symmetric, this simplifies to:
-$$
-A(\mathbf{X}_{0},\mathbf{X}')=\text{min}\left( 1,\frac{\rho(\mathbf{X}^{'})}{\rho(\mathbf{X}_{0})} \right)
-$$
-4. Generate a uniform number $U\in[0,1]$. If: $U<A(\mathbf{X}_{0}\to \mathbf{X'}_{l})$ then $\mathbf{X_{1}}=\mathbf{X}'$, otherwise try another $\mathbf{X}'$. Accept or decline.
-
-\end{frame}
-
-\begin{frame}{Back propagation Pitfall}
-The loss is:
-$$
-\mathcal{L}(\Psi_{\theta})=\mathbb{E}_{x\sim p_{\theta}}[E_{L}(x)]
-$$
-
-\begin{block}{Gradients of the Loss}
-Using calculus you obtain:
-\begin{equation}
-  \nabla _{\theta}\mathcal{L}=2\mathbb{E}_{x\sim \Psi^{2}}[(E_{L}(x)-\mathbf{E}_{p}(E_L))\log \psi]
-\end{equation}
-\end{block}
-This expectation is calculated in the same way.
 \end{frame}
 
 % ------------------------------
-\section{Deep Learning Tool Box}
-
+\section{Transformers}
 \subsection{Attention Mechanism}
+
+\begin{frame}{Transformer Architecture}
+  \begin{figure}
+    \centering
+    \includegraphics[width=0.8\textwidth]{}
+    \caption{Caption}
+  \end{figure}
+\end{frame}
+
 \begin{frame}
 \frametitle{Attention on the room}
-
 \textbf{Multi Head Attention}
-
 $d$ the embedding dimension, $n_h$ the number of attention heads, $d_h$ the dimension per head, and $\mathbf{h}_t \in \mathbb{R}^{d}$ the hidden dimension.
 The learnable matrices are:
 $$ W ^{Q}, W ^{K}, W ^{V} \in \mathbb{R}^{d_h n_h \times d}$$
@@ -251,17 +247,16 @@ In the $i-th$ head:
 \begin{equation}
 \mathbf{o}_{t,i}=\sum_{j=1}^{t}\text{Softmax}\left( \frac{\mathbf{q}^{T}_{t,i}\mathbf{k}_{j,i}}{\sqrt{ d_{h} }} \right) \mathbf{v}_{j,i}
 \end{equation}
-
 $W^{O}\in \mathbb{R}^{d \times d_h n_h}$ the output projection matrix.
 $$\mathbf{u}_{t}=W^{O}[\mathbf{o}_{t,1};\mathbf{o}_{t,2};\dots ;\mathbf{o}_{t,n_{h}}]$$
-
+\end{frame}
 
 \section{Fermi Net and Psiformer}
 \subsection{Fermi Net}
 
 \begin{frame}{Fermi Net Architecture}
     \begin{columns}
-    
+
       \begin{column}{0.5\textwidth}
         \begin{figure}
           \centering
@@ -269,7 +264,7 @@ $$\mathbf{u}_{t}=W^{O}[\mathbf{o}_{t,1};\mathbf{o}_{t,2};\dots ;\mathbf{o}_{t,n_
           \caption{Fermi Net Architecture}
           \end{figure}
       \end{column}
-    
+
     \end{columns}
     \begin{column}{0.5\textwidth}
       \begin{itemize}
@@ -281,15 +276,12 @@ $$\mathbf{u}_{t}=W^{O}[\mathbf{o}_{t,1};\mathbf{o}_{t,2};\dots ;\mathbf{o}_{t,n_
 
 \begin{frame}
 \frametitle{FermiNet baseline}
-
 \begin{block}{Orbital}
-
 FermiNet computes:
 \begin{align}
-	\psi(\mathbf{r}^\uparrow_1,\ldots,\mathbf{r}^\downarrow_{n^\downarrow}) = 
+	\psi(\mathbf{r}^\uparrow_1,\ldots,\mathbf{r}^\downarrow_{n^\downarrow}) =
   \sum_{k}\omega_k \det\left[\phi^{k \uparrow}_{ij} \right] \det\left[\phi^{k\downarrow}_{ij} \right]
 \end{align}
-
 
 \end{block}
 \end{frame}
@@ -303,7 +295,6 @@ FermiNet computes:
         \centering
         \includegraphics[width=0.50\linewidth]{img/psiformer.png}
         \caption{Psi Former Architecture}
-        \label{fig:placeholder}
       \end{figure}
     \end{column}
     \begin{column}{0.5\textwidth}
@@ -316,11 +307,7 @@ FermiNet computes:
 \end{frame}
 
 \subsection{Practical Implementation Details}
-
 \begin{frame}{Implementation : Laplacian Computation}
-
-
-
 \end{frame}
 
 \begin{frame}{Implementation : Determinant Stability}
@@ -344,10 +331,10 @@ FermiNet computes:
   \caption{Model Size}
   \label{fig:model_size}
 \end{figure}
+
 \end{frame}
 
 \begin{frame}{Results: Convergence Curve}
-
 \begin{figure}
   \centering
   \includegraphics[width=0.50\linewidth]{img/convergence_curve.pdf}
@@ -364,8 +351,8 @@ FermiNet computes:
   \caption{Energy Estimates}
   \label{fig:energy_estimates}
 \end{figure}
-\end{frame}
 
+\end{frame}
 
 \begin{frame}{Improvements}
   \begin{itemize}
