@@ -1,0 +1,319 @@
+\documentclass{beamer}
+
+\mode<presentation>
+{
+\usetheme{Madrid}
+\usecolortheme{default}
+\usefonttheme{serif}
+\setbeamertemplate{navigationsymbols}{}
+\setbeamertemplate{caption}[numbered]
+}
+\AtBeginSection[]{
+  \begin{frame}
+    \frametitle{Outline}
+    \tableofcontents[currentsection]
+  \end{frame}
+}
+
+
+\setbeamertemplate{footline}{%
+  \leavevmode%
+  \hbox{%
+    \begin{beamercolorbox}[wd=.33\paperwidth,ht=2.5ex,dp=1ex,left]{author in head/foot}%
+      \hspace*{1ex}\insertshortauthor
+    \end{beamercolorbox}%
+    \begin{beamercolorbox}[wd=.55\paperwidth,ht=2.5ex,dp=1ex,center]{title in head/foot}%
+      Schrodinger Equation with Transformers
+    \end{beamercolorbox}%
+    \begin{beamercolorbox}[wd=.13\paperwidth,ht=2.5ex,dp=1ex,right]{date in head/foot}%
+      \insertframenumber{} / \inserttotalframenumber\hspace*{1ex}
+    \end{beamercolorbox}%
+  }%
+}
+\setbeamertemplate{navigation symbols}{} % usually nicer without icons
+
+
+
+\usepackage{amsmath,amssymb,bm,mathtools,physics,siunitx,tikz,xcolor,graphicx,hyperref}
+\title{Teaching Quantum Chemistry to a Deep Learning Model }
+
+\subtitle{Transformers for the many body Schrodinger Equation}
+\author{Jorge Munoz Laredo, Angel Flores, Daniel Paredes}
+\date{\today}
+\begin{document}
+\begin{frame}
+    \titlepage
+\end{frame}
+
+
+\section{The Schr\"odinger Wave Function and the physical laws that rule}
+
+\subsection{Schr\"odinger Equation}
+
+\begin{frame}{The Schr\"odinger equation}
+  On 1926 Schrodinger derived his equatin:
+\begin{equation}
+\hat{H}\,\Psi=E \Psi
+\end{equation}
+
+\begin{itemize}
+\item $\Psi$ is a complex value function called \textbf{wave function}.
+\item $\hat{H}$ is called the \textbf{Hamiltonian Operator}.
+\end{itemize}
+
+\begin{block}{Hamiltonian}
+In the position basis:
+
+\begin{equation}
+\hat{H}=\frac{\hat{\vec{{P}}}^{2}}{2m}+\hat{V} =-\frac{\hbar^{2}}{2m}\nabla^{2}+\hat{V}
+\end{equation}
+- Find the electrostatic potential $V$ of the system.
+\end{block}
+\end{frame}
+
+\begin{frame}{Many-Body System}
+When considering $n$ bodies, we have:
+\begin{equation}
+\hat{H}\psi(\mathbf{x}_{1},\dots ,\mathbf{x}_{n})=E\psi(\mathbf{x}_{1},\dots ,\mathbf{x}_{n})
+\end{equation}
+
+With $\mathbf{x}_{i}=\{ \mathbf{r}_{i},\sigma \}$, where $\mathbf{r}_{i}\in \mathbb{R}^{3}$ is the position of each particle and $\sigma \in \{ \uparrow.\downarrow \}$ is the so called spin.
+
+\begin{alertblock}{Considerations}
+ \begin{itemize}
+  \item Each particle interact with all the another particles.
+  \item For atoms, consider all the protons, electrons and neutrons.
+  \item Solution obey physical laws.
+\end{itemize}
+\end{alertblock}
+\end{frame}
+\begin{frame}{Setting up the Hamiltonian}
+  The first step is obtain a practical form of the \textbf{Hamiltonian}.
+\begin{itemize}
+        \item Kinetic energy: $T = -\frac{1}{2}\sum_{i=1}^{N} \nabla_i^2$.
+        \item Electron-electron repulsion: $V_{ee} = \sum_{i<j} \frac{1}{r_{ij}}$.
+    \end{itemize}
+\begin{align}
+   \hat H  =
+-\sum_{i=1}^{N}\frac{1}{2}\nabla_i^{2}
+-\sum_{i=1}^{N}\frac{Z_I}{|\mathbf r_i-\mathbf R_I|} 
+ +\sum_{1\le i<j\le N}\frac{1}{|\mathbf r_i-\mathbf r_j|}
+\end{align}
+
+\end{frame}
+
+\subsection{Physical laws and conditions}
+
+
+\begin{frame}{Fermi-Dirac statistics}
+
+All the fermions follow the Fermi-Dirac Statistics, this is.
+
+  \begin{itemize}
+        \item Exchanging two electrons flips the wavefunction's sign: $\Psi(\dots i,j \dots) = -\,\Psi(\dots j,i \dots)$.
+    \end{itemize}
+
+    \begin{block}{Slater Determinant}
+Enforce it using a determinant.
+\begin{equation}
+\psi=
+\begin{vmatrix}
+\phi_{1}^{k}(\mathbf{x}_{1})  & \dots  &  \phi_{1}^{k}(\mathbf{x}_{n}) \\
+\vdots   &  & \vdots  \\
+\phi_{n}^{k}(\mathbf{x}_{1}) & \dots & \phi_{n}^{k}(\mathbf{x}_{n})
+\end{vmatrix}
+\end{equation}
+\end{block}
+Where $\phi$ are called spin orbitals
+\end{frame}
+
+\begin{frame}{Kato cusp conditions, Jastrow Factor}
+The potential are:
+ $$\sum\frac{1}{|\mathbf r_i-\mathbf r_j|}$$
+
+\begin{itemize}
+\item Coulomb potentials cause a sharp cusp in $\Psi$ when particles overlaps.
+    \end{itemize}
+\begin{block}{Jastrow Factor $\exp(\mathcal{J})$}
+In this work we are going to use this specific form:
+\begin{equation}
+ \mathcal{J}_{\theta}(x)=\sum_{i<j;\sigma_{i}=\sigma_{j}}-\frac{1}{4}\frac{\alpha^{2}_{par}}{\alpha_{par}+\lvert \mathbf{r}_{i}-\mathbf{r}_{j} \rvert }+\sum_{i,j;\sigma_{i}\neq \sigma_{j}}-\frac{1}{2}\frac{\alpha^{2}_{anti}}{\alpha_{anti}+\lvert \mathbf{r}_{i}-\mathbf{r}_{j} \rvert }
+\end{equation}
+
+\end{block}
+\end{frame}
+
+\subsection{Optimizing an Ansatz}
+\begin{frame}
+
+\frametitle{Loss: Variational Principle}
+
+Variational principle states:
+
+$$E[\Psi] = \displaystyle \frac{\langle \Psi \mid H \mid \Psi \rangle}{\langle \Psi \mid \Psi \rangle} \ge E_0$$
+
+Minimizing $E[\Psi]$ drives the ansatz toward the ground state.
+$$
+E[\Psi]=\mathcal{L}(\Psi_\theta)=\frac{\bra{\Psi_{\theta}} \hat{H}\ket{\Psi_{\theta}} }{\braket{ \Psi_{\theta}} }=\frac{\int d\mathbf{r}\Psi ^{*}(\mathbf{r})\hat{H}\Psi(\mathbf{r})}{\int d\mathbf{r}\Psi ^{*}(\mathbf{r})\Psi(\mathbf{r})}
+$$
+Define:
+$$p_{\theta}(x)=\Psi^{2}_{\theta}(x)\frac{1}{\int  dx'\Psi^{2}_{\theta}(x')}\land E_{L}(x)=\Psi ^{-1}_{\theta}(x)\hat{H}\Psi_{\theta}(x)
+$$
+Then:
+\begin{equation}
+\mathcal{L}_{\theta}=\mathbb{E}_{x\sim p_{\theta}}[E_{L}(x)]
+\end{equation}
+\end{frame}
+\begin{frame}{Quantum Monte Carlo}
+  \begin{block}{Variational Monte Carlo}
+With the samples $\mathbf{R}_{1},\dots,\mathbf{R}_{M}\sim p_{\theta}(\mathbf{R})$ we can make:
+
+\begin{equation}
+\mathcal{L}_{\theta}=\mathbb{E}_{x\sim p_{\theta}}[E_{L}(x)]\approx \frac{1}{M}\sum_{i=1}^{m} E_{L}(\mathbf{R}_{k})
+\end{equation}
+\end{block}
+
+With:
+
+$$E_{L}(\mathbf{R}_{k})=\frac{\hat{H}\psi(\mathbf{R}_{k})}{\psi(\mathbf{R}_{k})}=-\frac{1}{2}\frac{\nabla^{2}\psi(\mathbf{R_{k}})}{\psi(\mathbf{R}_{k})}+V(\mathbf{R}_{k})
+$$
+
+Obtain $\mathbf{R}_k$ $\to$ \textbf{Metropolis-Hastings Algorithm}.
+
+
+\end{frame}
+
+\begin{frame}
+  \frametitle{Metropolis-Hastings Algorithm}
+  \textbf{Goal: Obtain $\rho$, Requirement: $C\rho$}
+1. Take a initial configuration $\mathbf{X}_{0}\in E$ arbitrary:
+
+2. Propose $\mathbf{X}'=\mathbf{X}_{0}+\eta$ ,where $\eta \sim q(\eta)$, $q$ is a probability density on $E$ called proposal kernel.(Normal Gaussian)
+
+3. Compute the quantity:
+$$
+A(\mathbf{X_{0}}, \mathbf{X}')=\text{min}\left( 1,\frac{\rho(\mathbf{X}')}{\rho(\mathbf{X}_{0})} \frac{q(\mathbf{X}'-\mathbf{X}_{0})}{q(\mathbf{X}_{0}-\mathbf{X}')}\right)
+$$
+Where $\rho$ is the target distribution where we want sample, In the case where $q$ is symmetric, this simplifies to:
+$$
+A(\mathbf{X}_{0},\mathbf{X}')=\text{min}\left( 1,\frac{\rho(\mathbf{X}^{'})}{\rho(\mathbf{X}_{0})} \right)
+$$
+4. Generate a uniform number $U\in[0,1]$. If: $U<A(\mathbf{X}_{0}\to \mathbf{X'}_{l})$ then $\mathbf{X_{1}}=\mathbf{X}'$, otherwise try another $\mathbf{X}'$. Accept or decline.
+
+\end{frame}
+
+\begin{frame}{Back propagation pitfall}
+
+\begin{block}{Gradients of the Loss}
+Using calculus you obtain:
+\begin{equation}
+  \nabla _{\theta}\mathcal{L}=2\mathbb{E}_{x\sim \Psi^{2}}[(E_{L}(x)-\mathbf{E}_{p}(E_L))\log \psi]
+\end{equation}
+\end{block}
+This expectation is calculated in the same way.
+\end{frame}
+
+% ------------------------------
+\section{Deep Learning Tool Box}
+
+\subsection{Attention Mechanism}
+\begin{frame}
+\frametitle{Attention on the room}
+
+\textbf{Multi Head Attention}
+Let $d$ be the embedding dimension, $n_h$ be the number of attention heads, $d_h$ be the dimension per head, and $\mathbf{h}_t \in \mathbb{R}^{d}$ be hidden dimension.
+The learn matrices are:
+$$ W ^{Q}, W ^{K}, W ^{V} \in \mathbb{R}^{d_h n_h \times d}$$
+We obtain the key, queries, and values vectors with:
+$$ \mathbf{k}_{i}=\mathbf{W}^{k}\mathbf{h}_{i},\mathbf{q}_{i}=\mathbf{W}^{q}\mathbf{h}_{i},\mathbf{v}_{i}=\mathbf{W}^{v}\mathbf{h}_{i} $$
+We slice this vectors:
+$$
+\begin{align}
+[\mathbf{q_{1},q_{2},\dots ,q_{n_{h}}}]=\mathbf{q} \\
+[\mathbf{k_{1},k_{2},\dots ,k_{n_{h}}}]=\mathbf{k} \\
+[\mathbf{v_{1},v_{2},\dots ,v_{n_{h}}}]=\mathbf{v}
+\end{align}
+$$
+In the $i-th$ head:
+\begin{equation}
+\mathbf{o}_{t,i}=\sum_{j=1}^{t}\text{Softmax}\left( \frac{\mathbf{q}^{T}_{t,i}\mathbf{k}_{j,i}}{\sqrt{ d_{h} }} \right) \mathbf{v}_{j,i}
+\end{equation}
+
+\end{frame}
+
+
+\begin{frame}{Attention!}
+
+Let $W^{O}\in \mathbb{R}^{d \times d_h n_h}$ be the output projection matrix.
+$$\mathbf{u}_{t}=W^{O}[\mathbf{o}_{t,1};\mathbf{o}_{t,2};\dots ;\mathbf{o}_{t,n_{h}}]$$
+
+\end{frame}
+
+\section{Fermi Net and Psiformer}
+
+\subsection{Fermi Net}
+\begin{frame}
+    \frametitle{FermiNet baseline}
+
+\begin{block}{Orbital}
+To compute the orbitals we need to compute.
+\begin{equation}
+\phi^{k\alpha}_i(\mathbf{r}^\alpha_j; \{\mathbf{r}^\alpha_{/j}\}; \{\mathbf{r}^{\bar{\alpha}}\}) = \left(\mathbf{w}^{k\alpha}_i \cdot \mathbf{h}^{L\alpha}_j + g^{k\alpha}_i\right) \sum_{m} \pi^{k\alpha}_{im}\mathrm{exp}\left(-|\mathbf{\Sigma}_{im}^{k \alpha}(\mathbf{r}^{\alpha}_j-\mathbf{R}_m)|\right)
+\end{equation}
+\end{block}
+Where the hidden states are:
+\begin{align}
+    \mathbf{h}^{\ell+1 \alpha}_i &= \mathrm{tanh}\left(\mathbf{V}^\ell \mathbf{f}^{\ell \alpha}_i + \mathbf{b}^\ell\right) + \mathbf{h}^{\ell\alpha}_i \nonumber \notag\\
+    \mathbf{h}^{\ell+1 \alpha\beta}_{ij} &= \mathrm{tanh}\left(\mathbf{W}^\ell\mathbf{h}^{\ell \alpha\beta}_{ij} + \mathbf{c}^\ell\right) + \mathbf{h}^{\ell \alpha\beta}_{ij}\notag
+\end{align}
+Finally:
+\begin{align}
+	\psi(\mathbf{r}^\uparrow_1,\ldots,\mathbf{r}^\downarrow_{n^\downarrow}) = \sum_{k}\omega_k &\left(\det\left[\phi^{k \uparrow}_i(\mathbf{r}^\uparrow_j; \{\mathbf{r}^\uparrow_{/j}\}; \{\mathbf{r}^\downarrow\})\right]\right.\notag \\&\left.\hphantom{\left(\right.}\det\left[\phi^{k\downarrow}_i(\mathbf{r}^\downarrow_j; \{\mathbf{r}^\downarrow_{/j}\});
+	\{\mathbf{r}^\uparrow\};\right]\right).
+\end{align}
+
+
+\end{frame}
+
+\begin{frame}{Fermi Net Architecture}
+  \begin{figure}
+  \centering
+  \includegraphics[width=0.50\linewidth]{img/ferminet.png}
+  \caption{Fermi Net Architecture}
+  \end{figure}
+
+\end{frame}
+
+\subsection{Psi Former}
+\begin{frame}{The Psiformer Ansatz (overview)}
+  The output of \textbf{Psiformer} is:
+  \begin{equation}
+  \Psi_{\theta}(\mathbf{x})=\exp(\mathcal{J}_{\theta}(\mathbf{x}))\sum_{k=1}^{N_{\det}}\det[\boldsymbol{\Phi}_{\theta}^{k}(x)]
+\end{equation}
+We obtain the hidden states:
+$$
+ A^{l}_{h}=[\text{SelfAttn}(\mathbf{h}^{l}_{1},\dots,\mathbf{h}^{\ell}_{N};\mathbf{W}^{\ell h}_{q},\mathbf{W}^{\ell h}_{k},\mathbf{W}^{\ell h}_{v})]
+$$
+
+$$A^{\ell}=\text{concat}_{h}[A_{h}^{\ell}]$$
+And then used it apply:
+$$
+\mathbf{f}_{i}^{\ell+1}=\mathbf{h}_{i}^{\ell}+W_{o}^{\ell}A^{\ell}
+$$
+And generate a new hidden state:
+$$ \mathbf{h}_{i}^{\ell+1}=\mathbf{f}_{i}^{\ell+1}+\tanh(\mathbf{W}^{\ell+1}\mathbf{f}_{i}^{\ell+1}+\mathbf{b}^{\ell+1}) $$
+\end{frame}
+\begin{frame}{Psi Former Architecture}
+  \begin{figure}
+    \centering
+    \includegraphics[width=0.45\linewidth]{img/psiformer.png}
+    \caption{Psi Former Architecture}
+    \label{fig:placeholder}
+\end{figure}
+\end{frame}
+
+\begin{frame}{Thanks}
+    \centering
+    Thanks.
+\end{frame}
+\end{document}
