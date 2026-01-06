@@ -104,7 +104,6 @@ With $\mathbf{x}_{i}=\{ \mathbf{r}_{i},\sigma \}$, where $\mathbf{r}_{i}\in \mat
 
 \subsection{Physical laws and conditions}
 
-
 \begin{frame}{Fermi-Dirac statistics}
 
 All the fermions follow the Fermi-Dirac Statistics, this is.
@@ -183,6 +182,16 @@ Obtain $\mathbf{R}_k$ $\to$ \textbf{Metropolis-Hastings Algorithm}.
 
 \end{frame}
 
+\begin{frame}{Metropolis-Hastings Algorithm}
+  \begin{figure}
+    \centering
+    \includegraphics[width=0.50\linewidth]{img/mcmc.png}
+    \caption{Metropolis-Hastings Algorithm}
+    \label{fig:placeholder}
+  \end{figure}
+\end{frame}
+
+
 \begin{frame}
   \frametitle{Metropolis-Hastings Algorithm}
   \textbf{Goal: Obtain $\rho$, Requirement: $C\rho$}
@@ -202,7 +211,11 @@ $$
 
 \end{frame}
 
-\begin{frame}{Back propagation pitfall}
+\begin{frame}{Back propagation Pitfall}
+The loss is:
+$$
+\mathcal{L}(\Psi_{\theta})=\mathbb{E}_{x\sim p_{\theta}}[E_{L}(x)]
+$$
 
 \begin{block}{Gradients of the Loss}
 Using calculus you obtain:
@@ -221,12 +234,12 @@ This expectation is calculated in the same way.
 \frametitle{Attention on the room}
 
 \textbf{Multi Head Attention}
-Let $d$ be the embedding dimension, $n_h$ be the number of attention heads, $d_h$ be the dimension per head, and $\mathbf{h}_t \in \mathbb{R}^{d}$ be hidden dimension.
-The learn matrices are:
+
+$d$ the embedding dimension, $n_h$ the number of attention heads, $d_h$ the dimension per head, and $\mathbf{h}_t \in \mathbb{R}^{d}$ the hidden dimension.
+The learnable matrices are:
 $$ W ^{Q}, W ^{K}, W ^{V} \in \mathbb{R}^{d_h n_h \times d}$$
-We obtain the key, queries, and values vectors with:
 $$ \mathbf{k}_{i}=\mathbf{W}^{k}\mathbf{h}_{i},\mathbf{q}_{i}=\mathbf{W}^{q}\mathbf{h}_{i},\mathbf{v}_{i}=\mathbf{W}^{v}\mathbf{h}_{i} $$
-We slice this vectors:
+
 $$
 \begin{align}
 [\mathbf{q_{1},q_{2},\dots ,q_{n_{h}}}]=\mathbf{q} \\
@@ -239,81 +252,136 @@ In the $i-th$ head:
 \mathbf{o}_{t,i}=\sum_{j=1}^{t}\text{Softmax}\left( \frac{\mathbf{q}^{T}_{t,i}\mathbf{k}_{j,i}}{\sqrt{ d_{h} }} \right) \mathbf{v}_{j,i}
 \end{equation}
 
-\end{frame}
-
-
-\begin{frame}{Attention!}
-
-Let $W^{O}\in \mathbb{R}^{d \times d_h n_h}$ be the output projection matrix.
+$W^{O}\in \mathbb{R}^{d \times d_h n_h}$ the output projection matrix.
 $$\mathbf{u}_{t}=W^{O}[\mathbf{o}_{t,1};\mathbf{o}_{t,2};\dots ;\mathbf{o}_{t,n_{h}}]$$
 
-\end{frame}
 
 \section{Fermi Net and Psiformer}
-
 \subsection{Fermi Net}
-\begin{frame}
-    \frametitle{FermiNet baseline}
-
-\begin{block}{Orbital}
-To compute the orbitals we need to compute.
-\begin{equation}
-\phi^{k\alpha}_i(\mathbf{r}^\alpha_j; \{\mathbf{r}^\alpha_{/j}\}; \{\mathbf{r}^{\bar{\alpha}}\}) = \left(\mathbf{w}^{k\alpha}_i \cdot \mathbf{h}^{L\alpha}_j + g^{k\alpha}_i\right) \sum_{m} \pi^{k\alpha}_{im}\mathrm{exp}\left(-|\mathbf{\Sigma}_{im}^{k \alpha}(\mathbf{r}^{\alpha}_j-\mathbf{R}_m)|\right)
-\end{equation}
-\end{block}
-Where the hidden states are:
-\begin{align}
-    \mathbf{h}^{\ell+1 \alpha}_i &= \mathrm{tanh}\left(\mathbf{V}^\ell \mathbf{f}^{\ell \alpha}_i + \mathbf{b}^\ell\right) + \mathbf{h}^{\ell\alpha}_i \nonumber \notag\\
-    \mathbf{h}^{\ell+1 \alpha\beta}_{ij} &= \mathrm{tanh}\left(\mathbf{W}^\ell\mathbf{h}^{\ell \alpha\beta}_{ij} + \mathbf{c}^\ell\right) + \mathbf{h}^{\ell \alpha\beta}_{ij}\notag
-\end{align}
-Finally:
-\begin{align}
-	\psi(\mathbf{r}^\uparrow_1,\ldots,\mathbf{r}^\downarrow_{n^\downarrow}) = \sum_{k}\omega_k &\left(\det\left[\phi^{k \uparrow}_i(\mathbf{r}^\uparrow_j; \{\mathbf{r}^\uparrow_{/j}\}; \{\mathbf{r}^\downarrow\})\right]\right.\notag \\&\left.\hphantom{\left(\right.}\det\left[\phi^{k\downarrow}_i(\mathbf{r}^\downarrow_j; \{\mathbf{r}^\downarrow_{/j}\});
-	\{\mathbf{r}^\uparrow\};\right]\right).
-\end{align}
-
-
-\end{frame}
 
 \begin{frame}{Fermi Net Architecture}
-  \begin{figure}
-  \centering
-  \includegraphics[width=0.50\linewidth]{img/ferminet.png}
-  \caption{Fermi Net Architecture}
-  \end{figure}
+    \begin{columns}
+    
+      \begin{column}{0.5\textwidth}
+        \begin{figure}
+          \centering
+          \includegraphics[width=0.50\linewidth]{img/ferminet.png}
+          \caption{Fermi Net Architecture}
+          \end{figure}
+      \end{column}
+    
+    \end{columns}
+    \begin{column}{0.5\textwidth}
+      \begin{itemize}
+        \item Learn the orbitals $\phi$
+        \item Learn the coefficients.
+      \end{itemize}
+    \end{column}
+\end{frame}
 
+\begin{frame}
+\frametitle{FermiNet baseline}
+
+\begin{block}{Orbital}
+
+FermiNet computes:
+\begin{align}
+	\psi(\mathbf{r}^\uparrow_1,\ldots,\mathbf{r}^\downarrow_{n^\downarrow}) = 
+  \sum_{k}\omega_k \det\left[\phi^{k \uparrow}_{ij} \right] \det\left[\phi^{k\downarrow}_{ij} \right]
+\end{align}
+
+
+\end{block}
 \end{frame}
 
 \subsection{Psi Former}
-\begin{frame}{The Psiformer Ansatz (overview)}
-  The output of \textbf{Psiformer} is:
-  \begin{equation}
-  \Psi_{\theta}(\mathbf{x})=\exp(\mathcal{J}_{\theta}(\mathbf{x}))\sum_{k=1}^{N_{\det}}\det[\boldsymbol{\Phi}_{\theta}^{k}(x)]
-\end{equation}
-We obtain the hidden states:
-$$
- A^{l}_{h}=[\text{SelfAttn}(\mathbf{h}^{l}_{1},\dots,\mathbf{h}^{\ell}_{N};\mathbf{W}^{\ell h}_{q},\mathbf{W}^{\ell h}_{k},\mathbf{W}^{\ell h}_{v})]
-$$
 
-$$A^{\ell}=\text{concat}_{h}[A_{h}^{\ell}]$$
-And then used it apply:
-$$
-\mathbf{f}_{i}^{\ell+1}=\mathbf{h}_{i}^{\ell}+W_{o}^{\ell}A^{\ell}
-$$
-And generate a new hidden state:
-$$ \mathbf{h}_{i}^{\ell+1}=\mathbf{f}_{i}^{\ell+1}+\tanh(\mathbf{W}^{\ell+1}\mathbf{f}_{i}^{\ell+1}+\mathbf{b}^{\ell+1}) $$
-\end{frame}
 \begin{frame}{Psi Former Architecture}
-  \begin{figure}
-    \centering
-    \includegraphics[width=0.45\linewidth]{img/psiformer.png}
-    \caption{Psi Former Architecture}
-    \label{fig:placeholder}
+  \begin{columns}
+    \begin{column}{0.5\textwidth}
+      \begin{figure}
+        \centering
+        \includegraphics[width=0.50\linewidth]{img/psiformer.png}
+        \caption{Psi Former Architecture}
+        \label{fig:placeholder}
+      \end{figure}
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \begin{itemize}
+        \item Learn the Jastrow factor $\mathcal{J}$
+        \item Learn the coefficients $\omega$
+      \end{itemize}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\subsection{Practical Implementation Details}
+
+\begin{frame}{Implementation : Laplacian Computation}
+
+
+
+\end{frame}
+
+\begin{frame}{Implementation : Determinant Stability}
+\end{frame}
+
+\begin{frame}{Implementation : Backpropagation on Markov Chain}
+\end{frame}
+
+\begin{frame}{Implementation : Optimizer Choice}
+\end{frame}
+
+\begin{frame}{Implementation : GPU Parallelization}
+\end{frame}
+
+
+\begin{frame}{Model Size}
+
+\begin{figure}
+  \centering
+  \includegraphics[width=0.50\linewidth]{img/model_size.pdf}
+  \caption{Model Size}
+  \label{fig:model_size}
 \end{figure}
 \end{frame}
 
-\begin{frame}{Thanks}
-    \centering
-    Thanks.
+\begin{frame}{Results: Convergence Curve}
+
+\begin{figure}
+  \centering
+  \includegraphics[width=0.50\linewidth]{img/convergence_curve.pdf}
+  \caption{Convergence Curve}
+  \label{fig:convergence_curve}
+\end{figure}
+\end{frame}
+
+\begin{frame}{Results: Energy Estimates}
+
+\begin{figure}
+  \centering
+  \includegraphics[width=0.50\linewidth]{img/energy_estimates.pdf}
+  \caption{Energy Estimates}
+  \label{fig:energy_estimates}
+\end{figure}
+\end{frame}
+
+
+\begin{frame}{Improvements}
+  \begin{itemize}
+    \item Use a better optimizer.
+    \item Use a better model.
+    \item Use a better sampling method.
+    \item Use a better model.
+    \item Use a better model.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Thanks!}
+
+\begin{figure}
+  \centering
+  \includegraphics[width=0.50\linewidth]{img/thanks.png}
+  \end{figure}
 \end{frame}
 \end{document}
