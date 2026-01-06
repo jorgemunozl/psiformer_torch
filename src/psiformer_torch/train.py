@@ -136,9 +136,12 @@ class Trainer():
 
             # Energy Local Expection
             E_mean = local_energies.mean().detach()
-
-            # Derivative of the Loss
+            # E_mean = local_energies.mean()
+            # Derivative of the Loss using Log Derivative Trick
             loss = 2*((local_energies.detach() - E_mean) * log_psi_vals).mean()
+
+            # Derivative of the Loss using PyTorch Grad
+            # loss = E_mean
 
             # Optimizer Step
             self.optimizer.zero_grad()
@@ -249,10 +252,10 @@ if __name__ == "__main__":
     print(f"Using {device}")
 
     # Model
-    model_configs = wrapper("large",
-                            run_name="Carbon",
-                            checkpoint_name="Carbon",
-                            wand_mode="offline",)
+    model_configs = wrapper("small",
+                            run_name="Helium",
+                            checkpoint_name="Helium",
+                            wand_mode="online",)
     model = PsiFormer(model_configs[0])
 
     # Train

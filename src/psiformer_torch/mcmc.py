@@ -34,7 +34,7 @@ class MH():
 
     def accept_decline(self, trial: torch.Tensor,
                        current_state: torch.Tensor) -> torch. Tensor:
-        # Sampling does not need gradients; keep it detached from autograd.
+        # Sampling does not need gradients.
         with torch.no_grad():
             # alpha: (B,)
             alpha = 2*(self.target(trial) - self.target(current_state))

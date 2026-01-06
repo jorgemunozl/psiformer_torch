@@ -2,7 +2,6 @@ README.md
 pyproject.toml
 src/psiformer_torch/__init__.py
 src/psiformer_torch/config.py
-src/psiformer_torch/eval.py
 src/psiformer_torch/hamiltonian.py
 src/psiformer_torch/jastrow.py
 src/psiformer_torch/logdet_matmul.py
@@ -22,6 +21,9 @@ src/psiformer_torch/tests/logdet_matmul_stability_test.py
 src/psiformer_torch/tests/logdet_test.py
 src/psiformer_torch/tests/metropolis_hasting_test.py
 src/psiformer_torch/tests/second_derivative_test copy.py
+src/psiformer_torch/tests/train_wrapper_test.py
 src/psiformer_torch/utils/CONVERT_SF.py
+src/psiformer_torch/utils/EVAL.py
 src/psiformer_torch/utils/METRICS.py
 src/psiformer_torch/utils/UPLOAD_HF.py
+src/psiformer_torch/utils/ploter.py

@@ -10,9 +10,9 @@ class Model_Config():
     n_embd: int = 512
     n_features: int = 3  # Electron Coordinates (x, y, z)
     n_determinants: int = 1
-    n_electron_num: int = 6
-    n_spin_up: int = 4
-    n_spin_down: int = 2
+    n_electron_num: int = 2
+    n_spin_up: int = 1
+    n_spin_down: int = 1
     nuclear_charge: int = 6  # Z for single nucleus (default: Lithium)
 
 
