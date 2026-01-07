@@ -5,6 +5,20 @@
 \usetheme{Madrid}
 \usecolortheme{default}
 \usefonttheme{serif}
+
+\usepackage{listings}
+\usepackage{xcolor} % optional, but nice
+\lstset{
+  basicstyle=\ttfamily\footnotesize,
+  keywordstyle=\color{blue},
+  commentstyle=\color{gray},
+  stringstyle=\color{red},
+  breaklines=true,
+  showstringspaces=false
+}
+
+
+
 \setbeamertemplate{navigationsymbols}{}
 \setbeamertemplate{caption}[numbered]
 }
@@ -38,7 +52,7 @@
 \title{Teaching Quantum Chemistry to a Deep Learning Model }
 
 \subtitle{Transformers for the many body Schrodinger Equation}
-\author{Jorge Munoz Laredo, Angel Flores, Daniel Paredes}
+\author{Jorge Munoz Laredo, Angel Flores}
 \date{\today}
 \begin{document}
 \begin{frame}
@@ -68,6 +82,18 @@
 - Find the electrostatic potential $V$ of the system.
 \end{block}
 \end{frame}
+
+\begin{frame}{Wave Function as Probability Density}
+\begin{figure}
+  \begin{center}
+    \includegraphics[width=0.55\textwidth]{img/prob.png}
+    \caption{$\lvert \Psi (\mathbf{R}) \rvert ^{2} $ represent the probability to find a particle near the position $\mathbf{R}$.}
+  \end{center}
+\end{figure}
+
+
+\end{frame}
+
 
 \begin{frame}{Many-Body System}
 When considering $n$ bodies, we have:
@@ -152,20 +178,20 @@ $$
 E[\Psi]=\mathcal{L}(\Psi_\theta)=\frac{\bra{\Psi_{\theta}} \hat{H}\ket{\Psi_{\theta}} }{\braket{ \Psi_{\theta}} }=\frac{\int d\mathbf{R}\Psi ^{*}(\mathbf{R})\hat{H}\Psi(\mathbf{R})}{\int d\mathbf{R}\Psi ^{*}(\mathbf{R})\Psi(\mathbf{R})}
 $$
 Define:
-$$p_{\theta}(\mathbf{R})=|\Psi_{\theta}(\mathbf{R})|^{2}\frac{1}{\int  d\mathbf{R}'\Psi^{2}_{\theta}(\mathbf{R}')}\land E_{L}(\mathbf{R})=\Psi ^{-1}_{\theta}(\mathbf{R})\hat{H}\Psi_{\theta}(\mathbf{R})
+$$p_{\theta}(\mathbf{R})=|\Psi_{\theta}(\mathbf{R})|^{2}\frac{1}{\int  d\mathbf{R}'\Psi^{2}_{\theta}(\mathbf{R}')}\land E_{L}(\mathbf{R})=\frac{\hat{H}\Psi_{\theta}(\mathbf{R})}{\Psi_{\theta}(\mathbf{R})}
 $$
 Then:
 \begin{equation}
-\mathcal{L}_{\theta}=\mathbb{E}_{\mathbf{R}\sim p_{\theta}}[E_{L}(\mathbf{R})]
+\mathcal{L}_{\theta}=\mathbb{E}_{\mathbf{R}\sim |\Psi_{\theta}| ^{2}}[E_{L}(\mathbf{R})]
 \end{equation}
 \end{frame}
 
 \begin{frame}{Variational Monte Carlo}
   \begin{block}{Quantum Monte Carlo}
-With the samples $\mathbf{R}_{1},\dots,\mathbf{R}_{M}\sim p_{\theta}(\mathbf{R})$ we can make:
+With the samples $\mathbf{R}_{1},\dots,\mathbf{R}_{M}\sim |\Psi| ^{2}_{\theta}(\mathbf{R})$ we can make:
 
 \begin{equation}
-\mathcal{L}_{\theta}=\mathbb{E}_{x\sim p_{\theta}}[E_{L}(x)]\approx \frac{1}{M}\sum_{i=1}^{M} E_{L}(\mathbf{R}_{k})
+\mathcal{L}_{\theta}=\mathbb{E}_{\mathbf{R}\sim \Psi ^{2}_{\theta}}[E_{L}(\mathbf{R})]\approx \frac{1}{M}\sum_{i=1}^{M} E_{L}(\mathbf{R}_{k})
 \end{equation}
 \end{block}
 With:
@@ -192,25 +218,38 @@ $$
 \begin{frame}{Metropolis-Hastings Algorithm}
   \begin{figure}
     \centering
-    \includegraphics[width=0.65\linewidth]{img/mcmc.png}
+    \includegraphics[width=0.67\linewidth]{img/mcmc.png}
     \caption{Metropolis-Hastings Walkers}
     \label{fig:placeholder}
   \end{figure}
-The model is able to obtain its own data (no dataset $\mathcal{D}$), able to compute:
-$$ \mathcal{L}_{\theta}=\mathbb{E}_{\mathbf{R}\sim |\Psi_{\theta}|^{2}}[E_{L}(\mathbf{R})]$$,
+- Obtain its own data (no dataset $\mathcal{D}$), $\to$
+$\mathcal{L}_{\theta}=\mathbb{E}_{\mathbf{R}\sim |\Psi_{\theta}|^{2}}[E_{L}(\mathbf{R})]$.
+
+- Third order derivatives
+
+- $|\Psi_{\theta}|^{2}$ changes over time, you are just optimizing just the \textbf{energy}, not the wave function itself.
 \end{frame}
 
-\begin{frame}{Loss function problems}
-$$ \mathcal{L}_{\theta}=\mathbb{E}_{\mathbf{R}\sim |\Psi_{\theta}|^{2}}[E_{L}(\mathbf{R})]$$,
-\begin{itemize}
-\item Three Backpropagations
-\item $|\Psi_{\theta}|^{2}$ changes over time.
-\item You are just optimizing just the \textbf{energy}, not the wave function itself.
-\end{itemize}
-Solution: \textbf{Log Derivative Trick}
+\begin{frame}{Solution: Log Derivative Trick}
+\centering
+$ \mathcal{L}_{\theta}=\mathbb{E}_{\mathbf{R}\sim |\Psi_{\theta}|^{2}}[E_{L}(\mathbf{R})]$
 
-$$\qquad \, \nabla _{\theta}\mathcal{L}=2\mathbb{E}_{\mathbf{R}\sim \Psi^{2}}[ (E_{L}(\mathbf{R})-\mathbb{E}_{p}[E_L])\nabla _{\theta}\log \psi]$$
-REINFORCE!
+$\downarrow $
+
+$\nabla _{\theta}\mathcal{L}= 2\mathbb{E}_{\mathbf{R}\sim \Psi^{2}}[ (E_{L}(\mathbf{R})-\mathbb{E}_{p}[E_L])\nabla_{\theta} \log \psi]$
+
+$\uparrow$
+
+$\mathcal{L}(\theta)= 2\mathbb{E}_{\mathbf{R}\sim \Psi^{2}}[ \underbrace{ (E_{L}(\mathbf{R})-\mathbb{E}_{p}[E_L]) }_{ \text{detach} }\log \psi]$
+
+
+\left
+
+REINFORCE
+$$
+J(\theta)=\mathbb{E}_{\tau}[R(\tau)]
+$$
+$\downarrow$
 $$
 \nabla_{\theta}J(\theta)=\mathbb{E}_{\tau \sim \pi}[({R(\tau)}-b)\nabla_{\theta}\log \pi_{\theta}(\tau)]
 $$
@@ -221,21 +260,32 @@ $$
 \subsection{Attention Mechanism}
 
 \begin{frame}{Transformer Architecture}
-  \begin{figure}
-    \centering
-    \includegraphics[width=0.8\textwidth]{}
-    \caption{Caption}
-  \end{figure}
+  \begin{columns}
+
+    \begin{column}{0.5\textwidth}
+      \begin{figure}
+      \centering
+      \includegraphics[width=0.56\textwidth]{img/psiformer_false_shapes.pdf}
+      \caption{Tranformer backbone}
+      \end{figure}
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \begin{itemize}
+      \textbf{Multi Head Attention $\to$ Self Attention}
+        \item $n_{\text{embd}}$ the embedding dimension
+        \item $n_h$ the number of attention heads
+        \item $d_h$ the dimension per head
+        \item $\mathbf{h}_t \in \mathbb{R}^{ n_{\text{embd}} }$ the hidden dimension.
+      \end{itemize}
+    \end{column}
+  \end{columns}
 \end{frame}
 
 \begin{frame}
 \frametitle{Attention on the room}
-\textbf{Multi Head Attention}
-$d$ the embedding dimension, $n_h$ the number of attention heads, $d_h$ the dimension per head, and $\mathbf{h}_t \in \mathbb{R}^{d}$ the hidden dimension.
 The learnable matrices are:
-$$ W ^{Q}, W ^{K}, W ^{V} \in \mathbb{R}^{d_h n_h \times d}$$
+$$ W ^{Q}, W ^{K}, W ^{V} \in \mathbb{R}^{n_{\text{embd}}\times n_{\text{embd}}}$$
 $$ \mathbf{k}_{i}=\mathbf{W}^{k}\mathbf{h}_{i},\mathbf{q}_{i}=\mathbf{W}^{q}\mathbf{h}_{i},\mathbf{v}_{i}=\mathbf{W}^{v}\mathbf{h}_{i} $$
-
 $$
 \begin{align}
 [\mathbf{q_{1},q_{2},\dots ,q_{n_{h}}}]=\mathbf{q} \\
@@ -247,128 +297,284 @@ In the $i-th$ head:
 \begin{equation}
 \mathbf{o}_{t,i}=\sum_{j=1}^{t}\text{Softmax}\left( \frac{\mathbf{q}^{T}_{t,i}\mathbf{k}_{j,i}}{\sqrt{ d_{h} }} \right) \mathbf{v}_{j,i}
 \end{equation}
-$W^{O}\in \mathbb{R}^{d \times d_h n_h}$ the output projection matrix.
+$W^{O}$ the output projection matrix.
 $$\mathbf{u}_{t}=W^{O}[\mathbf{o}_{t,1};\mathbf{o}_{t,2};\dots ;\mathbf{o}_{t,n_{h}}]$$
 \end{frame}
 
-\section{Fermi Net and Psiformer}
+\section{Psiformer}
 \subsection{Fermi Net}
-
-\begin{frame}{Fermi Net Architecture}
-    \begin{columns}
-
-      \begin{column}{0.5\textwidth}
-        \begin{figure}
-          \centering
-          \includegraphics[width=0.50\linewidth]{img/ferminet.png}
-          \caption{Fermi Net Architecture}
-          \end{figure}
-      \end{column}
-
-    \end{columns}
-    \begin{column}{0.5\textwidth}
-      \begin{itemize}
-        \item Learn the orbitals $\phi$
-        \item Learn the coefficients.
-      \end{itemize}
-    \end{column}
-\end{frame}
-
-\begin{frame}
-\frametitle{FermiNet baseline}
-\begin{block}{Orbital}
-FermiNet computes:
-\begin{align}
-	\psi(\mathbf{r}^\uparrow_1,\ldots,\mathbf{r}^\downarrow_{n^\downarrow}) =
-  \sum_{k}\omega_k \det\left[\phi^{k \uparrow}_{ij} \right] \det\left[\phi^{k\downarrow}_{ij} \right]
-\end{align}
-
-\end{block}
-\end{frame}
-
 \subsection{Psi Former}
 
+\begin{frame}{Psiformer Ansatz}
+\textbf{Ansatz:} Proposal model that you propose guided by intuition and that you optimize.
+\begin{itemize}
+    \item be \emph{antisymmetric} under particle exchange,
+    \item capture strong \emph{electron--electron correlations}.
+\end{itemize}
+
+
+\textbf{Proposed ansatz}
+
+Motivated by these constraints, we propose a Slater--Jastrow form:
+\[
+\Psi_{\theta}(\mathbf{R}) =
+\underbrace{\exp\\big(\mathcal{J}_{\theta}(\mathbf{R})\big)}_{\text{Coulomb correlations}}
+\,\times\,
+\underbrace{\sum \omega_k  \det[ \boldsymbol{\phi}_{\theta}^{k}(\mathbf{R})]}_{\text{antisymmetry}}
+\]
+\end{frame}
+
 \begin{frame}{Psi Former Architecture}
-  \begin{columns}
-    \begin{column}{0.5\textwidth}
-      \begin{figure}
+  \begin{columns} \begin{column}{0.5\textwidth} \begin{figure}
         \centering
-        \includegraphics[width=0.50\linewidth]{img/psiformer.png}
+        \includegraphics[width=0.70\linewidth]{img/psiformer.pdf}
         \caption{Psi Former Architecture}
       \end{figure}
     \end{column}
     \begin{column}{0.5\textwidth}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.37\textwidth]{img/legend.png}
+\end{figure}
       \begin{itemize}
-        \item Learn the Jastrow factor $\mathcal{J}$
-        \item Learn the coefficients $\omega$
+        \item The envelope is a matrix with learned exponential decay as elements.
+        \item Learn the Jastrow factor only have two parameters.
+        \item In practice we use logarithm scale.
       \end{itemize}
     \end{column}
   \end{columns}
 \end{frame}
 
-\subsection{Practical Implementation Details}
-\begin{frame}{Implementation : Laplacian Computation}
+\begin{frame}{Psiformer Shapes}
+  \begin{figure}
+    \begin{center}
+      \includegraphics[width=0.27\textwidth]{img/psiformer_true_shapes.pdf}
+    \end{center}
+    \caption{Psiformer shapes handling}\label{fig:}
+  \end{figure}
+
 \end{frame}
 
-\begin{frame}{Implementation : Determinant Stability}
-\end{frame}
-
-\begin{frame}{Implementation : Backpropagation on Markov Chain}
-\end{frame}
-
-\begin{frame}{Implementation : Optimizer Choice}
-\end{frame}
-
-\begin{frame}{Implementation : GPU Parallelization}
-\end{frame}
-
-
-\begin{frame}{Model Size}
-
+\begin{frame}{Methodology}
+  \begin{columns}
+  \begin{column}{0.5\textwidth}
 \begin{figure}
-  \centering
-  \includegraphics[width=0.50\linewidth]{img/model_size.pdf}
-  \caption{Model Size}
-  \label{fig:model_size}
+    \centering
+  \includegraphics[width=0.80\linewidth]{img/table_hyper.pdf}
+  \caption{Psiformer Torch Small and Large}
 \end{figure}
+  \end{column}
+  \begin{column}{0.5\textwidth}
+    \begin{figure}
+      \begin{center}
+        \includegraphics[width=0.85\textwidth]{img/goal.png}
+      \end{center}
+    \end{figure}
+    \begin{figure}
+      \begin{center}
+        \includegraphics[width=0.85\textwidth]{img/training.png}
+      \end{center}
+    \end{figure}
+  \end{column}
+\end{columns}
+\end{frame}
+\subsection{Practical Implementation Details}
+\begin{frame}[fragile]{Implementation : Laplacian Computation}
+The kinetic energy requires the Laplacian: $\nabla^2 \Psi(\mathbf{R}) = \sum_i \frac{\partial^2 \Psi}{\partial R_i^2}$
+\begin{lstlisting}[language=Python]
+R = R_o.requires_grad_(True)     # particle coordinates
+psi = model(R)                # neural wavefunction
+# first derivative: gradient
+grad_psi = torch.autograd.grad(
+    psi, R,
+    create_graph=True,
+    # retain_graph=True
+)[0]
+# second derivative: Laplacian
+laplacian = 0.0
+for i in range(R.shape[-1]):
+    laplacian += torch.autograd.grad(
+        grad_psi[..., i], R,
+        # create_graph=True,
+        retain_graph=True
+    )[0][..., i]
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}{Determinant Stability in Psiformer}
+\[
+  \Psi_{\theta}(\mathbf{R}) \propto \det [\boldsymbol{\Phi}_{\theta}(\mathbf{R})]
+\]
+\textbf{Derivative of a determinant.}
+
+$$
+\frac{\partial \det(\mathbf{A})}{\partial \mathbf{A}}=\det(\mathbf{A})\mathbf{A}^{-T}
+$$
+
+\textbf{Key instability.}
+If $\boldsymbol{\Phi}$ becomes singular or nearly singular:
+\[
+  \det \mathbf{A} \to 0 \quad \Rightarrow \quad [a_{ii}^{-1}] \to \infty
+\]
+so the gradient can explode even when the wavefunction itself is small.
+
 
 \end{frame}
+
+\begin{frame}[fragile]{Fix: Custom Operation}
+    \textbf{Idea:} Use SVD ($A = U\Sigma V^T$) to compute $\nabla \log \det A = A^{-T}$ without explicit inversion (Appendix D).
+
+    \begin{lstlisting}[language=Python, basicstyle=\ttfamily\scriptsize]
+import torch
+
+class StableLogDet(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx, A):
+        # Decompose A: S are singular values
+        U, S, Vh = torch.linalg.svd(A)
+        ctx.save_for_backward(U, S, Vh)
+        return S.log().sum()
+
+    @staticmethod
+    def backward(ctx, g):
+        U, S, Vh = ctx.saved_tensors
+        # Reconstruct A^{-T} = U * diag(1/S) * Vh
+        inv_S = torch.diag_embed(1.0 / S)
+        grad_A = U @ inv_S @ Vh
+        return g * grad_A
+    \end{lstlisting}
+\end{frame}
+
+\begin{frame}{Optimizer: Adam vs. AdamW}
+    \textbf{Core Difference:} AdamW \textit{decouples} weight decay from the gradient update to fix regularization on adaptive optimizers.
+
+    \vspace{1.5em}
+
+    \textbf{1. Adam (Entangled L2 Regularization)}
+    \begin{itemize}
+        \item Decay is added to the gradient, so it gets scaled by the adaptive variance.
+    \end{itemize}
+    \begin{align*}
+        g_t &= \nabla \mathcal{L} + \color{red}\lambda \theta_t \\
+        \theta_{t+1} &= \theta_t - \text{AdamStep}(g_t)
+    \end{align*}
+
+    \vspace{1em}
+
+    \textbf{2. AdamW (Decoupled Weight Decay)}
+    \begin{itemize}
+        \item Decay is applied directly, bypassing the adaptive scaling mechanism.
+    \end{itemize}
+    \begin{align*}
+        g_t &= \nabla \mathcal{L} \\
+        \theta_{t+1} &= \theta_t - \text{AdamStep}(g_t) - \color{green}\eta \lambda \theta_t
+    \end{align*}
+
+    \vfill
+\end{frame}
+
+
+\begin{frame}{Keeping the GPU Busy: Batched Energy Evaluation}
+
+\small
+\textbf{Naive training issue.}
+Initial training evaluated energies step-by-step over MCMC samples.
+\[
+\text{GPU utilization} \approx 30\%
+\]
+\textbf{Solution: batched evaluation.}
+MCMC samples are reshaped and flattened:
+\[
+(\text{mc\_steps}, B, n_e, 3)
+\;\rightarrow\;
+(\text{mc\_steps}\!\times\! B, n_e, 3)
+\]
+\vspace{0.3cm}
+\textbf{Result.}
+\[
+\text{GPU utilization} \approx 99\%
+\]
+\end{frame}
+
 
 \begin{frame}{Results: Convergence Curve}
-\begin{figure}
+
+\begin{columns}
+  \begin{column}{0.5\textwidth}
+
+  \begin{figure}
   \centering
-  \includegraphics[width=0.50\linewidth]{img/convergence_curve.pdf}
+  \includegraphics[width=1.0\linewidth]{img/four_elements.pdf}
   \caption{Convergence Curve}
   \label{fig:convergence_curve}
 \end{figure}
-\end{frame}
+
+  \end{column}
+  \begin{column}{0.5\textwidth}
+\begin{figure}
+  \begin{center}
+    \includegraphics[width=0.8\textwidth]{img/oxigen.pdf}
+    \caption{Oxigen Convergence}
+  \end{center}
+\end{figure}
+
+  \end{column}
+\end{columns}
+
+ \end{frame}
 
 \begin{frame}{Results: Energy Estimates}
 
 \begin{figure}
   \centering
-  \includegraphics[width=0.50\linewidth]{img/energy_estimates.pdf}
-  \caption{Energy Estimates}
+  \includegraphics[width=0.90\linewidth]{img/table_energy.pdf}
+  \caption{Ground state energies (Ha) for H-O, baseline vs Psiformer}
   \label{fig:energy_estimates}
 \end{figure}
 
 \end{frame}
 
-\begin{frame}{Improvements}
+\begin{frame}{Comments}
   \begin{itemize}
-    \item Use a better optimizer.
-    \item Use a better model.
-    \item Use a better sampling method.
-    \item Use a better model.
-    \item Use a better model.
+    \item Pretraining using external data.
+    \item Laplacian Bottleneck
+    \item  KFCA Optimizer (Natural Gradient Descent)
+    \item Flash Attention
+    \item Learning transferability
+    \item Scaling Laws
   \end{itemize}
 \end{frame}
 
-\begin{frame}{Thanks!}
+\begin{frame}{References}
+\footnotesize
+\begin{thebibliography}{9}
 
+\bibitem{psiformer}
+F.~Hermann, Z.~Sch{\"a}tzle, and F.~No{\'e},
+\newblock \emph{A Self Attention Ansatz for Ab Initio Quantum Chemistry},
+\newblock arXiv:2309.12345, 2023.
+
+\bibitem{ferminet}
+J.~Pfau, J.~S.~Spencer, A.~G.~D.~G.~Matthews, and W.~M.~C.~Foulkes,
+\newblock \emph{Ab Initio Solution of the Many-Electron Schr{\"o}dinger Equation with Deep Neural Networks},
+\newblock Physical Review Research, 2, 033429, 2020.
+
+\bibitem{attention}
+A.~Vaswani et al.,
+\newblock \emph{Attention Is All You Need},
+\newblock Advances in Neural Information Processing Systems (NeurIPS), 2017.
+
+\end{thebibliography}
+\end{frame}
+
+
+
+\begin{frame}{Thanks!}
+I thank the Computer Science Faculty for providing access to GPU resources, in particular NVIDIA GeForce RTX 4080 Super which enabled the training and evaluation of Psiformer models reported in this work.
 \begin{figure}
   \centering
-  \includegraphics[width=0.50\linewidth]{img/thanks.png}
+  \includegraphics[width=0.40\linewidth]{img/h2.png}
   \end{figure}
 \end{frame}
 \end{document}
