@@ -15,6 +15,8 @@ This repository demonstrates an experimental approach to approximating solutions
 
 > My sincerest thanks to Angel A. Flores and Alejandro D. Paredes for their feedback and helpful technical discussion. I would also like to thank the Faculty of Computer Science at UNI for the GPU used to make this project.
 
+<div style="text-align:center;"><img src="assets/research/poster.png" width="400"></div>
+
 ## Table of contents
 
 - [What this does](#what-this-does)
