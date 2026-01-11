@@ -4,7 +4,7 @@ import torch.nn as nn
 
 class Jastrow(nn.Module):
     """
-    Docstring for Jastrow:
+    Jastrow factor for the Psiformer model
     """
     def __init__(self, spin_up: int, spin_down: int):
         super().__init__()

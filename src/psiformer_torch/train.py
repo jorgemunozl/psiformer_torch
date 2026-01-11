@@ -255,7 +255,7 @@ if __name__ == "__main__":
     model_configs = wrapper("small",
                             run_name="Helium",
                             checkpoint_name="Helium",
-                            wand_mode="online",)
+                            wand_mode="offline",)
     model = PsiFormer(model_configs[0])
 
     # Train

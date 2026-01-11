@@ -76,10 +76,11 @@ class Hamiltonian():
         y = self.log_psi_fn(x_req)  # (B,)
         (g,) = grad(
             y, x_req, grad_outputs=torch.ones_like(y),
-            create_graph=True, retain_graph=True
+            create_graph=True
         )
         # Compute Hessian diagonals more efficiently by summing per-dimension
         # gradients and differentiating once per dimension.
+        # g_flat: (B, n_elec * 3)
         g_flat = g.reshape(g.shape[0], -1)
         # print("first derivative for the laplacian: ", g)
         lap_terms = []

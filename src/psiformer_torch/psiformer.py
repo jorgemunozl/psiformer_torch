@@ -35,8 +35,10 @@ class MHA(nn.Module):
         # (batch_size, seq_len=n_electrons, embedding_dim)
 
         # Get query, key, values from single linear projection.
+        # qkv: (B, n_elec, 3 * n_embd)
         qkv = self.c_attn(x)
 
+        # q, k, v: (B, n_elec, n_embd)
         q, k, v = qkv.split(self.n_embd, dim=2)
 
         head_dim = C // self.n_head
@@ -120,7 +122,7 @@ class Envelope(nn.Module):
 
 class Orbital_Head(nn.Module):
     """
-    This guy create k matrix to takes the determinants.
+    Build the spin-orbital matrices for each determinant
     """
     def __init__(self, config: Model_Config) -> None:
         super().__init__()
@@ -142,6 +144,7 @@ class Orbital_Head(nn.Module):
         self.orb_down = nn.Linear(self.n_embd, self.n_det*self.n_spin_down)
         nn.init.constant_(self.orb_up.bias, 1e-3)
         nn.init.constant_(self.orb_down.bias, 1e-3)
+        # Weights for the determinant initialized on zero
         self.det_logits = nn.Parameter(torch.zeros(self.n_det))
 
     def build_orbital_matrix(self, h: torch.Tensor,
