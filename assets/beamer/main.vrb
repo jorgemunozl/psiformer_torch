@@ -1,0 +1,22 @@
+\frametitle{Fix: Custom Operation}
+\textbf{Idea:} Use SVD ($A = U\Sigma V^T$) to compute $\nabla \log \det A = A^{-T}$ without explicit inversion (Appendix D).
+
+    \begin{lstlisting}[language=Python, basicstyle=\ttfamily\scriptsize]
+import torch
+
+class StableLogDet(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx, A):
+        # Decompose A: S are singular values
+        U, S, Vh = torch.linalg.svd(A)
+        ctx.save_for_backward(U, S, Vh)
+        return S.log().sum()
+
+    @staticmethod
+    def backward(ctx, g):
+        U, S, Vh = ctx.saved_tensors
+        # Reconstruct A^{-T} = U * diag(1/S) * Vh
+        inv_S = torch.diag_embed(1.0 / S)
+        grad_A = U @ inv_S @ Vh
+        return g * grad_A
+    \end{lstlisting}

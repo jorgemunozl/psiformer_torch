@@ -16,6 +16,19 @@
 }
 
 
+\usepackage{listings}
+\usepackage{xcolor} % optional, but nice
+\lstset{
+  basicstyle=\ttfamily\footnotesize,
+  keywordstyle=\color{blue},
+  commentstyle=\color{gray},
+  stringstyle=\color{red},
+  breaklines=true,
+  showstringspaces=false
+}
+
+
+
 \setbeamertemplate{footline}{%
   \leavevmode%
   \hbox{%
@@ -101,6 +114,20 @@ The eigen-problem becomes obtain $R$ solving:
 Find the potential $V$ of the system.
 \end{frame}
 
+
+
+\begin{frame}{Wave Function as Probability Density}
+\begin{figure}
+  \begin{center}
+    \includegraphics[width=0.55\textwidth]{img/prob.png}
+    \caption{$\lvert \Psi (\mathbf{R}) \rvert ^{2} $ represent the probability to find a particle near the position $\mathbf{R}$.}
+  \end{center}
+\end{figure}
+
+
+\end{frame}
+
+
 \begin{frame}{Many-Body System}
 When considering a many-body system, we need to consider the position of each electron like also the spin of it. When considering $n$ bodies, we have:
 \begin{equation}
@@ -117,6 +144,7 @@ With $\mathbf{x}_{i}=\{ \mathbf{r}_{i},\sigma \}$, where $\mathbf{r}_{i}\in \mat
 \end{itemize}
 \end{alertblock}
 \end{frame}
+
 \begin{frame}{Setting up the Hamiltonian}
   The first step is obtain a practical form of the \textbf{Hamiltonian}.
 
@@ -186,73 +214,57 @@ In this work we are going to use this specific form:
 \end{frame}
 
 \subsection{Optimizing an Ansatz}
-\begin{frame}
 
-Try an ansatz and optimize it.
+\begin{frame}
 \frametitle{Loss: Variational Principle}
 
-Variational principle states that the energy of any ansatz is greather the truth energy.
+Variational principle states:
 
 $$E[\Psi] = \displaystyle \frac{\langle \Psi \mid H \mid \Psi \rangle}{\langle \Psi \mid \Psi \rangle} \ge E_0$$
 
 Minimizing $E[\Psi]$ drives the ansatz toward the ground state.
-$E_0$ is the true ground energy (minimum possible).
 $$
-\mathcal{L}(\Psi_\theta)=\frac{\bra{\Psi_{\theta}} \hat{H}\ket{\Psi_{\theta}} }{\braket{ \Psi_{\theta}} }=\frac{\int d\mathbf{r}\Psi ^{*}(\mathbf{r})\hat{H}\Psi(\mathbf{r})}{\int d\mathbf{r}\Psi ^{*}(\mathbf{r})\Psi(\mathbf{r})}
+E[\Psi]=\mathcal{L}(\Psi_\theta)=\frac{\bra{\Psi_{\theta}} \hat{H}\ket{\Psi_{\theta}} }{\braket{ \Psi_{\theta}} }=\frac{\int d\mathbf{R}\Psi ^{*}(\mathbf{R})\hat{H}\Psi(\mathbf{R})}{\int d\mathbf{R}\Psi ^{*}(\mathbf{R})\Psi(\mathbf{R})}
 $$
 Define:
-$$p_{\theta}(x)=\frac{\Psi^{2}_{\theta}(x)}{\int  dx'\Psi^{2}_{\theta}(x')}\land E_{L}(x)=\Psi ^{-1}_{\theta}(x)\hat{H}\Psi_{\theta}(x)
+$$p_{\theta}(\mathbf{R})=|\Psi_{\theta}(\mathbf{R})|^{2}\frac{1}{\int  d\mathbf{R}'\Psi^{2}_{\theta}(\mathbf{R}')}\land E_{L}(\mathbf{R})=\frac{\hat{H}\Psi_{\theta}(\mathbf{R})}{\Psi_{\theta}(\mathbf{R})}
 $$
 Then:
 \begin{equation}
-\mathcal{L}_{\theta}=\mathbb{E}_{x\sim p_{\theta}}[E_{L}(x)]
+\mathcal{L}_{\theta}=\mathbb{E}_{\mathbf{R}\sim |\Psi_{\theta}| ^{2}}[E_{L}(\mathbf{R})]
 \end{equation}
 \end{frame}
 \begin{frame}{Variational Monte Carlo}
-  To evaluate that expectation we use Monte Carlo estimator.
   \begin{block}{Quantum Monte Carlo}
-With the samples $\mathbf{R}_{1},\dots,\mathbf{R}_{M}\sim p_{\theta}(\mathbf{R})$ we can make:
+With the samples $\mathbf{R}_{1},\dots,\mathbf{R}_{M}\sim |\Psi| ^{2}_{\theta}(\mathbf{R})$ we can make:
 
 \begin{equation}
-\mathcal{L}_{\theta}=\mathbb{E}_{x\sim p_{\theta}}[E_{L}(x)]\approx \frac{1}{M}\sum_{i=1}^{m} E_{L}(\mathbf{R}_{k})
+\mathcal{L}_{\theta}=\mathbb{E}_{\mathbf{R}\sim \Psi ^{2}_{\theta}}[E_{L}(\mathbf{R})]\approx \frac{1}{M}\sum_{i=1}^{M} E_{L}(\mathbf{R}_{k})
 \end{equation}
 \end{block}
-
 With:
-
 $$E_{L}(\mathbf{R}_{k})=\frac{\hat{H}\psi(\mathbf{R}_{k})}{\psi(\mathbf{R}_{k})}=-\frac{1}{2}\frac{\nabla^{2}\psi(\mathbf{R_{k}})}{\psi(\mathbf{R}_{k})}+V(\mathbf{R}_{k})
 $$
-
-To obtain those samples we use the \textbf{Metropolis-Hastings Algorithm} which handles well high dimensions.
-
+\textbf{Obtain $\mathbf{R}_k$} $\to$ \textbf{Metropolis-Hastings Algorithm}
 \end{frame}
-
 \begin{frame}
   \frametitle{Metropolis-Hastings Algorithm}
+\textbf{Goal: Generate many samples} $\mathbf{R}\sim \rho$, Requirement: $C\rho$
 
-1. Take a initial configuration $\mathbf{X}_{0}\in E$ arbitrary:
+1. $\mathbf{R}_{0}\in E$ random.
 
-2. Propose $\mathbf{X}'=\mathbf{X}_{0}+\eta$ ,where $\eta \sim q(\eta)$, $q$ is a probability density on $E$ called proposal kernel. symmetric Gaussian
+2. Propose $\mathbf{R}'=\mathbf{R}_{0}+\eta$ ,where $\eta \sim q(\eta)$, (Normal Gaussian)
 
 3. Compute the quantity:
 $$
-A(\mathbf{X_{0}}, \mathbf{X}')=\text{min}\left( 1,\frac{\rho(\mathbf{X}')}{\rho(\mathbf{X}_{0})} \frac{q(\mathbf{X}'-\mathbf{X}_{0})}{q(\mathbf{X}_{0}-\mathbf{X}')}\right)
+A(\mathbf{R_{0}}, \mathbf{R}')=\text{min}\left( 1,\frac{\rho(\mathbf{R}')}{\rho(\mathbf{R}_{0})} \right)
 $$
-Where $\rho$ is the target distribution where we want sample, In the case where $q$ is symmetric, this simplifies to:
-$$
-A(\mathbf{X}_{0},\mathbf{X}')=\text{min}\left( 1,\frac{\rho(\mathbf{X}^{'})}{\rho(\mathbf{X}_{0})} \right)
-$$
-4. Generate a uniform number $U\in[0,1]$
-
-5. If: $U<A(\mathbf{X}_{0}\to \mathbf{X'}_{l})$ then $\mathbf{X_{1}}=\mathbf{X}'$, otherwise try another $\mathbf{X}'$. Accept or decline.
+4. Generate a uniform number $U\in[0,1]$. If: $U<A(\mathbf{R}_{0} ,\mathbf{R'})$ then $\mathbf{R_{1}}=\mathbf{R}'$, otherwise try another $\mathbf{R}'$. Accept or decline.
 
 \end{frame}
 
 \begin{frame}{Metropolis-Hastings}
 
-  6. Repeat until obtain $N_{eq}$ accepted, the change stabilizes (stationary distribution) this phase is called \textbf{burn in}.
-
-  7. From $\mathbf{X}_{N_{\text{eq}}}$ generate $M$ samples until reach the sample $\mathbf{X}_{N_{\text{eq}}+M+1}$.
 In each sample generates $E_{L}(\mathbf{R}_{k})$ then average to obtain $\mathbb{E}(E_{L})$ and begin the back propagation step.
 
 \begin{block}{Gradients of the Loss}
@@ -267,75 +279,35 @@ This expectation is calculated in the same way.
 
 % ------------------------------
 
-\section{Deep Learning Tool Box}
 
-\subsection{Natural Gradient Descent}
 
-\begin{frame}{Fisher Information Matrix}
+\begin{frame}{Transformer Architecture}
+  \begin{columns}
 
-  Gradient descent assumes that parameters lives on the Euclidian Space $\mathbb{R}^{n}$. $(\mathcal{L}(\theta_1,\dots,\mathbf{x})$
-
-But in the case where parameters lives on a probability distribution $p(x,\theta)$ that assumption don't work to well.
-A natural \textbf{metric} when looking for compare the distributions $p(x,\theta)$ and $p(x,\theta+\delta \theta)$ is the \textbf{Fisher information Matrix}.
-
-\begin{block}{Fisher Matrix $F(\theta)$}
- Let $x\sim p(x|\theta)$. Define the score:
-$$
-s_{\theta}(x)=\nabla_{\theta}\log p(x|\theta)
-$$
-$$
-F(\theta)=\mathbb{E}_{x\sim p(\cdot|\theta)}[s_{\theta}(x)s_{\theta}(x)^{\mathsf{\top}}]
-$$
-\end{block}
-$s\in \mathbb{R}^{d}$ a column vector. $d$ number of parameters.
+    \begin{column}{0.5\textwidth}
+      \begin{figure}
+      \centering
+      \includegraphics[width=0.56\textwidth]{img/psiformer_false_shapes.pdf}
+      \caption{Tranformer backbone}
+      \end{figure}
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \begin{itemize}
+      \textbf{Multi Head Attention $\to$ Self Attention}
+        \item $n_{\text{embd}}$ the embedding dimension
+        \item $n_h$ the number of attention heads
+        \item $d_h$ the dimension per head
+        \item $\mathbf{h}_t \in \mathbb{R}^{ n_{\text{embd}} }$ the hidden dimension.
+      \end{itemize}
+    \end{column}
+  \end{columns}
 \end{frame}
 
-\begin{frame}{Natural Gradient}
-
-\begin{block}{Natural Gradient}
-Using the Fisher Metric, the steepest descent direction of the loss is:
-
-$$
--F(\theta)^{-1} \nabla_{\theta}\mathcal{L}
-$$
-\end{block}
-The updates becomes:
-$$
-\theta_{k+1}=\theta_k-\eta F(\theta_k)^{-1}\delta_{\theta}\mathcal{L}
-$$
-\begin{itemize}
-\item Compute $F$, expensive.
-\item KFAC ameliorate this with two approximations.
-\end{itemize}
-\end{frame}
-
-\begin{frame}
-    \frametitle{Optimizer: KFAC (natural gradient)}
-
-    The first approximation is: $F_{ij}$ is assumed zero when $\theta_i$ and $\theta_j$ are on different layers (neural network). So we just care about the same layer $\ell$.
-Calculus say.
-$$
-\mathbb{E}_{p(\mathbf{X})}\left[ \frac{\partial \log p(X)}{\partial \text{vec}(\mathbf{W}_{\ell})}\frac{\partial \log p(X)}{\partial \text{vec}(\mathbf{W}_{\ell})}^{\mathsf{T}} \right]=\mathbb{E}_{p(\mathbf{X})}[(\mathbf{a}_{\ell}\otimes \mathbf{e}_{\ell})(\mathbf{a}_{\ell}\otimes \mathbf{e}_{\ell})^{\mathsf{T}}]
-$$
-Where $\mathbf{a}_{\ell}$ are the forward activation and $\mathbf{e}_{\ell}$ are the backward sensitivities for that layer.
-
-\begin{equation}
-\mathbb{E}_{p(\mathbf{X})}[(\mathbf{a}_{\ell}\otimes \mathbf{e}_{\ell})(\mathbf{a}_{\ell}\otimes \mathbf{e}_{\ell})^{\mathsf{\top}}]^{-1}\approx \mathbb{E}_{p(\mathbf{X})}[\mathbf{a}_{\ell}\mathbf{a_{\ell}}^{\mathsf{\top}}]^{-1}\otimes \mathbb{E}_{p(\mathbf{X})}[\mathbf{e}_{\ell}\mathbf{e}_{\ell}^{\mathsf{\top}}]^{-1}
-\end{equation}
-\end{frame}
-
-
-\subsection{Attention Mechanism}
 \begin{frame}
 \frametitle{Attention on the room}
-
-\textbf{Multi Head Attention}
-Let $d$ be the embedding dimension, $n_h$ be the number of attention heads, $d_h$ be the dimension per head, and $\mathbf{h}_t \in \mathbb{R}^{d}$ be hidden dimension.
-The learn matrices are:
-$$ W ^{Q}, W ^{K}, W ^{V} \in \mathbb{R}^{d_h n_h \times d}$$
-We obtain the key, queries, and values vectors with:
+The learnable matrices are:
+$$ W ^{Q}, W ^{K}, W ^{V} \in \mathbb{R}^{n_{\text{embd}}\times n_{\text{embd}}}$$
 $$ \mathbf{k}_{i}=\mathbf{W}^{k}\mathbf{h}_{i},\mathbf{q}_{i}=\mathbf{W}^{q}\mathbf{h}_{i},\mathbf{v}_{i}=\mathbf{W}^{v}\mathbf{h}_{i} $$
-We slice this vectors:
 $$
 \begin{align}
 [\mathbf{q_{1},q_{2},\dots ,q_{n_{h}}}]=\mathbf{q} \\
@@ -347,89 +319,285 @@ In the $i-th$ head:
 \begin{equation}
 \mathbf{o}_{t,i}=\sum_{j=1}^{t}\text{Softmax}\left( \frac{\mathbf{q}^{T}_{t,i}\mathbf{k}_{j,i}}{\sqrt{ d_{h} }} \right) \mathbf{v}_{j,i}
 \end{equation}
-
-\end{frame}
-
-
-\begin{frame}{Attention!}
-
-Let $W^{O}\in \mathbb{R}^{d \times d_h n_h}$ be the output projection matrix.
+$W^{O}$ the output projection matrix.
 $$\mathbf{u}_{t}=W^{O}[\mathbf{o}_{t,1};\mathbf{o}_{t,2};\dots ;\mathbf{o}_{t,n_{h}}]$$
-
-\begin{figure}
-  \centering
-  \includegraphics[width=0.3\linewidth]{img/transf.png}
-  \caption{Original Transformer}
-\end{figure}
-
 \end{frame}
 
-
-\section{Fermi Net and Psiformer}
-
+\section{Psiformer}
 \subsection{Fermi Net}
-\begin{frame}
-    \frametitle{FermiNet baseline}
+\subsection{Psi Former}
 
-\begin{block}{Orbital}
-To compute the orbitals we need to compute.
-\begin{equation}
-\phi^{k\alpha}_i(\mathbf{r}^\alpha_j; \{\mathbf{r}^\alpha_{/j}\}; \{\mathbf{r}^{\bar{\alpha}}\}) = \left(\mathbf{w}^{k\alpha}_i \cdot \mathbf{h}^{L\alpha}_j + g^{k\alpha}_i\right) \sum_{m} \pi^{k\alpha}_{im}\mathrm{exp}\left(-|\mathbf{\Sigma}_{im}^{k \alpha}(\mathbf{r}^{\alpha}_j-\mathbf{R}_m)|\right)
-\end{equation}
-\end{block}
-Where the hidden states are:
-\begin{align}
-    \mathbf{h}^{\ell+1 \alpha}_i &= \mathrm{tanh}\left(\mathbf{V}^\ell \mathbf{f}^{\ell \alpha}_i + \mathbf{b}^\ell\right) + \mathbf{h}^{\ell\alpha}_i \nonumber \notag\\
-    \mathbf{h}^{\ell+1 \alpha\beta}_{ij} &= \mathrm{tanh}\left(\mathbf{W}^\ell\mathbf{h}^{\ell \alpha\beta}_{ij} + \mathbf{c}^\ell\right) + \mathbf{h}^{\ell \alpha\beta}_{ij}\notag
-\end{align}
-Finally:
-\begin{align}
-	\psi(\mathbf{r}^\uparrow_1,\ldots,\mathbf{r}^\downarrow_{n^\downarrow}) = \sum_{k}\omega_k &\left(\det\left[\phi^{k \uparrow}_i(\mathbf{r}^\uparrow_j; \{\mathbf{r}^\uparrow_{/j}\}; \{\mathbf{r}^\downarrow\})\right]\right.\notag \\&\left.\hphantom{\left(\right.}\det\left[\phi^{k\downarrow}_i(\mathbf{r}^\downarrow_j; \{\mathbf{r}^\downarrow_{/j}\});
-	\{\mathbf{r}^\uparrow\};\right]\right).
-\end{align}
+\begin{frame}{Psiformer Ansatz}
+\textbf{Ansatz:} Proposal model that you propose guided by intuition and that you optimize.
+\begin{itemize}
+    \item be \emph{antisymmetric} under particle exchange,
+    \item capture strong \emph{electron--electron correlations}.
+\end{itemize}
 
 
+\textbf{Proposed ansatz}
+
+Motivated by these constraints, we propose a Slater--Jastrow form:
+\[
+\Psi_{\theta}(\mathbf{R}) =
+\underbrace{\exp\\big(\mathcal{J}_{\theta}(\mathbf{R})\big)}_{\text{Coulomb correlations}}
+\,\times\,
+\underbrace{\sum \omega_k  \det[ \boldsymbol{\phi}_{\theta}^{k}(\mathbf{R})]}_{\text{antisymmetry}}
+\]
 \end{frame}
 
-\begin{frame}{Fermi Net Architecture}
-  \begin{figure}
+\begin{frame}{Psi Former Architecture}
+  \begin{columns} \begin{column}{0.5\textwidth} \begin{figure}
+        \centering
+        \includegraphics[width=0.70\linewidth]{img/psiformer.pdf}
+        \caption{Psi Former Architecture}
+      \end{figure}
+    \end{column}
+    \begin{column}{0.5\textwidth}
+
+\begin{figure}[htbp]
   \centering
-  \includegraphics[width=0.50\linewidth]{img/ferminet.png}
-  \caption{Fermi Net Architecture}
+  \includegraphics[width=0.37\textwidth]{img/legend.png}
+\end{figure}
+      \begin{itemize}
+        \item The envelope is a matrix with learned exponential decay as elements.
+        \item Learn the Jastrow factor only have two parameters.
+        \item In practice we use logarithm scale.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Psiformer Shapes}
+  \begin{figure}
+    \begin{center}
+      \includegraphics[width=0.27\textwidth]{img/psiformer_true_shapes.pdf}
+    \end{center}
+    \caption{Psiformer shapes handling}\label{fig:}
   \end{figure}
 
 \end{frame}
 
-\subsection{Psi Former}
-\begin{frame}{The Psiformer Ansatz (overview)}
-  The output of \textbf{Psiformer} is:
-  \begin{equation}
-  \Psi_{\theta}(\mathbf{x})=\exp(\mathcal{J}_{\theta}(\mathbf{x}))\sum_{k=1}^{N_{\det}}\det[\boldsymbol{\Phi}_{\theta}^{k}(x)]
-\end{equation}
-We obtain the hidden states:
-$$
- A^{l}_{h}=[\text{SelfAttn}(\mathbf{h}^{l}_{1},\dots,\mathbf{h}^{\ell}_{N};\mathbf{W}^{\ell h}_{q},\mathbf{W}^{\ell h}_{k},\mathbf{W}^{\ell h}_{v})]
-$$
-
-$$A^{\ell}=\text{concat}_{h}[A_{h}^{\ell}]$$
-And then used it apply:
-$$
-\mathbf{f}_{i}^{\ell+1}=\mathbf{h}_{i}^{\ell}+W_{o}^{\ell}A^{\ell}
-$$
-And generate a new hidden state:
-$$ \mathbf{h}_{i}^{\ell+1}=\mathbf{f}_{i}^{\ell+1}+\tanh(\mathbf{W}^{\ell+1}\mathbf{f}_{i}^{\ell+1}+\mathbf{b}^{\ell+1}) $$
-\end{frame}
-\begin{frame}{Psi Former Architecture}
-  \begin{figure}
+\begin{frame}{Methodology}
+  \begin{columns}
+  \begin{column}{0.5\textwidth}
+\begin{figure}
     \centering
-    \includegraphics[width=0.45\linewidth]{img/psiformer.png}
-    \caption{Psi Former Architecture}
-    \label{fig:placeholder}
+  \includegraphics[width=0.80\linewidth]{img/table_hyper.pdf}
+  \caption{Psiformer Torch Small and Large}
 \end{figure}
+  \end{column}
+  \begin{column}{0.5\textwidth}
+    \begin{figure}
+      \begin{center}
+        \includegraphics[width=0.85\textwidth]{img/goal.png}
+      \end{center}
+    \end{figure}
+    \begin{figure}
+      \begin{center}
+        \includegraphics[width=0.85\textwidth]{img/training.png}
+      \end{center}
+    \end{figure}
+  \end{column}
+\end{columns}
+\end{frame}
+\subsection{Practical Implementation Details}
+\begin{frame}[fragile]{Implementation : Laplacian Computation}
+The kinetic energy requires the Laplacian: $\nabla^2 \Psi(\mathbf{R}) = \sum_i \frac{\partial^2 \Psi}{\partial R_i^2}$
+\begin{lstlisting}[language=Python]
+R = R_o.requires_grad_(True)     # particle coordinates
+psi = model(R)                # neural wavefunction
+# first derivative: gradient
+grad_psi = torch.autograd.grad(
+    psi, R,
+    create_graph=True,
+    # retain_graph=True
+)[0]
+# second derivative: Laplacian
+laplacian = 0.0
+for i in range(R.shape[-1]):
+    laplacian += torch.autograd.grad(
+        grad_psi[..., i], R,
+        # create_graph=True,
+        retain_graph=True
+    )[0][..., i]
+\end{lstlisting}
 \end{frame}
 
-\begin{frame}{Thanks}
-    \centering
-    Thanks.
+\begin{frame}{Determinant Stability in Psiformer}
+\[
+  \Psi_{\theta}(\mathbf{R}) \propto \det [\boldsymbol{\Phi}_{\theta}(\mathbf{R})]
+\]
+\textbf{Derivative of a determinant.}
+
+$$
+\frac{\partial \det(\mathbf{A})}{\partial \mathbf{A}}=\det(\mathbf{A})\mathbf{A}^{-T}
+$$
+
+\textbf{Key instability.}
+If $\boldsymbol{\Phi}$ becomes singular or nearly singular:
+\[
+  \det \mathbf{A} \to 0 \quad \Rightarrow \quad [a_{ii}^{-1}] \to \infty
+\]
+so the gradient can explode even when the wavefunction itself is small.
+
+
 \end{frame}
+
+\begin{frame}[fragile]{Fix: Custom Operation}
+    \textbf{Idea:} Use SVD ($A = U\Sigma V^T$) to compute $\nabla \log \det A = A^{-T}$ without explicit inversion (Appendix D).
+
+    \begin{lstlisting}[language=Python, basicstyle=\ttfamily\scriptsize]
+import torch
+
+class StableLogDet(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx, A):
+        # Decompose A: S are singular values
+        U, S, Vh = torch.linalg.svd(A)
+        ctx.save_for_backward(U, S, Vh)
+        return S.log().sum()
+
+    @staticmethod
+    def backward(ctx, g):
+        U, S, Vh = ctx.saved_tensors
+        # Reconstruct A^{-T} = U * diag(1/S) * Vh
+        inv_S = torch.diag_embed(1.0 / S)
+        grad_A = U @ inv_S @ Vh
+        return g * grad_A
+    \end{lstlisting}
+\end{frame}
+
+\begin{frame}{Optimizer: Adam vs. AdamW}
+    \textbf{Core Difference:} AdamW \textit{decouples} weight decay from the gradient update to fix regularization on adaptive optimizers.
+
+    \vspace{1.5em}
+
+    \textbf{1. Adam (Entangled L2 Regularization)}
+    \begin{itemize}
+        \item Decay is added to the gradient, so it gets scaled by the adaptive variance.
+    \end{itemize}
+    \begin{align*}
+        g_t &= \nabla \mathcal{L} + \color{red}\lambda \theta_t \\
+        \theta_{t+1} &= \theta_t - \text{AdamStep}(g_t)
+    \end{align*}
+
+    \vspace{1em}
+
+    \textbf{2. AdamW (Decoupled Weight Decay)}
+    \begin{itemize}
+        \item Decay is applied directly, bypassing the adaptive scaling mechanism.
+    \end{itemize}
+    \begin{align*}
+        g_t &= \nabla \mathcal{L} \\
+        \theta_{t+1} &= \theta_t - \text{AdamStep}(g_t) - \color{green}\eta \lambda \theta_t
+    \end{align*}
+
+    \vfill
+\end{frame}
+
+
+\begin{frame}{Keeping the GPU Busy: Batched Energy Evaluation}
+
+\small
+\textbf{Naive training issue.}
+Initial training evaluated energies step-by-step over MCMC samples.
+\[
+\text{GPU utilization} \approx 30\%
+\]
+\textbf{Solution: batched evaluation.}
+MCMC samples are reshaped and flattened:
+\[
+(\text{mc\_steps}, B, n_e, 3)
+\;\rightarrow\;
+(\text{mc\_steps}\!\times\! B, n_e, 3)
+\]
+\vspace{0.3cm}
+\textbf{Result.}
+\[
+\text{GPU utilization} \approx 99\%
+\]
+\end{frame}
+
+
+\begin{frame}{Results: Convergence Curve}
+
+\begin{columns}
+  \begin{column}{0.5\textwidth}
+
+  \begin{figure}
+  \centering
+  \includegraphics[width=1.0\linewidth]{img/four_elements.pdf}
+  \caption{Convergence Curve}
+  \label{fig:convergence_curve}
+\end{figure}
+
+  \end{column}
+  \begin{column}{0.5\textwidth}
+\begin{figure}
+  \begin{center}
+    \includegraphics[width=0.8\textwidth]{img/oxigen.pdf}
+    \caption{Oxigen Convergence}
+  \end{center}
+\end{figure}
+
+  \end{column}
+\end{columns}
+
+ \end{frame}
+
+\begin{frame}{Results: Energy Estimates}
+
+\begin{figure}
+  \centering
+  \includegraphics[width=0.90\linewidth]{img/table_energy.pdf}
+  \caption{Ground state energies (Ha) for H-O, baseline vs Psiformer}
+  \label{fig:energy_estimates}
+\end{figure}
+
+\end{frame}
+
+\begin{frame}{Comments}
+  \begin{itemize}
+    \item Pretraining using external data.
+    \item Laplacian Bottleneck
+    \item  KFCA Optimizer (Natural Gradient Descent)
+    \item Flash Attention
+    \item Learning transferability
+    \item Scaling Laws
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{References}
+\footnotesize
+\begin{thebibliography}{9}
+
+\bibitem{psiformer}
+F.~Hermann, Z.~Sch{\"a}tzle, and F.~No{\'e},
+\newblock \emph{A Self Attention Ansatz for Ab Initio Quantum Chemistry},
+\newblock arXiv:2309.12345, 2023.
+
+\bibitem{ferminet}
+J.~Pfau, J.~S.~Spencer, A.~G.~D.~G.~Matthews, and W.~M.~C.~Foulkes,
+\newblock \emph{Ab Initio Solution of the Many-Electron Schr{\"o}dinger Equation with Deep Neural Networks},
+\newblock Physical Review Research, 2, 033429, 2020.
+
+\bibitem{attention}
+A.~Vaswani et al.,
+\newblock \emph{Attention Is All You Need},
+\newblock Advances in Neural Information Processing Systems (NeurIPS), 2017.
+
+\end{thebibliography}
+\end{frame}
+
+
+
+\begin{frame}{Thanks!}
+I thank the Computer Science Faculty for providing access to GPU resources, in particular NVIDIA GeForce RTX 4080 Super which enabled the training and evaluation of Psiformer models reported in this work.
+\begin{figure}
+  \centering
+  \includegraphics[width=0.40\linewidth]{img/h2.png}
+  \end{figure}
+\end{frame}
+
 \end{document}
