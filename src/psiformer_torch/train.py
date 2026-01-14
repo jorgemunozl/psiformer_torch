@@ -70,35 +70,15 @@ class Trainer():
         local_es: list[torch.Tensor] = []
 
         for chunk in flat.split(self.config.energy_batch_size):
-            try:
-                logpsi = self.log_psi(chunk)
-            except ValueError as e:
-                logger.warning(
-                    f"Skipping chunk due to log_psi error: {e}"
-                )
-                continue
-
-            if not torch.isfinite(logpsi).all():
-                logger.warning("Skipping chunk with non-finite log_psi")
-                continue
-
+            logpsi = self.log_psi(chunk)  # (B, )
             local_energy = self.hamilton.local_energy(chunk)
-            finite_mask = torch.isfinite(local_energy)
-            if not finite_mask.all():
-                logger.warning("Dropping non-finite local_energy entries")
-                logpsi = logpsi[finite_mask]
-                local_energy = local_energy[finite_mask]
-
-            if logpsi.numel() == 0:
-                continue
-
+            # local_energy: (B, )
             logpsis.append(logpsi)
             local_es.append(local_energy)
 
-        if len(logpsis) == 0:
-            return None, None
-
         return torch.cat(logpsis, dim=0), torch.cat(local_es, dim=0)
+        # logpsis: (mc_steps * B, )
+        # local_es: (mc_steps * B, )
 
     def save_checkpoint(self, step):
         if step % self.config.checkpoint_step == 0:
@@ -128,30 +108,18 @@ class Trainer():
             samples = self.mh.sampler()
 
             log_psi_vals, local_energies = self._batched_energy_eval(samples)
-            if log_psi_vals is None or local_energies is None:
-                logger.warning(
-                    f"No valid samples at step {step}; resampling next step."
-                )
-                continue
-
             # Energy Local Expection
             E_mean = local_energies.mean().detach()
-            # E_mean = local_energies.mean()
             # Derivative of the Loss using Log Derivative Trick
             loss = 2*((local_energies.detach() - E_mean) * log_psi_vals).mean()
-
-            # Derivative of the Loss using PyTorch Grad
-            # loss = E_mean
 
             # Optimizer Step
             self.optimizer.zero_grad()
             loss.backward()
-            grad_norm = torch.nn.utils.clip_grad_norm_(self.model.parameters(),
-                                                       max_norm=10.0)
             self.optimizer.step()
             self.scheduler.step()
 
-            # self.save_checkpoint(step)
+            self.save_checkpoint(step)
 
             # Print info
             logger.info(f"Step {step}: E_mean = {E_mean.item():.6f}")
@@ -166,12 +134,11 @@ class Trainer():
                 "Energy": E_mean,
                 "loss": loss,
                 "step_time_sec": time.perf_counter() - step_start,
-                "grad_norm": grad_norm.item() if grad_norm is not None else .0,
                 "lr": self.optimizer.param_groups[0]["lr"],
-                "env_up_pi_norm": env_up.pi.detach().norm().item(),
-                "env_up_sigma_norm": env_up.raw_sigma.detach().norm().item(),
-                "env_down_pi_norm": env_down.pi.detach().norm().item(),
-                "env_down_sigma_n": env_down.raw_sigma.detach().norm().item(),
+                "e_up_pi_norm": env_up.pi.detach().norm().item(),
+                "e_up_sigma_norm": env_up.raw_sigma.detach().norm().item(),
+                "e_down_pi_norm": env_down.pi.detach().norm().item(),
+                "e_down_sigma_norm": env_down.raw_sigma.detach().norm().item(),
             }
             if torch.cuda.is_available():
                 torch.cuda.synchronize(self.device)
@@ -252,14 +219,14 @@ if __name__ == "__main__":
     print(f"Using {device}")
 
     # Model
-    model_configs = wrapper("small",
-                            run_name="Helium",
-                            checkpoint_name="Helium",
-                            wand_mode="offline",)
-    model = PsiFormer(model_configs[0])
+    model_config, train_config = wrapper("small",
+                                         run_name="Helium",
+                                         checkpoint_name="Helium",
+                                         wand_mode="offline")
+    model = PsiFormer(model_config)
 
     # Train
-    trainer = Trainer(model, model_configs[1], True)
+    trainer = Trainer(model, train_config, True)
 
     # train the model
     trainer.train()

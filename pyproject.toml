@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "huggingface-hub>=1.2.3",
+    "jupyter>=1.1.1",
     "matplotlib>=3.10.7",
     "numpy>=2.3.3",
     "pytest>=9.0.2",
@@ -15,25 +16,33 @@ dependencies = [
 
 [dependency-groups]
 # On the GPU box: install this group to get CUDA PyTorch
+# Uses pytorch-cu128 index (set in [tool.uv.sources])
 cuda = [
     "torch>=2.9.1",
 ]
 
-# You can keep this, but right now it's identical to `cuda`.
-# If later you want a CPU-only build for laptop, we’d point it to a CPU index instead.
+# CPU-only build for laptop
+# To use this, change [tool.uv.sources] torch index to "pytorch-cpu"
 laptop = [
     "torch>=2.9.1",
 ]
 
 
-# CUDA 12.8 wheels from the official PyTorch index
+# CPU wheels from the official PyTorch index
 [[tool.uv.index]]
-name = "pytorch-cu128"
+name = "pytorch-cpu"
 url = "https://download.pytorch.org/whl/cpu"
 explicit = true
 
+# CUDA 12.8 wheels from the official PyTorch index
+[[tool.uv.index]]
+name = "pytorch-cu128"
+url = "https://download.pytorch.org/whl/cu128"
+explicit = true
+
 [tool.uv.sources]
-# Force torch to be resolved from the CUDA 12.8 index
+# Force torch to be resolved from the CUDA 12.8 index by default
+# To use CPU instead, change this to "pytorch-cpu" or remove this section
 torch = [
-  { index = "pytorch-cu128" },
+  { index = "pytorch-cpu" },
 ]

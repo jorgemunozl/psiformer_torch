@@ -82,14 +82,11 @@ class Hamiltonian():
         # gradients and differentiating once per dimension.
         # g_flat: (B, n_elec * 3)
         g_flat = g.reshape(g.shape[0], -1)
-        # print("first derivative for the laplacian: ", g)
         lap_terms = []
         for j in range(g_flat.shape[1]):
             second = grad(
                 g_flat[:, j].sum(), x_req, retain_graph=True
             )[0]
-            # print("second for the laplacian", second)
             lap_terms.append(second.reshape(g.shape[0], -1)[:, j])
         lap = torch.stack(lap_terms, dim=1).sum(dim=1)
-        # print("laplacian", lap)
         return lap

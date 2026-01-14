@@ -2,8 +2,6 @@
 Test laplacian implementation from Hamiltonian.local energy
 Compare to analytical solutions and stability.
 """
-
-
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
@@ -45,7 +43,10 @@ def gradient(f: Callable, x: torch.Tensor):
     return grad.sum()
 
 
-def laplacian(f: Callable[[torch.Tensor], torch.Tensor], x: torch.Tensor) -> torch.Tensor:
+def laplacian(f: Callable[[torch.Tensor], torch.Tensor],
+              x: torch.Tensor,
+              hessian: Callable[[Callable[[torch.Tensor], torch.Tensor], torch.Tensor],  # noqa: E501
+              torch.Tensor]) -> torch.Tensor:
     # Compute the Laplacian at a single point by tracing the Hessian
     x = x.clone().detach().requires_grad_(True)
     hess = hessian(f, x)  # This would be efficient?

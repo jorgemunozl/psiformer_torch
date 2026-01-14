@@ -113,11 +113,9 @@ class Envelope(nn.Module):
         """
 
         sigma = F.softplus(self.raw_sigma) + 1e-6
-        sigma = torch.clamp(sigma, min=1e-3, max=1e3)
-        pi = torch.clamp(self.pi, min=1e-3, max=1e3)
 
         # Broadcasting for B, n_elec, _ , 1
-        return torch.sum(torch.exp(-r_ae * sigma) * pi, dim=2)
+        return torch.sum(torch.exp(-r_ae * sigma) * self.pi, dim=2)
 
 
 class Orbital_Head(nn.Module):
@@ -184,10 +182,14 @@ class Orbital_Head(nn.Module):
         """
         h_up = h[:, spin_up_idx, :]
         h_down = h[:, spin_down_idx, :]
+        # (B, n_up, n_det, n_spin, n_spin)
         phi_up = self.build_orbital_matrix(h_up, r_ae_up, "up")
+        # (B, n_down, n_det, n_spin, n_spin)
         phi_down = self.build_orbital_matrix(h_down, r_ae_down, "down")
 
+        # (B, n_det, 1)
         weights = torch.softmax(self.det_logits, dim=-1).unsqueeze(-1)
+        # (B, n_det, n_spin, n_spin)
         log_out, _ = logdet_matmul(phi_up, phi_down, weights)
 
         return log_out.squeeze(-1)
@@ -252,12 +254,7 @@ class PsiFormer(nn.Module,
         # print("sign_det", _sign_det)
         jastrow_term = self.jastrow(x)
 
-        # Guard against singular determinant blocks
-        if not torch.isfinite(logdet).all():
-            raise ValueError("Non-finite log determinant detected")
-
         # The _sign_det you can use later for whatever you want.
-
         log_psi = logdet + jastrow_term
 
         # log_psi: (B, )
