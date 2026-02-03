@@ -1,5 +1,5 @@
 <div align="center">
-  <h1>Solving the many-electron Schrödinger equation with Transformers</h1>
+  <h1>Solving the Schrödinger equation with Transformers</h1>
   <p>
     <a href="https://pytorch.org/"><img alt="PyTorch" src="https://img.shields.io/badge/PyTorch-ready-EE4C2C?logo=pytorch&logoColor=white"></a>
     <a href="https://www.python.org/"><img alt="Python" src="https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white"></a>
