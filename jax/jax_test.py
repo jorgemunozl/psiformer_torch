@@ -32,7 +32,6 @@ model = Model(din=1, dmid=10, dout=1, rngs=init_rngs)
 output = model(jnp.array([100.0]), init_rngs)
 print(output)
 
-"""
 optimizer = nnx.Optimizer(model, optax.adam(learning_rate=0.001), wrt=nnx.Param)
 
 def train_step(model, optimizer, x: jnp.ndarray, y: jnp.ndarray, dropout_key: jax.Array):
@@ -43,7 +42,7 @@ def train_step(model, optimizer, x: jnp.ndarray, y: jnp.ndarray, dropout_key: ja
         return jnp.mean((pred - y) ** 2)
     
     loss, grads = nnx.value_and_grad(loss_fn)(model)
-    optimizer.update(grads)
+    optimizer.update(model, grads)
     return loss
 
 # Generate training data
@@ -52,7 +51,7 @@ y_data = function_to_learn(x_data)
 
 # Training loop - split keys and pass to train_step
 rng_key = jax.random.PRNGKey(1)
-for epoch in range(100):
+for epoch in range(5000):
     # Split key for each step
     rng_key, dropout_key = jax.random.split(rng_key)
     loss = train_step(model, optimizer, x_data, y_data, dropout_key)
@@ -66,4 +65,3 @@ test_rngs = nnx.Rngs(dropout=test_rng_key)
 test_y = model(test_x, test_rngs)
 print(f"\nPredictions for x={test_x.flatten()}: {test_y.flatten()}")
 print(f"True values: {function_to_learn(test_x).flatten()}")
-"""
