@@ -18,7 +18,6 @@
 }
 
 
-
 \setbeamertemplate{navigationsymbols}{}
 \setbeamertemplate{caption}[numbered]
 }
@@ -52,34 +51,32 @@
 \title{Teaching Quantum Chemistry to a Deep Learning Model }
 
 \subtitle{Transformers for the many body Schrodinger Equation}
-\author{Jorge Munoz Laredo, Angel Flores}
+\author{Jorge Munoz Laredo}
 \date{\today}
 \begin{document}
 \begin{frame}
     \titlepage
 \end{frame}
-
-
 \section{The Schr\"odinger Wave Function and the physical laws that rule}
 
 \subsection{Schr\"odinger Equation}
 
 \begin{frame}{The Schr\"odinger equation}
-  On 1926 Schrodinger derived his equatin:
+On 1926 Schrodinger derived his equation: Let $\Psi$ be a complex value 
+function called \textbf{wave function}, $\hat{H}$ is called the \textbf{Hamiltonian Operator}
+and $E$ is the energy of the system, then the Schr\"odinger equation is:
+
 \begin{equation}
-\hat{H}\,\Psi=E \Psi
+\hat{H}\,\Psi(\mathbf{R})=E \Psi(\mathbf{R})
 \end{equation}
 
-\begin{itemize}
-\item $\Psi$ is a complex value function called \textbf{wave function}.
-\item $\hat{H}$ is called the \textbf{Hamiltonian Operator}.
-\end{itemize}
+Where $\mathbf{R}=\{\mathbf{r}_{1},\dots ,\mathbf{r}_{n} \} \in \mathbb{E}$ is a sample of the configuration space $E=\mathbb{R}^{3n}$.
 
 \begin{block}{Hamiltonian}
 \begin{equation}
 \hat{H}=\frac{\hat{\vec{{P}}}^{2}}{2m}+\hat{V} =-\frac{\hbar^{2}}{2m}\nabla^{2}+\hat{V}
 \end{equation}
-- Find the electrostatic potential $V$ of the system.
+Where $\hat{V}$ is the potential operator and $\nabla$ is the Laplacian operator.
 \end{block}
 \end{frame}
 
@@ -90,8 +87,6 @@
     \caption{$\lvert \Psi (\mathbf{R}) \rvert ^{2} $ represent the probability to find a particle near the position $\mathbf{R}$.}
   \end{center}
 \end{figure}
-
-
 \end{frame}
 
 
@@ -191,7 +186,7 @@ Then:
 With the samples $\mathbf{R}_{1},\dots,\mathbf{R}_{M}\sim |\Psi| ^{2}_{\theta}(\mathbf{R})$ we can make:
 
 \begin{equation}
-\mathcal{L}_{\theta}=\mathbb{E}_{\mathbf{R}\sim \Psi ^{2}_{\theta}}[E_{L}(\mathbf{R})]\approx \frac{1}{M}\sum_{i=1}^{M} E_{L}(\mathbf{R}_{k})
+\mathcal{L}_{\theta}=\mathbb{E}_{\mathbf{R}\sim \Psi ^{2}_{\theta}}[E_{L}(\mathbf{R})]\approx \frac{1}{M}\sum_{i=1}^{M} E_{L}(\mathbf{R}_{i})
 \end{equation}
 \end{block}
 With:
@@ -203,15 +198,14 @@ $$
   \frametitle{Metropolis-Hastings Algorithm}
 \textbf{Goal: Generate many samples} $\mathbf{R}\sim \rho$, Requirement: $C\rho$
 
-1. $\mathbf{X}_{0}\in E$ arbitrary:
-
-2. Propose $\mathbf{X}'=\mathbf{X}_{0}+\eta$ ,where $\eta \sim q(\eta)$, (Normal Gaussian)
-
+1. $\mathbf{R}_{0}\in E$ arbitrary:
+2. Propose $\mathbf{R}'=\mathbf{R}_{0}+\eta$ ,where $\eta \sim q(\eta)$, (Normal Gaussian)
 3. Compute the quantity:
 $$
-A(\mathbf{X_{0}}, \mathbf{X}')=\text{min}\left( 1,\frac{\rho(\mathbf{X}')}{\rho(\mathbf{X}_{0})} \right)
+A(\mathbf{R_{0}}, \mathbf{R}')=\text{min}\left( 1,\frac{\rho(\mathbf{R}')}{\rho(\mathbf{R}_{0})} \right)
 $$
-4. Generate a uniform number $U\in[0,1]$. If: $U<A(\mathbf{X}_{0} ,\mathbf{X'})$ then $\mathbf{X_{1}}=\mathbf{X}'$, otherwise try another $\mathbf{X}'$. Accept or decline.
+4. Generate a uniform number $U\in[0,1]$. If: $U<A(\mathbf{R}_{0} ,\mathbf{R'})$ then 
+$\mathbf{R_{1}}=\mathbf{R}'$, otherwise try another $\mathbf{R}'$. Accept or decline.
 
 \end{frame}
 
