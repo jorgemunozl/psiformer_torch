@@ -284,10 +284,7 @@ $\uparrow$
 
 $\mathcal{L}(\theta)= 2\mathbb{E}_{\mathbf{R}\sim \Psi^{2}}[ \underbrace{ (E_{L}(\mathbf{R})-\mathbb{E}_{p}[E_L]) }_{ \text{detach} }\log \psi]$
 
-
-\left
-
-REINFORCE
+\textbf{REINFORCE}
 $$
 J(\theta)=\mathbb{E}_{\tau}[R(\tau)]
 $$
@@ -378,7 +375,7 @@ $$\mathbf{u}_{t}=W^{O}[\mathbf{o}_{t,1};\mathbf{o}_{t,2};\dots ;\mathbf{o}_{t,n_
 Motivated by these constraints, we propose a Slater--Jastrow form:
 \[
 \Psi_{\theta}(\mathbf{R}) =
-\underbrace{\exp\\big(\mathcal{J}_{\theta}(\mathbf{R})\big)}_{\text{Coulomb correlations}}
+\underbrace{\exp\big(\mathcal{J}_{\theta}(\mathbf{R})\big)}_{\text{Coulomb correlations}}
 \,\times\,
 \underbrace{\sum \omega_k  \det[ \boldsymbol{\phi}_{\theta}^{k}(\mathbf{R})]}_{\text{antisymmetry}}
 \]
@@ -392,7 +389,6 @@ In this work we are going to use this specific form:
 \begin{equation}
  \mathcal{J}_{\theta}(x)=\sum_{i<j;\sigma_{i}=\sigma_{j}}-\frac{1}{4}\frac{\alpha^{2}_{par}}{\alpha_{par}+\lvert \mathbf{r}_{i}-\mathbf{r}_{j} \rvert }+\sum_{i,j;\sigma_{i}\neq \sigma_{j}}-\frac{1}{2}\frac{\alpha^{2}_{anti}}{\alpha_{anti}+\lvert \mathbf{r}_{i}-\mathbf{r}_{j} \rvert }
 \end{equation}
-\end{block}
 \end{frame}
 
 %--------------------------------
