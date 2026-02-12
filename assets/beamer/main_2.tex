@@ -45,7 +45,9 @@
 }
 \setbeamertemplate{navigation symbols}{} % usually nicer without icons
 
-
+%--------------------------------
+% Begin Document
+%--------------------------------
 
 \usepackage{amsmath,amssymb,bm,mathtools,physics,siunitx,tikz,xcolor,graphicx,hyperref}
 \title{Teaching Quantum Chemistry to a Deep Learning Model }
@@ -54,22 +56,32 @@
 \author{Jorge Munoz Laredo}
 \date{\today}
 \begin{document}
+
+% First Frame
 \begin{frame}
     \titlepage
 \end{frame}
+
+%--------------------------------
+% Section 1: The Schr\"odinger Wave Function and the physical laws that rule
+%--------------------------------
 \section{The Schr\"odinger Wave Function and the physical laws that rule}
 
+%--------------------------------
+% Subsection 1.1: Schr\"odinger Equation
+%--------------------------------
 \subsection{Schr\"odinger Equation}
 
+%--------------------------------
+% Frame 1.1.1: The Schr\"odinger equation
+%--------------------------------
 \begin{frame}{The Schr\"odinger equation}
 On 1926 Schrodinger derived his equation: Let $\Psi$ be a complex value 
 function called \textbf{wave function}, $\hat{H}$ is called the \textbf{Hamiltonian Operator}
 and $E$ is the energy of the system, then the Schr\"odinger equation is:
-
 \begin{equation}
 \hat{H}\,\Psi(\mathbf{R})=E \Psi(\mathbf{R})
 \end{equation}
-
 Where $\mathbf{R}=\{\mathbf{r}_{1},\dots ,\mathbf{r}_{n} \} \in \mathbb{E}$ is a sample of the configuration space $E=\mathbb{R}^{3n}$.
 
 \begin{block}{Hamiltonian}
@@ -80,6 +92,9 @@ Where $\hat{V}$ is the potential operator and $\nabla$ is the Laplacian operator
 \end{block}
 \end{frame}
 
+%--------------------------------
+% Frame 1.1.2: Wave Function as Probability Density
+%--------------------------------
 \begin{frame}{Wave Function as Probability Density}
 \begin{figure}
   \begin{center}
@@ -90,6 +105,9 @@ Where $\hat{V}$ is the potential operator and $\nabla$ is the Laplacian operator
 \end{frame}
 
 
+%--------------------------------
+% Frame 1.1.3: Many-Body System
+%--------------------------------
 \begin{frame}{Many-Body System}
 When considering $n$ bodies, we have:
 \begin{equation}
@@ -106,6 +124,10 @@ With $\mathbf{x}_{i}=\{ \mathbf{r}_{i},\sigma \}$, where $\mathbf{r}_{i}\in \mat
 \end{itemize}
 \end{alertblock}
 \end{frame}
+
+%--------------------------------
+% Frame 1.1.4: Setting up the Hamiltonian
+%--------------------------------
 \begin{frame}{Setting up the Hamiltonian}
   The first step is obtain a practical form of the \textbf{Hamiltonian}.
 \begin{itemize}
@@ -121,8 +143,14 @@ With $\mathbf{x}_{i}=\{ \mathbf{r}_{i},\sigma \}$, where $\mathbf{r}_{i}\in \mat
 
 \end{frame}
 
+%--------------------------------
+% Subsection 1.1.5: Physical laws and conditions
+%--------------------------------
 \subsection{Physical laws and conditions}
 
+%--------------------------------
+% Frame 1.1.6: Fermi-Dirac statistics
+%--------------------------------
 \begin{frame}{Fermi-Dirac statistics}
 All the fermions follow the Fermi-Dirac Statistics, this is.
  \begin{itemize}
@@ -143,22 +171,29 @@ Enforce it using a determinant.
 Where $\phi$ are called spin orbitals
 \end{frame}
 
-\begin{frame}{Kato cusp conditions, Jastrow Factor}
+
+%--------------------------------
+% Frame 1.1.7: Kato cusp conditions
+%--------------------------------
+\begin{frame}{Kato cusp conditions}
 The potential are:
  $$\sum\frac{1}{|\mathbf r_i-\mathbf r_j|}$$
 \begin{itemize}
 \item Coulomb potentials cause a sharp cusp in $\Psi$ when particles overlaps.
     \end{itemize}
-\begin{block}{Jastrow Factor $\exp(\mathcal{J})$}
-In this work we are going to use this specific form:
-\begin{equation}
- \mathcal{J}_{\theta}(x)=\sum_{i<j;\sigma_{i}=\sigma_{j}}-\frac{1}{4}\frac{\alpha^{2}_{par}}{\alpha_{par}+\lvert \mathbf{r}_{i}-\mathbf{r}_{j} \rvert }+\sum_{i,j;\sigma_{i}\neq \sigma_{j}}-\frac{1}{2}\frac{\alpha^{2}_{anti}}{\alpha_{anti}+\lvert \mathbf{r}_{i}-\mathbf{r}_{j} \rvert }
-\end{equation}
-\end{block}
 \end{frame}
 
+
+
+
+%--------------------------------
+% Subsection 1.1.8: Optimizing an Ansatz
+%--------------------------------
 \subsection{Optimizing an Ansatz}
 
+%--------------------------------
+% Frame 1.1.9: Loss: Variational Principle
+%--------------------------------
 
 \begin{frame}
 
@@ -181,6 +216,9 @@ Then:
 \end{equation}
 \end{frame}
 
+%--------------------------------
+% Frame 1.1.10: Variational Monte Carlo
+%--------------------------------
 \begin{frame}{Variational Monte Carlo}
   \begin{block}{Quantum Monte Carlo}
 With the samples $\mathbf{R}_{1},\dots,\mathbf{R}_{M}\sim |\Psi| ^{2}_{\theta}(\mathbf{R})$ we can make:
@@ -194,6 +232,10 @@ $$E_{L}(\mathbf{R}_{k})=\frac{\hat{H}\psi(\mathbf{R}_{k})}{\psi(\mathbf{R}_{k})}
 $$
 \textbf{Obtain $\mathbf{R}_k$} $\to$ \textbf{Metropolis-Hastings Algorithm}
 \end{frame}
+
+%--------------------------------
+% Frame 1.1.11: Metropolis-Hastings Algorithm
+%--------------------------------
 \begin{frame}
   \frametitle{Metropolis-Hastings Algorithm}
 \textbf{Goal: Generate many samples} $\mathbf{R}\sim \rho$, Requirement: $C\rho$
@@ -209,6 +251,9 @@ $\mathbf{R_{1}}=\mathbf{R}'$, otherwise try another $\mathbf{R}'$. Accept or dec
 
 \end{frame}
 
+%--------------------------------
+% Frame 1.1.12: Metropolis-Hastings Algorithm
+%--------------------------------
 \begin{frame}{Metropolis-Hastings Algorithm}
   \begin{figure}
     \centering
@@ -224,6 +269,9 @@ $\mathcal{L}_{\theta}=\mathbb{E}_{\mathbf{R}\sim |\Psi_{\theta}|^{2}}[E_{L}(\mat
 - $|\Psi_{\theta}|^{2}$ changes over time, you are just optimizing just the \textbf{energy}, not the wave function itself.
 \end{frame}
 
+%--------------------------------
+% Frame 1.1.13: Solution: Log Derivative Trick
+%--------------------------------
 \begin{frame}{Solution: Log Derivative Trick}
 \centering
 $ \mathcal{L}_{\theta}=\mathbb{E}_{\mathbf{R}\sim |\Psi_{\theta}|^{2}}[E_{L}(\mathbf{R})]$
@@ -251,6 +299,10 @@ $$
 
 % ------------------------------
 \section{Transformers}
+
+%--------------------------------
+% Subsection 2.1: Attention Mechanism
+%--------------------------------
 \subsection{Attention Mechanism}
 
 \begin{frame}{Transformer Architecture}
@@ -275,6 +327,9 @@ $$
   \end{columns}
 \end{frame}
 
+%--------------------------------
+% Frame 2.1.2: Attention on the room
+%--------------------------------
 \begin{frame}
 \frametitle{Attention on the room}
 The learnable matrices are:
@@ -296,9 +351,20 @@ $$\mathbf{u}_{t}=W^{O}[\mathbf{o}_{t,1};\mathbf{o}_{t,2};\dots ;\mathbf{o}_{t,n_
 \end{frame}
 
 \section{Psiformer}
+%--------------------------------
+% Subsection 2.1: Fermi Net
+%--------------------------------
 \subsection{Fermi Net}
+%--------------------------------
+% Frame 2.1.1: Fermi Net
+%--------------------------------
+% Subsection 2.2: Psi Former
+%--------------------------------
 \subsection{Psi Former}
 
+%--------------------------------
+% Frame 2.2.1: Psiformer Ansatz
+%--------------------------------
 \begin{frame}{Psiformer Ansatz}
 \textbf{Ansatz:} Proposal model that you propose guided by intuition and that you optimize.
 \begin{itemize}
@@ -318,6 +384,20 @@ Motivated by these constraints, we propose a Slater--Jastrow form:
 \]
 \end{frame}
 
+%--------------------------------
+% Frame 2.2.2: Jastrow Factor $\exp(\mathcal{J})$
+%--------------------------------
+\begin{frame}{Jastrow Factor $\exp(\mathcal{J})$}
+In this work we are going to use this specific form:
+\begin{equation}
+ \mathcal{J}_{\theta}(x)=\sum_{i<j;\sigma_{i}=\sigma_{j}}-\frac{1}{4}\frac{\alpha^{2}_{par}}{\alpha_{par}+\lvert \mathbf{r}_{i}-\mathbf{r}_{j} \rvert }+\sum_{i,j;\sigma_{i}\neq \sigma_{j}}-\frac{1}{2}\frac{\alpha^{2}_{anti}}{\alpha_{anti}+\lvert \mathbf{r}_{i}-\mathbf{r}_{j} \rvert }
+\end{equation}
+\end{block}
+\end{frame}
+
+%--------------------------------
+% Frame 2.2.3: Psi Former Architecture
+%--------------------------------
 \begin{frame}{Psi Former Architecture}
   \begin{columns} \begin{column}{0.5\textwidth} \begin{figure}
         \centering
@@ -340,6 +420,9 @@ Motivated by these constraints, we propose a Slater--Jastrow form:
   \end{columns}
 \end{frame}
 
+%--------------------------------
+% Frame 2.2.4: Psiformer Shapes
+%--------------------------------
 \begin{frame}{Psiformer Shapes}
   \begin{figure}
     \begin{center}
@@ -350,6 +433,9 @@ Motivated by these constraints, we propose a Slater--Jastrow form:
 
 \end{frame}
 
+%--------------------------------
+% Frame 2.2.5: Methodology
+%--------------------------------
 \begin{frame}{Methodology}
   \begin{columns}
   \begin{column}{0.5\textwidth}
@@ -373,7 +459,15 @@ Motivated by these constraints, we propose a Slater--Jastrow form:
   \end{column}
 \end{columns}
 \end{frame}
+
+%--------------------------------
+% Subsection 2.3: Practical Implementation Details
+%--------------------------------
 \subsection{Practical Implementation Details}
+
+%--------------------------------
+% Frame 2.3.1: Implementation : Laplacian Computation
+%--------------------------------
 \begin{frame}[fragile]{Implementation : Laplacian Computation}
 The kinetic energy requires the Laplacian: $\nabla^2 \Psi(\mathbf{R}) = \sum_i \frac{\partial^2 \Psi}{\partial R_i^2}$
 \begin{lstlisting}[language=Python]
@@ -396,6 +490,9 @@ for i in range(R.shape[-1]):
 \end{lstlisting}
 \end{frame}
 
+%--------------------------------
+% Frame 2.3.2: Determinant Stability in Psiformer
+%--------------------------------
 \begin{frame}{Determinant Stability in Psiformer}
 \[
   \Psi_{\theta}(\mathbf{R}) \propto \det [\boldsymbol{\Phi}_{\theta}(\mathbf{R})]
@@ -416,6 +513,9 @@ so the gradient can explode even when the wavefunction itself is small.
 
 \end{frame}
 
+%--------------------------------
+% Frame 2.3.3: Fix: Custom Operation
+%--------------------------------
 \begin{frame}[fragile]{Fix: Custom Operation}
     \textbf{Idea:} Use SVD ($A = U\Sigma V^T$) to compute $\nabla \log \det A = A^{-T}$ without explicit inversion (Appendix D).
 
@@ -440,6 +540,9 @@ class StableLogDet(torch.autograd.Function):
     \end{lstlisting}
 \end{frame}
 
+%--------------------------------
+% Frame 2.3.4: Optimizer: Adam vs. AdamW
+%--------------------------------
 \begin{frame}{Optimizer: Adam vs. AdamW}
     \textbf{Core Difference:} AdamW \textit{decouples} weight decay from the gradient update to fix regularization on adaptive optimizers.
 
@@ -469,6 +572,9 @@ class StableLogDet(torch.autograd.Function):
 \end{frame}
 
 
+%--------------------------------
+% Frame 2.3.5: Keeping the GPU Busy: Batched Energy Evaluation
+%--------------------------------
 \begin{frame}{Keeping the GPU Busy: Batched Energy Evaluation}
 
 \small
@@ -492,6 +598,9 @@ MCMC samples are reshaped and flattened:
 \end{frame}
 
 
+%--------------------------------
+% Frame 2.3.6: Results: Convergence Curve
+%--------------------------------
 \begin{frame}{Results: Convergence Curve}
 
 \begin{columns}
@@ -518,6 +627,9 @@ MCMC samples are reshaped and flattened:
 
  \end{frame}
 
+%--------------------------------
+% Frame 2.3.7: Results: Energy Estimates
+%--------------------------------
 \begin{frame}{Results: Energy Estimates}
 
 \begin{figure}
@@ -529,6 +641,9 @@ MCMC samples are reshaped and flattened:
 
 \end{frame}
 
+%--------------------------------
+% Frame 2.3.8: Comments
+%--------------------------------
 \begin{frame}{Comments}
   \begin{itemize}
     \item Pretraining using external data.
@@ -540,6 +655,9 @@ MCMC samples are reshaped and flattened:
   \end{itemize}
 \end{frame}
 
+%--------------------------------
+% Frame 2.3.9: References
+%--------------------------------
 \begin{frame}{References}
 \footnotesize
 \begin{thebibliography}{9}
@@ -564,6 +682,9 @@ A.~Vaswani et al.,
 
 
 
+%--------------------------------
+% Frame 2.3.10: Thanks!
+%--------------------------------
 \begin{frame}{Thanks!}
 I thank the Computer Science Faculty for providing access to GPU resources, in particular NVIDIA GeForce RTX 4080 Super which enabled the training and evaluation of Psiformer models reported in this work.
 \begin{figure}
