@@ -82,7 +82,7 @@ and $E$ is the energy of the system, then the Schr\"odinger equation is:
 \begin{equation}
 \hat{H}\,\Psi(\mathbf{R})=E \Psi(\mathbf{R})
 \end{equation}
-Where $\mathbf{R}=\{\mathbf{r}_{1},\dots ,\mathbf{r}_{n} \} \in \mathbb{E}$ is a sample of the configuration space $E=\mathbb{R}^{3n}$.
+In this slide we consider the \textbf{single-particle} case, so $\mathbf{R}=\mathbf{r}\in\mathbb{R}^{3}$.
 
 \begin{block}{Hamiltonian}
 \begin{equation}
@@ -115,12 +115,13 @@ When considering $n$ bodies, we have:
 \end{equation}
 
 With $\mathbf{x}_{i}=\{ \mathbf{r}_{i},\sigma \}$, where $\mathbf{r}_{i}\in \mathbb{R}^{3}$ is the position of each particle and $\sigma \in \{ \uparrow.\downarrow \}$ is the so called spin.
+The Hamiltonian becomes hard because all interaction terms are coupled across particles.
 
 \begin{alertblock}{Considerations}
  \begin{itemize}
-  \item Each particle interact with all the another particles.
-  \item For atoms, consider all the protons, electrons and neutrons.
-  \item Solution obey physical laws.
+  \item Each particle interacts with all other particles.
+  \item For atoms, we include electron-electron, electron-nucleus, and nucleus-nucleus interactions.
+  \item The solution must obey physical laws.
 \end{itemize}
 \end{alertblock}
 \end{frame}
@@ -129,18 +130,35 @@ With $\mathbf{x}_{i}=\{ \mathbf{r}_{i},\sigma \}$, where $\mathbf{r}_{i}\in \mat
 % Frame 1.1.4: Setting up the Hamiltonian
 %--------------------------------
 \begin{frame}{Setting up the Hamiltonian}
-  The first step is obtain a practical form of the \textbf{Hamiltonian}.
-\begin{itemize}
-        \item Kinetic energy: $T = -\frac{1}{2}\sum_{i=1}^{N} \nabla_i^2$.
-        \item Electron-electron repulsion: $V_{ee} = \sum_{i<j} \frac{1}{r_{ij}}$.
-    \end{itemize}
+  Start from the full non-relativistic molecular Hamiltonian (atomic units):
 \begin{align}
    \hat H  =
 -\sum_{i=1}^{N}\frac{1}{2}\nabla_i^{2}
--\sum_{i=1}^{N}\frac{Z_I}{|\mathbf r_i-\mathbf R_I|}
- +\sum_{1\le i<j\le N}\frac{1}{|\mathbf r_i-\mathbf r_j|}
+-\sum_{I=1}^{N_n}\frac{1}{2M_I}\nabla_I^{2}
+-\sum_{i=1}^{N}\sum_{I=1}^{N_n}\frac{Z_I}{|\mathbf r_i-\mathbf R_I|}
++\sum_{1\le i<j\le N}\frac{1}{|\mathbf r_i-\mathbf r_j|}
++\sum_{1\le I<J\le N_n}\frac{Z_I Z_J}{|\mathbf R_I-\mathbf R_J|}
 \end{align}
+\vspace{-0.3em}
+\begin{itemize}
+  \item The hard part is the potential operator: every electron interacts with all other charges.
+\end{itemize}
+\end{frame}
 
+\begin{frame}{Oppenheimer approximation}
+Assume nuclei are much heavier than electrons and treat nuclear positions as fixed parameters.
+\begin{align}
+\hat H_e
+=-\sum_{i=1}^{N}\frac{1}{2}\nabla_i^{2}
+-\sum_{i=1}^{N}\sum_{I=1}^{N_n}\frac{Z_I}{|\mathbf r_i-\mathbf R_I|}
++\sum_{1\le i<j\le N}\frac{1}{|\mathbf r_i-\mathbf r_j|}
++E_{nn}(\mathbf R)
+\end{align}
+where
+\[
+E_{nn}(\mathbf R)=\sum_{1\le I<J\le N_n}\frac{Z_I Z_J}{|\mathbf R_I-\mathbf R_J|}
+\]
+is constant for fixed nuclei.
 \end{frame}
 
 %--------------------------------
@@ -152,13 +170,21 @@ With $\mathbf{x}_{i}=\{ \mathbf{r}_{i},\sigma \}$, where $\mathbf{r}_{i}\in \mat
 % Frame 1.1.6: Fermi-Dirac statistics
 %--------------------------------
 \begin{frame}{Fermi-Dirac statistics}
-All the fermions follow the Fermi-Dirac Statistics, this is.
- \begin{itemize}
-        \item Exchanging two electrons flips the wavefunction's sign: $\Psi(\dots i,j \dots) = -\,\Psi(\dots j,i \dots)$.
- \end{itemize}
+All fermions follow Fermi-Dirac statistics.
+\begin{alertblock}{Antisymmetry requirement}
+Exchanging two electrons must flip the sign of the wavefunction:
+\[
+\Psi(\dots,\mathbf{x}_i,\mathbf{x}_j,\dots)
+=-\Psi(\dots,\mathbf{x}_j,\mathbf{x}_i,\dots)
+\]
+\end{alertblock}
+\begin{itemize}
+  \item This is a hard structural constraint on the ansatz.
+\end{itemize}
+\end{frame}
 
- \begin{block}{Slater Determinant}
-Enforce it using a determinant.
+\begin{frame}{Slater Determinant}
+One standard way to enforce antisymmetry is a determinant:
 \begin{equation}
 \psi=
 \begin{vmatrix}
@@ -167,8 +193,7 @@ Enforce it using a determinant.
 \phi_{n}^{k}(\mathbf{x}_{1}) & \dots & \phi_{n}^{k}(\mathbf{x}_{n})
 \end{vmatrix}
 \end{equation}
-\end{block}
-Where $\phi$ are called spin orbitals
+where $\phi$ are spin orbitals.
 \end{frame}
 
 
@@ -176,11 +201,27 @@ Where $\phi$ are called spin orbitals
 % Frame 1.1.7: Kato cusp conditions
 %--------------------------------
 \begin{frame}{Kato cusp conditions}
-The potential are:
- $$\sum\frac{1}{|\mathbf r_i-\mathbf r_j|}$$
+Near coalescence, Coulomb terms
+\[
+V \sim \frac{1}{r}
+\]
+make the wavefunction non-smooth at short distance.
+
 \begin{itemize}
-\item Coulomb potentials cause a sharp cusp in $\Psi$ when particles overlaps.
-    \end{itemize}
+\item Intuition: when two charged particles get very close, the potential changes very fast.
+\item Therefore, $\Psi$ is continuous but its radial derivative has a finite jump (a \textbf{cusp}).
+\end{itemize}
+
+\begin{block}{Kato cusp constraints (atomic units)}
+\[
+\left.\frac{\partial_r \Psi}{\Psi}\right|_{r_{iI}\to 0}=-Z_I
+\qquad
+\left.\frac{\partial_r \Psi}{\Psi}\right|_{r_{ij}\to 0}=\frac{1}{2}
+\]
+\end{block}
+\tiny Note: for electron-electron pairs, opposite-spin cusp is stronger; same-spin is softened by antisymmetry.
+\small
+Any good ansatz should satisfy these limits to get accurate local energies.
 \end{frame}
 
 
@@ -195,25 +236,37 @@ The potential are:
 % Frame 1.1.9: Loss: Variational Principle
 %--------------------------------
 
-\begin{frame}
+\begin{frame}{From Operator to Local Quantity}
+For any operator $\hat O$, define its local form on the wavefunction:
+\[
+O_L(\mathbf{R})=\frac{\hat O\,\Psi_{\theta}(\mathbf{R})}{\Psi_{\theta}(\mathbf{R})}
+\]
+Using
+\[
+p_{\theta}(\mathbf{R})=
+|\Psi_{\theta}(\mathbf{R})|^{2}
+\frac{1}{\int d\mathbf{R}'\,|\Psi_{\theta}(\mathbf{R}')|^{2}},
+\]
+the expectation value can be estimated as
+\[
+\langle \hat O \rangle_{\theta}
+=\mathbb{E}_{\mathbf{R}\sim p_{\theta}}\!\left[O_L(\mathbf{R})\right].
+\]
+\end{frame}
 
-\frametitle{Loss: Variational Principle}
-
-Variational principle states:
-
-$$E[\Psi] = \displaystyle \frac{\langle \Psi \mid H \mid \Psi \rangle}{\langle \Psi \mid \Psi \rangle} \ge E_0$$
-
-Minimizing $E[\Psi]$ drives the ansatz toward the ground state.
-$$
-E[\Psi]=\mathcal{L}(\Psi_\theta)=\frac{\bra{\Psi_{\theta}} \hat{H}\ket{\Psi_{\theta}} }{\braket{ \Psi_{\theta}} }=\frac{\int d\mathbf{R}\Psi ^{*}(\mathbf{R})\hat{H}\Psi(\mathbf{R})}{\int d\mathbf{R}\Psi ^{*}(\mathbf{R})\Psi(\mathbf{R})}
-$$
-Define:
-$$p_{\theta}(\mathbf{R})=|\Psi_{\theta}(\mathbf{R})|^{2}\frac{1}{\int  d\mathbf{R}'\Psi^{2}_{\theta}(\mathbf{R}')}\land E_{L}(\mathbf{R})=\frac{\hat{H}\Psi_{\theta}(\mathbf{R})}{\Psi_{\theta}(\mathbf{R})}
-$$
-Then:
-\begin{equation}
-\mathcal{L}_{\theta}=\mathbb{E}_{\mathbf{R}\sim |\Psi_{\theta}| ^{2}}[E_{L}(\mathbf{R})]
-\end{equation}
+\begin{frame}{Loss: Variational Principle}
+Choose the specific operator $\hat O=\hat H$ (Hamiltonian), so
+\[
+E_L(\mathbf{R})=\frac{\hat H\,\Psi_{\theta}(\mathbf{R})}{\Psi_{\theta}(\mathbf{R})}.
+\]
+Then the variational objective is
+\[
+E[\Psi_{\theta}]
+=\frac{\bra{\Psi_{\theta}}\hat H\ket{\Psi_{\theta}}}{\braket{\Psi_{\theta}}}
+=\mathbb{E}_{\mathbf{R}\sim p_{\theta}}\!\left[E_L(\mathbf{R})\right]
+\ge E_0.
+\]
+Minimizing this energy drives the ansatz toward the ground state.
 \end{frame}
 
 %--------------------------------
@@ -236,24 +289,6 @@ $$
 %--------------------------------
 % Frame 1.1.11: Metropolis-Hastings Algorithm
 %--------------------------------
-\begin{frame}
-  \frametitle{Metropolis-Hastings Algorithm}
-\textbf{Goal: Generate many samples} $\mathbf{R}\sim \rho$, Requirement: $C\rho$
-
-1. $\mathbf{R}_{0}\in E$ arbitrary:
-2. Propose $\mathbf{R}'=\mathbf{R}_{0}+\eta$ ,where $\eta \sim q(\eta)$, (Normal Gaussian)
-3. Compute the quantity:
-$$
-A(\mathbf{R_{0}}, \mathbf{R}')=\text{min}\left( 1,\frac{\rho(\mathbf{R}')}{\rho(\mathbf{R}_{0})} \right)
-$$
-4. Generate a uniform number $U\in[0,1]$. If: $U<A(\mathbf{R}_{0} ,\mathbf{R'})$ then 
-$\mathbf{R_{1}}=\mathbf{R}'$, otherwise try another $\mathbf{R}'$. Accept or decline.
-
-\end{frame}
-
-%--------------------------------
-% Frame 1.1.12: Metropolis-Hastings Algorithm
-%--------------------------------
 \begin{frame}{Metropolis-Hastings Algorithm}
   \begin{figure}
     \centering
@@ -267,6 +302,24 @@ $\mathcal{L}_{\theta}=\mathbb{E}_{\mathbf{R}\sim |\Psi_{\theta}|^{2}}[E_{L}(\mat
 - Third order derivatives
 
 - $|\Psi_{\theta}|^{2}$ changes over time, you are just optimizing just the \textbf{energy}, not the wave function itself.
+\end{frame}
+
+%--------------------------------
+% Frame 1.1.12: Metropolis-Hastings Algorithm
+%--------------------------------
+\begin{frame}
+  \frametitle{Metropolis-Hastings Algorithm}
+\textbf{Goal: Generate many samples} $\mathbf{R}\sim \rho$, Requirement: $C\rho$
+
+1. $\mathbf{R}_{0}\in E$ arbitrary:
+2. Propose $\mathbf{R}'=\mathbf{R}_{0}+\eta$ ,where $\eta \sim q(\eta)$, (Normal Gaussian)
+3. Compute the quantity:
+$$
+A(\mathbf{R_{0}}, \mathbf{R}')=\text{min}\left( 1,\frac{\rho(\mathbf{R}')}{\rho(\mathbf{R}_{0})} \right)
+$$
+4. Generate a uniform number $U\in[0,1]$. If: $U<A(\mathbf{R}_{0} ,\mathbf{R'})$ then 
+$\mathbf{R_{1}}=\mathbf{R}'$, otherwise try another $\mathbf{R}'$. Accept or decline.
+
 \end{frame}
 
 %--------------------------------
@@ -459,6 +512,7 @@ In this work we are going to use this specific form:
 %--------------------------------
 % Subsection 2.3: Practical Implementation Details
 %--------------------------------
+\section{Implementation Details and Next Steps}
 \subsection{Practical Implementation Details}
 
 %--------------------------------
@@ -638,16 +692,15 @@ MCMC samples are reshaped and flattened:
 \end{frame}
 
 %--------------------------------
-% Frame 2.3.8: Comments
+% Frame 2.3.8: Next Steps
 %--------------------------------
-\begin{frame}{Comments}
+\begin{frame}{Next Steps}
   \begin{itemize}
-    \item Pretraining using external data.
-    \item Laplacian Bottleneck
-    \item  KFCA Optimizer (Natural Gradient Descent)
-    \item Flash Attention
-    \item Learning transferability
-    \item Scaling Laws
+    \item Build a hybrid framework that combines Density Functional Theory (DFT) with neural wave functions.
+    \item Use DFT orbitals/densities as priors or pretraining targets for faster convergence.
+    \item Reduce the Laplacian bottleneck (e.g., efficient second-order derivatives).
+    \item Explore better optimizers (natural-gradient variants such as KFAC/KFCA).
+    \item Improve scaling with larger systems and transferable training.
   \end{itemize}
 \end{frame}
 
