@@ -75,36 +75,60 @@
 %--------------------------------
 % Frame 1.1.1: The Schr\"odinger equation
 %--------------------------------
+\begin{frame}{Why this exist}
+\begin{itemize}
+    \item With accurate solutions to the many body Schrodinger equation almost all the chemistry could be derived from first principles.
+    \item Solve it analytically is impossible. The only path is do it numerically
+    \item Challenging problem, standard method DFT, work with the density rather than the full function.
+\end{itemize}
+\end{frame}
+
 \begin{frame}{The Schr\"odinger equation}
-On 1926 Schrodinger derived his equation: Let $\Psi$ be a complex value
-function called \textbf{wave function}, $\hat{H}$ is called the \textbf{Hamiltonian Operator}
-and $E$ is the energy of the system, then the Schr\"odinger equation is:
+Let $\Psi$ be a complex value function called \textbf{wave function}, $\hat{H}$ the \textbf{Hamiltonian Operator}
+and $E$ is the energy of the system, then:
 \begin{equation}
 \hat{H}\,\Psi(\mathbf{R})=E \Psi(\mathbf{R})
 \end{equation}
-In this slide we consider the \textbf{single-particle} case, so $\mathbf{R}=\mathbf{r}\in\mathbb{R}^{3}$.
+Where $\mathbf{R}=\mathbf{r}\in\mathbb{R}^{3}$ is a system configuration.
 
-\begin{block}{Hamiltonian}
+\begin{block}{Hamiltonian Operator}
 \begin{equation}
 \hat{H}=\frac{\hat{\vec{{P}}}^{2}}{2m}+\hat{V} =-\frac{\hbar^{2}}{2m}\nabla^{2}+\hat{V}
 \end{equation}
-Where $\hat{V}$ is the potential operator and $\nabla$ is the Laplacian operator.
+$\hat{V}$ is the potential energy operator, $\hat{\vec{P}}$ is the momentum operator and $\nabla$ is the laplacian operator.
 \end{block}
 \end{frame}
 
 %--------------------------------
 % Frame 1.1.2: Wave Function as Probability Density
 %--------------------------------
-\begin{frame}{Wave Function as Probability Density}
+\begin{frame}{Wave Function: Physical Meaning}
+
+$\Psi(\mathbf{R},t)$ contains all available information about the quantum system.
+
+\begin{block}{Observables}
+An observable $O$ is represented by a Hermitian operator $\hat{O}$. The expectation value is:
+\[
+\langle O \rangle
+=
+\int \Psi^*(\mathbf{R},t)\,
+\hat{O}\,
+\Psi(\mathbf{R},t)\,
+d^3R
+\]
+\end{block}
+
+The most well known observables are \textbf{position, momentum, energy, angular momentum}.
+
+\end{frame}
+\begin{frame}{Wave function as probability}
 \begin{figure}
   \begin{center}
-    \includegraphics[width=0.55\textwidth]{img/prob.png}
-    \caption{$\lvert \Psi (\mathbf{R}) \rvert ^{2} $ represent the probability to find a particle near the position $\mathbf{R}$.}
+    \includegraphics[width=0.85\textwidth]{img/density.png}
+    \caption{$\Psi(\mathbf{R},t)|^2$ represents the probability density to find the particle near position $\mathbf{R}$ at time $t$.}
   \end{center}
 \end{figure}
 \end{frame}
-
-
 %--------------------------------
 % Frame 1.1.3: Many-Body System
 %--------------------------------
@@ -115,12 +139,10 @@ When considering $n$ bodies, we have:
 \end{equation}
 
 With $\mathbf{x}_{i}=\{ \mathbf{r}_{i},\sigma \}$, where $\mathbf{r}_{i}\in \mathbb{R}^{3}$ is the position of each particle and $\sigma \in \{ \uparrow.\downarrow \}$ is the so called spin.
-The Hamiltonian becomes hard because all interaction terms are coupled across particles.
 
 \begin{alertblock}{Considerations}
  \begin{itemize}
   \item Each particle interacts with all other particles.
-  \item For atoms, we include electron-electron, electron-nucleus, and nucleus-nucleus interactions.
   \item The solution must obey physical laws.
 \end{itemize}
 \end{alertblock}
@@ -130,98 +152,83 @@ The Hamiltonian becomes hard because all interaction terms are coupled across pa
 % Frame 1.1.4: Setting up the Hamiltonian
 %--------------------------------
 \begin{frame}{Setting up the Hamiltonian}
-  Start from the full non-relativistic molecular Hamiltonian (atomic units):
+Hamiltonian for a molecule on atomic units:
 \begin{align}
-   \hat H  =
--\sum_{i=1}^{N}\frac{1}{2}\nabla_i^{2}
--\sum_{I=1}^{N_n}\frac{1}{2M_I}\nabla_I^{2}
--\sum_{i=1}^{N}\sum_{I=1}^{N_n}\frac{Z_I}{|\mathbf r_i-\mathbf R_I|}
-+\sum_{1\le i<j\le N}\frac{1}{|\mathbf r_i-\mathbf r_j|}
-+\sum_{1\le I<J\le N_n}\frac{Z_I Z_J}{|\mathbf R_I-\mathbf R_J|}
+   \hat H   = & -\sum_{i=1}^{N}\frac{1}{2}\nabla_i^{2} +
+-\sum_{I=1}^{N_n}\frac{1}{2M_I}\nabla_I^{2} \notag \\
+& -\sum_{i=1}^{N}\sum_{I=1}^{N_n}\frac{Z_I}{|\mathbf r_i-\mathbf R_I|} \notag \\
+& + \sum_{1\le i<j\le N}\frac{1}{|\mathbf r_i-\mathbf r_j|} \notag \\
+& + \sum_{1\le I<J\le N_n}\frac{Z_I Z_J}{|\mathbf R_I-\mathbf R_J|} \notag
 \end{align}
-\vspace{-0.3em}
-\begin{itemize}
-  \item The hard part is the potential operator: every electron interacts with all other charges.
-\end{itemize}
 \end{frame}
-
-\begin{frame}{Oppenheimer approximation}
+\begin{frame}{Clever Approximations}
+\begin{block}{Born Oppenheimer Approximation}
 Assume nuclei are much heavier than electrons and treat nuclear positions as fixed parameters.
 \begin{align}
 \hat H_e
-=-\sum_{i=1}^{N}\frac{1}{2}\nabla_i^{2}
--\sum_{i=1}^{N}\sum_{I=1}^{N_n}\frac{Z_I}{|\mathbf r_i-\mathbf R_I|}
-+\sum_{1\le i<j\le N}\frac{1}{|\mathbf r_i-\mathbf r_j|}
+=-\sum_{i=0}^{N}\frac{1}{2}\nabla_i^{2}
+-\sum_{i=0}^{N}\sum_{I=1}^{N_n}\frac{Z_I}{|\mathbf r_i-\mathbf R_I|}
++\sum_{0\le i<j\le N}\frac{1}{|\mathbf r_i-\mathbf r_j|}
 +E_{nn}(\mathbf R)
 \end{align}
-where
+\end{block}
+Where:
 \[
 E_{nn}(\mathbf R)=\sum_{1\le I<J\le N_n}\frac{Z_I Z_J}{|\mathbf R_I-\mathbf R_J|}
 \]
 is constant for fixed nuclei.
 \end{frame}
-
 %--------------------------------
 % Subsection 1.1.5: Physical laws and conditions
 %--------------------------------
 \subsection{Physical laws and conditions}
-
 %--------------------------------
 % Frame 1.1.6: Fermi-Dirac statistics
 %--------------------------------
 \begin{frame}{Fermi-Dirac statistics}
-All fermions follow Fermi-Dirac statistics.
+All fermions follow Fermi-Dirac statistics that implies the follow:
 \begin{alertblock}{Antisymmetry requirement}
 Exchanging two electrons must flip the sign of the wavefunction:
-\[
+$$
 \Psi(\dots,\mathbf{x}_i,\mathbf{x}_j,\dots)
 =-\Psi(\dots,\mathbf{x}_j,\mathbf{x}_i,\dots)
-\]
+$$
 \end{alertblock}
-\begin{itemize}
-  \item This is a hard structural constraint on the ansatz.
-\end{itemize}
-\end{frame}
 
-\begin{frame}{Slater Determinant}
+
+\begin{block}{Slater Determinant}
 One standard way to enforce antisymmetry is a determinant:
 \begin{equation}
-\psi=
+\Psi(\mathbf{x}_1,\dots,\mathbf{x}_n)=
 \begin{vmatrix}
 \phi_{1}^{k}(\mathbf{x}_{1})  & \dots  &  \phi_{1}^{k}(\mathbf{x}_{n}) \\
 \vdots   &  & \vdots  \\
 \phi_{n}^{k}(\mathbf{x}_{1}) & \dots & \phi_{n}^{k}(\mathbf{x}_{n})
 \end{vmatrix}
 \end{equation}
-where $\phi$ are spin orbitals.
+\end{block}
+Where $\phi_{i}(\mathbf{x}_j)$ are called spin orbitals.
 \end{frame}
-
 
 %--------------------------------
 % Frame 1.1.7: Kato cusp conditions
 %--------------------------------
 \begin{frame}{Kato cusp conditions}
-Near coalescence, Coulomb terms
-\[
-V \sim \frac{1}{r}
-\]
-make the wavefunction non-smooth at short distance.
-
-\begin{itemize}
-\item Intuition: when two charged particles get very close, the potential changes very fast.
-\item Therefore, $\Psi$ is continuous but its radial derivative has a finite jump (a \textbf{cusp}).
-\end{itemize}
-
+The potential energy operator is:
+$$
+\hat{V}=-\sum_{i=1}^{N}\sum_{I=1}^{M}\frac{Z_I}{|\mathbf r_i-\mathbf R_I|}
++\sum_{1\le i<j\le N}\frac{1}{|\mathbf r_i-\mathbf r_j|}
+$$
 \begin{block}{Kato cusp constraints (atomic units)}
-\[
-\left.\frac{\partial_r \Psi}{\Psi}\right|_{r_{iI}\to 0}=-Z_I
-\qquad
-\left.\frac{\partial_r \Psi}{\Psi}\right|_{r_{ij}\to 0}=\frac{1}{2}
-\]
+  Any wavefunction has a discontinuous derivative at point where particles coincide such as when electron meets nucleus or electron meets electrons.
 \end{block}
-\tiny Note: for electron-electron pairs, opposite-spin cusp is stronger; same-spin is softened by antisymmetry.
-\small
-Any good ansatz should satisfy these limits to get accurate local energies.
+
+Solution, introduce a \textbf{Jastrow factor} $\exp(\mathcal{J})$, $\mathcal{J}=u(r_{ij})$ finally.
+
+$$
+\Psi(R)=\exp(\mathcal{J})\det(\Phi)
+$$
+
 \end{frame}
 
 
@@ -236,39 +243,50 @@ Any good ansatz should satisfy these limits to get accurate local energies.
 % Frame 1.1.9: Loss: Variational Principle
 %--------------------------------
 
-\begin{frame}{From Operator to Local Quantity}
-For any operator $\hat O$, define its local form on the wavefunction:
-\[
-O_L(\mathbf{R})=\frac{\hat O\,\Psi_{\theta}(\mathbf{R})}{\Psi_{\theta}(\mathbf{R})}
-\]
-Using
-\[
-p_{\theta}(\mathbf{R})=
-|\Psi_{\theta}(\mathbf{R})|^{2}
-\frac{1}{\int d\mathbf{R}'\,|\Psi_{\theta}(\mathbf{R}')|^{2}},
-\]
-the expectation value can be estimated as
-\[
-\langle \hat O \rangle_{\theta}
-=\mathbb{E}_{\mathbf{R}\sim p_{\theta}}\!\left[O_L(\mathbf{R})\right].
-\]
-\end{frame}
 
+\begin{frame}{How We Create Models in Deep Learning}
+\textbf{Goal:} Learn parameters $\theta$ such that the model
+$f_{\theta}(x)$ approximates the true underlying mapping
+from inputs $x$ to targets $y$.
+\begin{enumerate}
+    \item Choose a model architecture
+    \[
+        f_{\theta}(x)
+    \]
+    with randomly initialized parameters $\theta$
+    \item Define a loss function that measures prediction error. Need a dataset, $(x_i,y_i)$
+    \[
+        \mathcal{L}(\theta) = \frac{1}{N} \sum_{i=1}^{N}
+        \ell\big(f_{\theta}(x_i), y_i\big)
+    \]
+    \item Compute gradients
+    \[
+        \nabla_{\theta} \mathcal{L}(\theta)
+    \]
+    \item Update parameters (gradient descent)
+    \[
+        \theta \leftarrow \theta - \eta \nabla_{\theta} \mathcal{L}(\theta)
+    \]
+    \item Repeat until convergence
+\end{enumerate}
+\end{frame}
 \begin{frame}{Loss: Variational Principle}
-Choose the specific operator $\hat O=\hat H$ (Hamiltonian), so
-\[
-E_L(\mathbf{R})=\frac{\hat H\,\Psi_{\theta}(\mathbf{R})}{\Psi_{\theta}(\mathbf{R})}.
-\]
-Then the variational objective is
-\[
-E[\Psi_{\theta}]
-=\frac{\bra{\Psi_{\theta}}\hat H\ket{\Psi_{\theta}}}{\braket{\Psi_{\theta}}}
-=\mathbb{E}_{\mathbf{R}\sim p_{\theta}}\!\left[E_L(\mathbf{R})\right]
-\ge E_0.
-\]
-Minimizing this energy drives the ansatz toward the ground state.
-\end{frame}
+Variational principle states:
 
+$$E[\Psi] = \displaystyle \frac{\langle \Psi \mid H \mid \Psi \rangle}{\langle \Psi \mid \Psi \rangle} \ge E_0$$
+
+Minimizing $E[\Psi]$ drives the ansatz toward the ground state.
+$$
+E[\Psi]=\mathcal{L}(\Psi_\theta)=\frac{\bra{\Psi_{\theta}} \hat{H}\ket{\Psi_{\theta}} }{\braket{ \Psi_{\theta}} }=\frac{\int d\mathbf{R}\Psi ^{*}(\mathbf{R})\hat{H}\Psi(\mathbf{R})}{\int d\mathbf{R}\Psi ^{*}(\mathbf{R})\Psi(\mathbf{R})}
+$$
+Define:
+$$p_{\theta}(\mathbf{R})=|\Psi_{\theta}(\mathbf{R})|^{2}\frac{1}{\int  d\mathbf{R}'\Psi^{2}_{\theta}(\mathbf{R}')}\land E_{L}(\mathbf{R})=\frac{\hat{H}\Psi_{\theta}(\mathbf{R})}{\Psi_{\theta}(\mathbf{R})}
+$$
+Then:
+\begin{equation}
+\mathcal{L}_{\theta}=\mathbb{E}_{\mathbf{R}\sim |\Psi_{\theta}| ^{2}}[E_{L}(\mathbf{R})]
+\end{equation}
+\end{frame}
 %--------------------------------
 % Frame 1.1.10: Variational Monte Carlo
 %--------------------------------
@@ -285,23 +303,18 @@ $$E_{L}(\mathbf{R}_{k})=\frac{\hat{H}\psi(\mathbf{R}_{k})}{\psi(\mathbf{R}_{k})}
 $$
 \textbf{Obtain $\mathbf{R}_k$} $\to$ \textbf{Metropolis-Hastings Algorithm}
 \end{frame}
-
 %--------------------------------
 % Frame 1.1.11: Metropolis-Hastings Algorithm
 %--------------------------------
 \begin{frame}{Metropolis-Hastings Algorithm}
   \begin{figure}
     \centering
-    \includegraphics[width=0.67\linewidth]{img/mcmc.png}
+    \includegraphics[width=0.77\linewidth]{img/mcmc.png}
     \caption{Metropolis-Hastings Walkers}
     \label{fig:placeholder}
   \end{figure}
 - Obtain its own data (no dataset $\mathcal{D}$), $\to$
 $\mathcal{L}_{\theta}=\mathbb{E}_{\mathbf{R}\sim |\Psi_{\theta}|^{2}}[E_{L}(\mathbf{R})]$.
-
-- Third order derivatives
-
-- $|\Psi_{\theta}|^{2}$ changes over time, you are just optimizing just the \textbf{energy}, not the wave function itself.
 \end{frame}
 
 %--------------------------------
@@ -325,30 +338,8 @@ $\mathbf{R_{1}}=\mathbf{R}'$, otherwise try another $\mathbf{R}'$. Accept or dec
 %--------------------------------
 % Frame 1.1.13: Solution: Log Derivative Trick
 %--------------------------------
-\begin{frame}{Solution: Log Derivative Trick}
-\centering
-$ \mathcal{L}_{\theta}=\mathbb{E}_{\mathbf{R}\sim |\Psi_{\theta}|^{2}}[E_{L}(\mathbf{R})]$
-
-$\downarrow $
-
-$\nabla _{\theta}\mathcal{L}= 2\mathbb{E}_{\mathbf{R}\sim \Psi^{2}}[ (E_{L}(\mathbf{R})-\mathbb{E}_{p}[E_L])\nabla_{\theta} \log \psi]$
-
-$\uparrow$
-
-$\mathcal{L}(\theta)= 2\mathbb{E}_{\mathbf{R}\sim \Psi^{2}}[ \underbrace{ (E_{L}(\mathbf{R})-\mathbb{E}_{p}[E_L]) }_{ \text{detach} }\log \psi]$
-
-\textbf{REINFORCE}
-$$
-J(\theta)=\mathbb{E}_{\tau}[R(\tau)]
-$$
-$\downarrow$
-$$
-\nabla_{\theta}J(\theta)=\mathbb{E}_{\tau \sim \pi}[({R(\tau)}-b)\nabla_{\theta}\log \pi_{\theta}(\tau)]
-$$
-\end{frame}
-
 % ------------------------------
-\section{Transformers}
+\section{Psiformer}
 
 %--------------------------------
 % Subsection 2.1: Attention Mechanism
@@ -365,48 +356,13 @@ $$
       \caption{Tranformer backbone}
       \end{figure}
     \end{column}
-    \begin{column}{0.5\textwidth}
-      \begin{itemize}
-      \textbf{Multi Head Attention $\to$ Self Attention}
-        \item $n_{\text{embd}}$ the embedding dimension
-        \item $n_h$ the number of attention heads
-        \item $d_h$ the dimension per head
-        \item $\mathbf{h}_t \in \mathbb{R}^{ n_{\text{embd}} }$ the hidden dimension.
-      \end{itemize}
-    \end{column}
   \end{columns}
 \end{frame}
 
 %--------------------------------
 % Frame 2.1.2: Attention on the room
 %--------------------------------
-\begin{frame}
-\frametitle{Attention on the room}
-The learnable matrices are:
-$$ W ^{Q}, W ^{K}, W ^{V} \in \mathbb{R}^{n_{\text{embd}}\times n_{\text{embd}}}$$
-$$ \mathbf{k}_{i}=\mathbf{W}^{k}\mathbf{h}_{i},\mathbf{q}_{i}=\mathbf{W}^{q}\mathbf{h}_{i},\mathbf{v}_{i}=\mathbf{W}^{v}\mathbf{h}_{i} $$
-$$
-\begin{align}
-[\mathbf{q_{1},q_{2},\dots ,q_{n_{h}}}]=\mathbf{q} \\
-[\mathbf{k_{1},k_{2},\dots ,k_{n_{h}}}]=\mathbf{k} \\
-[\mathbf{v_{1},v_{2},\dots ,v_{n_{h}}}]=\mathbf{v}
-\end{align}
-$$
-In the $i-th$ head:
-\begin{equation}
-\mathbf{o}_{t,i}=\sum_{j=1}^{t}\text{Softmax}\left( \frac{\mathbf{q}^{T}_{t,i}\mathbf{k}_{j,i}}{\sqrt{ d_{h} }} \right) \mathbf{v}_{j,i}
-\end{equation}
-$W^{O}$ the output projection matrix.
-$$\mathbf{u}_{t}=W^{O}[\mathbf{o}_{t,1};\mathbf{o}_{t,2};\dots ;\mathbf{o}_{t,n_{h}}]$$
-\end{frame}
 
-\section{Psiformer}
-%--------------------------------
-% Subsection 2.1: Fermi Net
-%--------------------------------
-\subsection{Fermi Net}
-%--------------------------------
-% Frame 2.1.1: Fermi Net
 %--------------------------------
 % Subsection 2.2: Psi Former
 %--------------------------------
@@ -416,14 +372,8 @@ $$\mathbf{u}_{t}=W^{O}[\mathbf{o}_{t,1};\mathbf{o}_{t,2};\dots ;\mathbf{o}_{t,n_
 % Frame 2.2.1: Psiformer Ansatz
 %--------------------------------
 \begin{frame}{Psiformer Ansatz}
-\textbf{Ansatz:} Proposal model that you propose guided by intuition and that you optimize.
-\begin{itemize}
-    \item be \emph{antisymmetric} under particle exchange,
-    \item capture strong \emph{electron--electron correlations}.
-\end{itemize}
 
-
-\textbf{Proposed ansatz}
+\textbf{Proposed Model}
 
 Motivated by these constraints, we propose a Slater--Jastrow form:
 \[
@@ -432,17 +382,18 @@ Motivated by these constraints, we propose a Slater--Jastrow form:
 \,\times\,
 \underbrace{\sum \omega_k  \det[ \boldsymbol{\phi}_{\theta}^{k}(\mathbf{R})]}_{\text{antisymmetry}}
 \]
-\end{frame}
+Using this specific form:
 
-%--------------------------------
-% Frame 2.2.2: Jastrow Factor $\exp(\mathcal{J})$
-%--------------------------------
-\begin{frame}{Jastrow Factor $\exp(\mathcal{J})$}
-In this work we are going to use this specific form:
+\begin{block}{Jastrow Factor}
 \begin{equation}
  \mathcal{J}_{\theta}(x)=\sum_{i<j;\sigma_{i}=\sigma_{j}}-\frac{1}{4}\frac{\alpha^{2}_{par}}{\alpha_{par}+\lvert \mathbf{r}_{i}-\mathbf{r}_{j} \rvert }+\sum_{i,j;\sigma_{i}\neq \sigma_{j}}-\frac{1}{2}\frac{\alpha^{2}_{anti}}{\alpha_{anti}+\lvert \mathbf{r}_{i}-\mathbf{r}_{j} \rvert }
 \end{equation}
+\end{block}
+
+
 \end{frame}
+
+
 
 %--------------------------------
 % Frame 2.2.3: Psi Former Architecture
@@ -462,24 +413,9 @@ In this work we are going to use this specific form:
 \end{figure}
       \begin{itemize}
         \item The envelope is a matrix with learned exponential decay as elements.
-        \item Learn the Jastrow factor only have two parameters.
-        \item In practice we use logarithm scale.
       \end{itemize}
     \end{column}
   \end{columns}
-\end{frame}
-
-%--------------------------------
-% Frame 2.2.4: Psiformer Shapes
-%--------------------------------
-\begin{frame}{Psiformer Shapes}
-  \begin{figure}
-    \begin{center}
-      \includegraphics[width=0.27\textwidth]{img/psiformer_true_shapes.pdf}
-    \end{center}
-    \caption{Psiformer shapes handling}\label{fig:}
-  \end{figure}
-
 \end{frame}
 
 %--------------------------------
@@ -518,139 +454,38 @@ In this work we are going to use this specific form:
 %--------------------------------
 % Frame 2.3.1: Implementation : Laplacian Computation
 %--------------------------------
-\begin{frame}[fragile]{Implementation : Laplacian Computation}
-The kinetic energy requires the Laplacian: $\nabla^2 \Psi(\mathbf{R}) = \sum_i \frac{\partial^2 \Psi}{\partial R_i^2}$
-\begin{lstlisting}[language=Python]
-R = R_o.requires_grad_(True)     # particle coordinates
-psi = model(R)                # neural wavefunction
-# first derivative: gradient
-grad_psi = torch.autograd.grad(
-    psi, R,
-    create_graph=True,
-    # retain_graph=True
-)[0]
-# second derivative: Laplacian
-laplacian = 0.0
-for i in range(R.shape[-1]):
-    laplacian += torch.autograd.grad(
-        grad_psi[..., i], R,
-        # create_graph=True,
-        retain_graph=True
-    )[0][..., i]
-\end{lstlisting}
-\end{frame}
 
-%--------------------------------
-% Frame 2.3.2: Determinant Stability in Psiformer
-%--------------------------------
-\begin{frame}{Determinant Stability in Psiformer}
-\[
-  \Psi_{\theta}(\mathbf{R}) \propto \det [\boldsymbol{\Phi}_{\theta}(\mathbf{R})]
-\]
-\textbf{Derivative of a determinant.}
 
-$$
-\frac{\partial \det(\mathbf{A})}{\partial \mathbf{A}}=\det(\mathbf{A})\mathbf{A}^{-T}
-$$
+\begin{frame}{Challenges Reproducing PsiFormer}
 
-\textbf{Key instability.}
-If $\boldsymbol{\Phi}$ becomes singular or nearly singular:
-\[
-  \det \mathbf{A} \to 0 \quad \Rightarrow \quad [a_{ii}^{-1}] \to \infty
-\]
-so the gradient can explode even when the wavefunction itself is small.
+\begin{itemize}
+    \item \textbf{Kinetic Energy Term}
+    Computing the Laplacian
+    \[
+        \nabla^2 \Psi(\mathbf{R}) = \sum_i \frac{\partial^2 \Psi}{\partial R_i^2}
+    \]
+    is numerically unstable and computationally expensive.
 
+    \vspace{0.2cm}
+
+    \item \textbf{Determinant Stability}
+    Slater determinant evaluation led to instability
+    (overflow/underflow, ill-conditioned matrices).
+
+    \vspace{0.2cm}
+
+    \item \textbf{GPU Utilization}
+    Find bottlenecks in order to use the 100\% of the GPU.
+\end{itemize}
 
 \end{frame}
 
-%--------------------------------
-% Frame 2.3.3: Fix: Custom Operation
-%--------------------------------
-\begin{frame}[fragile]{Fix: Custom Operation}
-    \textbf{Idea:} Use SVD ($A = U\Sigma V^T$) to compute $\nabla \log \det A = A^{-T}$ without explicit inversion (Appendix D).
-
-    \begin{lstlisting}[language=Python, basicstyle=\ttfamily\scriptsize]
-import torch
-
-class StableLogDet(torch.autograd.Function):
-    @staticmethod
-    def forward(ctx, A):
-        # Decompose A: S are singular values
-        U, S, Vh = torch.linalg.svd(A)
-        ctx.save_for_backward(U, S, Vh)
-        return S.log().sum()
-
-    @staticmethod
-    def backward(ctx, g):
-        U, S, Vh = ctx.saved_tensors
-        # Reconstruct A^{-T} = U * diag(1/S) * Vh
-        inv_S = torch.diag_embed(1.0 / S)
-        grad_A = U @ inv_S @ Vh
-        return g * grad_A
-    \end{lstlisting}
-\end{frame}
-
-%--------------------------------
-% Frame 2.3.4: Optimizer: Adam vs. AdamW
-%--------------------------------
-\begin{frame}{Optimizer: Adam vs. AdamW}
-    \textbf{Core Difference:} AdamW \textit{decouples} weight decay from the gradient update to fix regularization on adaptive optimizers.
-
-    \vspace{1.5em}
-
-    \textbf{1. Adam (Entangled L2 Regularization)}
-    \begin{itemize}
-        \item Decay is added to the gradient, so it gets scaled by the adaptive variance.
-    \end{itemize}
-    \begin{align*}
-        g_t &= \nabla \mathcal{L} + \color{red}\lambda \theta_t \\
-        \theta_{t+1} &= \theta_t - \text{AdamStep}(g_t)
-    \end{align*}
-
-    \vspace{1em}
-
-    \textbf{2. AdamW (Decoupled Weight Decay)}
-    \begin{itemize}
-        \item Decay is applied directly, bypassing the adaptive scaling mechanism.
-    \end{itemize}
-    \begin{align*}
-        g_t &= \nabla \mathcal{L} \\
-        \theta_{t+1} &= \theta_t - \text{AdamStep}(g_t) - \color{green}\eta \lambda \theta_t
-    \end{align*}
-
-    \vfill
-\end{frame}
-
-
-%--------------------------------
-% Frame 2.3.5: Keeping the GPU Busy: Batched Energy Evaluation
-%--------------------------------
-\begin{frame}{Keeping the GPU Busy: Batched Energy Evaluation}
-
-\small
-\textbf{Naive training issue.}
-Initial training evaluated energies step-by-step over MCMC samples.
-\[
-\text{GPU utilization} \approx 30\%
-\]
-\textbf{Solution: batched evaluation.}
-MCMC samples are reshaped and flattened:
-\[
-(\text{mc\_steps}, B, n_e, 3)
-\;\rightarrow\;
-(\text{mc\_steps}\!\times\! B, n_e, 3)
-\]
-\vspace{0.3cm}
-\textbf{Result.}
-\[
-\text{GPU utilization} \approx 99\%
-\]
-\end{frame}
 
 
 %--------------------------------
 % Frame 2.3.6: Results: Convergence Curve
 %--------------------------------
+\subsection{Results and Conclusions}
 \begin{frame}{Results: Convergence Curve}
 
 \begin{columns}
@@ -691,18 +526,6 @@ MCMC samples are reshaped and flattened:
 
 \end{frame}
 
-%--------------------------------
-% Frame 2.3.8: Next Steps
-%--------------------------------
-\begin{frame}{Next Steps}
-  \begin{itemize}
-    \item Build a hybrid framework that combines Density Functional Theory (DFT) with neural wave functions.
-    \item Use DFT orbitals/densities as priors or pretraining targets for faster convergence.
-    \item Reduce the Laplacian bottleneck (e.g., efficient second-order derivatives).
-    \item Explore better optimizers (natural-gradient variants such as KFAC/KFCA).
-    \item Improve scaling with larger systems and transferable training.
-  \end{itemize}
-\end{frame}
 
 %--------------------------------
 % Frame 2.3.9: References
@@ -727,6 +550,65 @@ A.~Vaswani et al.,
 \newblock Advances in Neural Information Processing Systems (NeurIPS), 2017.
 
 \end{thebibliography}
+\end{frame}
+
+%--------------------------------
+% Frame 2.3.8: Next Steps
+%--------------------------------
+\begin{frame}{Next Steps}
+\begin{block}{Foundation Models}
+Models trained on massive and diverse  datasets so it can adapt itself to many different tasks without being pretrained from scratch.
+\end{block}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.9\linewidth]{img/walrus.png}
+    \caption{Pretrained on 19 scenarios (Nov 2025)}
+    \label{fig:placeholder}
+\end{figure}
+
+
+\end{frame}
+
+\begin{frame}{Cutting Edge Topics: World Models}
+
+\begin{block}{World Models}
+A system builds its own internal representation of the world.
+\end{block}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.65\linewidth]{img/Lingbot.png}
+    \caption{Real time interactivity (Jan 2026)}
+\end{figure}
+
+\end{frame}
+
+\begin{frame}{Physical AI}
+\begin{block}{Vision Language Action Model}
+Models that sees the world, understands human instructions , and produces action.
+\end{block}
+
+\begin{columns}
+  \begin{column}{0.50\textwidth}
+    \begin{figure}
+    \centering
+    \includegraphics[width=0.40\linewidth]{img/g1.png}
+    \caption{Unitree G1 UTEC, UCV}
+    \end{figure}
+
+  \end{column}
+
+  \begin{column}{0.50\textwidth}
+  \begin{figure}
+    \centering
+    \includegraphics[width=0.53\linewidth]{img/agile.png}
+    \caption{Piper robotic arm PUCP}
+    \end{figure}
+  \end{column}
+\end{columns}
+
+
 \end{frame}
 
 
