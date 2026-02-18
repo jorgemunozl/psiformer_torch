@@ -75,31 +75,76 @@
 %--------------------------------
 % Frame 1.1.1: The Schr\"odinger equation
 %--------------------------------
+\begin{frame}{Why this exist}
+\begin{itemize}
+    \item With accurate solutions to the many body Schrodinger equation almost all the chemistry could be derived from first principles. 
+    \item Solve it analytically is impossible. The only path is do it numerically
+    \item Challenging problem, standard method DFT, work with the density rather than the full function.
+\end{itemize}
+\end{frame}
+
 \begin{frame}{The Schr\"odinger equation}
-On 1926 Schrodinger derived his equation: Let $\Psi$ be a complex value 
-function called \textbf{wave function}, $\hat{H}$ is called the \textbf{Hamiltonian Operator}
-and $E$ is the energy of the system, then the Schr\"odinger equation is:
+
+Schrodinger (1926) derived the Time Dependent Equation:
+Give it a system of a single particle, let $\Psi$ be a complex value function called \textbf{wave function}, $\hat{H}$ the \textbf{Hamiltonian Operator}
+and $E$ is the energy of the system, then:
 \begin{equation}
 \hat{H}\,\Psi(\mathbf{R})=E \Psi(\mathbf{R})
 \end{equation}
-In this slide we consider the \textbf{single-particle} case, so $\mathbf{R}=\mathbf{r}\in\mathbb{R}^{3}$.
+Where $\mathbf{R}=\mathbf{r}\in\mathbb{R}^{3}$ is a system configuration.
 
-\begin{block}{Hamiltonian}
+\begin{block}{Hamiltonian Operator}
 \begin{equation}
 \hat{H}=\frac{\hat{\vec{{P}}}^{2}}{2m}+\hat{V} =-\frac{\hbar^{2}}{2m}\nabla^{2}+\hat{V}
 \end{equation}
-Where $\hat{V}$ is the potential operator and $\nabla$ is the Laplacian operator.
+$\hat{V}$ is the potential operator (internal, external), $\hat{\vec{P}}$ is the momentum operator and $\nabla$ is the laplacian operator.
 \end{block}
 \end{frame}
 
 %--------------------------------
 % Frame 1.1.2: Wave Function as Probability Density
 %--------------------------------
-\begin{frame}{Wave Function as Probability Density}
+\begin{frame}{Wave Function: Physical Meaning}
+
+$\Psi(\mathbf{R},t)$ contains all available information about the quantum system.
+\vspace{0.3cm}
+
+
+\textbf{Observables:}
+
+An observable $O$ is represented by a Hermitian operator $\hat{O}$.
+
+The expectation value (average outcome of many measurements) is
+
+\[
+\langle O \rangle
+=
+\int \Psi^*(\mathbf{R},t)\,
+\hat{O}\,
+\Psi(\mathbf{R},t)\,
+d^3R
+\]
+
+\vspace{0.4cm}
+
+If $\Psi$ is an eigenfunction of $\hat{O}$,
+
+\[
+\hat{O}\Psi = o\Psi
+\]
+
+then the measurement of $O$ gives the definite value $o$.
+
+\end{frame}
+    
+
+
+\begin{frame}{Wave function as probability}
+
 \begin{figure}
   \begin{center}
-    \includegraphics[width=0.55\textwidth]{img/prob.png}
-    \caption{$\lvert \Psi (\mathbf{R}) \rvert ^{2} $ represent the probability to find a particle near the position $\mathbf{R}$.}
+    \includegraphics[width=0.25\textwidth]{img/density.png}
+    \caption{$\Psi(\mathbf{R},t)|^2$ represents the probability density to find the particle near position $\mathbf{R}$ at time $t$.}
   \end{center}
 \end{figure}
 \end{frame}
@@ -130,14 +175,13 @@ The Hamiltonian becomes hard because all interaction terms are coupled across pa
 % Frame 1.1.4: Setting up the Hamiltonian
 %--------------------------------
 \begin{frame}{Setting up the Hamiltonian}
-  Start from the full non-relativistic molecular Hamiltonian (atomic units):
+Hamiltonian (atomic units):
 \begin{align}
-   \hat H  =
--\sum_{i=1}^{N}\frac{1}{2}\nabla_i^{2}
--\sum_{I=1}^{N_n}\frac{1}{2M_I}\nabla_I^{2}
--\sum_{i=1}^{N}\sum_{I=1}^{N_n}\frac{Z_I}{|\mathbf r_i-\mathbf R_I|}
-+\sum_{1\le i<j\le N}\frac{1}{|\mathbf r_i-\mathbf r_j|}
-+\sum_{1\le I<J\le N_n}\frac{Z_I Z_J}{|\mathbf R_I-\mathbf R_J|}
+   \hat H   = & -\sum_{i=1}^{N}\frac{1}{2}\nabla_i^{2} +
+-\sum_{I=1}^{N_n}\frac{1}{2M_I}\nabla_I^{2} \notag \\
+& -\sum_{i=1}^{N}\sum_{I=1}^{N_n}\frac{Z_I}{|\mathbf r_i-\mathbf R_I|} \notag \\
+& + \sum_{1\le i<j\le N}\frac{1}{|\mathbf r_i-\mathbf r_j|} \notag \\
+& + \sum_{1\le I<J\le N_n}\frac{Z_I Z_J}{|\mathbf R_I-\mathbf R_J|} \notag
 \end{align}
 \vspace{-0.3em}
 \begin{itemize}
@@ -691,18 +735,6 @@ MCMC samples are reshaped and flattened:
 
 \end{frame}
 
-%--------------------------------
-% Frame 2.3.8: Next Steps
-%--------------------------------
-\begin{frame}{Next Steps}
-  \begin{itemize}
-    \item Build a hybrid framework that combines Density Functional Theory (DFT) with neural wave functions.
-    \item Use DFT orbitals/densities as priors or pretraining targets for faster convergence.
-    \item Reduce the Laplacian bottleneck (e.g., efficient second-order derivatives).
-    \item Explore better optimizers (natural-gradient variants such as KFAC/KFCA).
-    \item Improve scaling with larger systems and transferable training.
-  \end{itemize}
-\end{frame}
 
 %--------------------------------
 % Frame 2.3.9: References
@@ -727,6 +759,65 @@ A.~Vaswani et al.,
 \newblock Advances in Neural Information Processing Systems (NeurIPS), 2017.
 
 \end{thebibliography}
+\end{frame}
+
+%--------------------------------
+% Frame 2.3.8: Next Steps
+%--------------------------------
+\begin{frame}{Next Steps}
+\begin{block}{Foundation Models}
+Models trained on massive and diverse  datasets so it can adapt itself to many different tasks without being pretrained from scratch.    
+\end{block}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.5\linewidth]{img/walrus.png}
+    \caption{Caption}
+    \label{fig:placeholder}
+\end{figure}
+
+  
+\end{frame}
+
+\begin{frame}{Cutting Edge Topics: World Models}
+
+\begin{block}{World Models}
+An internal representation that a system builds of its environment’s dynamics so it can simulate how the world changes in response to actions
+\end{block}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.5\linewidth]{img/Lingbot.png}
+    \caption{Caption}
+\end{figure}
+
+\end{frame}
+
+\begin{frame}{Physical AI}
+\begin{block}{Vision Language Action Model}
+Multimodal model that sees the world through visual input, understands human instructions in natural language, and produces action outputs that can directly control an agent like a robot.
+\end{block}
+
+\begin{columns}
+  \begin{column}{0.5\textwidth}
+    \begin{figure}
+    \centering
+    \includegraphics[width=0.5\linewidth]{img/g1.png}
+    \caption{Caption}
+    \end{figure}
+    
+  \end{column}
+
+  \begin{column}{0.5\textwidth}
+  \begin{figure}
+    \centering
+    \includegraphics[width=0.5\linewidth]{img/agile.png}
+    \caption{Caption}
+    \end{figure}
+  \end{column}
+\end{columns}
+
+
 \end{frame}
 
 
