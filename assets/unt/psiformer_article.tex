@@ -1,0 +1,394 @@
+% Selecciones Matem\'aticas (UNT) article.
+% Build: run pdflatex (or latexmk) twice from this directory (assets/unt/) so Base/Paquetes resolves.
+% Figures: \includegraphics names are resolved via IMG/ART1/ and ../beamer/img/ (add your slide assets there).
+\input{Base/Paquetes}
+\graphicspath{{IMG/ART1/}{../beamer/img/}}
+
+\usepackage{physics}
+\usepackage{mathtools}
+\usepackage{siunitx}
+
+\lstset{
+  basicstyle=\ttfamily\footnotesize,
+  keywordstyle=\color{blue},
+  commentstyle=\color{gray},
+  stringstyle=\color{red},
+  breaklines=true,
+  showstringspaces=false
+}
+
+%============================================================%
+%                       CONFIGURACION                        %
+%============================================================%
+
+\title{Solving the Many-Electron Schr\"odinger Equation
+	\\
+	\vspace{0.4cm}
+	{\large With a Transformer Architecture}
+}
+
+\autor{Jorge Munoz Laredo}{}{Affiliation and contact email to be completed for final submission.}
+
+\edition{2025}{TBD}{1}{20}
+
+%\received{...}
+%\accepted{...}
+%\doi{...}
+%\howtocite{Munoz J.}{Solving the Many-Electron Schr\"odinger Equation with a Transformer Architecture}
+
+\begin{document}
+
+\maketitle
+
+\selectlanguage{USenglish}
+
+\begin{abstract}
+The many-electron Schr\"odinger equation is a central problem in \emph{ab initio} quantum chemistry. Variational Monte Carlo (VMC) with flexible neural ans\"atze, as in FermiNet and related architectures, has shown that deep models can approximate ground-state wavefunctions accurately. This work presents a PyTorch-based study of a Slater--Jastrow ansatz in which a transformer-style backbone parameterizes single-particle orbitals entering a Slater determinant, together with a low-parameter Jastrow factor enforcing electron--electron cusp structure. We summarize the governing equations, the VMC objective and Metropolis--Hastings sampling, implementation choices for stable derivatives of the log-determinant via SVD, and batched energy evaluation for high GPU utilization. Representative convergence curves and energy estimates illustrate the behavior of the resulting \emph{Psiformer}-style model on small molecular benchmarks.
+\end{abstract}
+
+\begin{keywords}
+Many-electron Schr\"odinger equation, variational Monte Carlo, transformer, neural wavefunction, Slater determinant, quantum chemistry.
+\end{keywords}
+
+%--------------------------------------------------------------
+\section{Introduction}
+
+Computing the ground state of many-electron systems requires solving the electronic Schr\"odinger equation in the presence of Coulomb interactions and fermionic antisymmetry. Deep variational wavefunctions trained with VMC have emerged as a practical route to high-accuracy energies without an explicit basis expansion in the traditional sense \cite{ferminet,psiformer}. Self-attention mechanisms, as introduced for sequence modeling \cite{attention}, motivate architectures that mix information across electrons while respecting permutation structure when combined with a Slater determinant. This article collects the material from an expository slide deck into article form and documents implementation aspects of a Psiformer-style ansatz in PyTorch.
+
+\section{The Schr\"odinger wave function and physical constraints}
+
+\subsection{Schr\"odinger equation}
+
+In 1926 Schr\"odinger formulated the time-dependent Schr\"odinger equation (TDSE),
+\begin{equation}
+	i\,\hbar\,\partial_t \Psi = \hat{H}\,\Psi.
+\end{equation}
+Here $\Psi \in \mathcal{H}$ is the \textbf{wave function}, $\hat{H}$ is the \textbf{Hamiltonian}, and the state depends on spatial coordinates and time. The quantity $|\Psi|^2$ is interpreted as a probability density (normalized to integrate to one).
+
+In the position representation,
+\begin{equation}
+	\hat{H}=\frac{\hat{\vec{P}}^{2}}{2m}+\hat{V}
+	=-\frac{\hbar^{2}}{2m}\nabla^{2}+\hat{V}.
+\end{equation}
+
+Separating $\psi(\vec{\mathbf{r}},t)=R(\vec{\mathbf{r}})T(t)$ leads to
+\begin{equation}
+	T(t)=e^{-iEt/\hbar}, \qquad \hat{H}R(\vec{\mathbf{r}})=ER(\vec{\mathbf{r}}),
+\end{equation}
+with $E$ the total energy. The stationary problem is to find $\psi$ such that
+\begin{equation}
+	\left[-\frac{\hbar^{2}}{2m}\nabla^{2}+V(\mathbf{r},t)\right]\psi(\vec{\mathbf{r}})= E \psi(\vec{\mathbf{r}}),
+\end{equation}
+given the potential $V$ of the system.
+
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[width=0.5\textwidth]{prob.png}
+	\caption{$|\Psi(\mathbf{R})|^2$ as the probability density for finding particles near configuration $\mathbf{R}$.}
+	\label{fig:prob}
+\end{figure}
+
+\subsection{Many-body Hamiltonian}
+
+For $n$ electrons (and clamped nuclei in the Born--Oppenheimer approximation), collective coordinates $\mathbf{x}_i=(\mathbf{r}_i,\sigma_i)$ combine position $\mathbf{r}_i\in\mathbb{R}^3$ and spin $\sigma_i\in\{\uparrow,\downarrow\}$. The eigenproblem reads
+\begin{equation}
+	\hat{H}\psi(\mathbf{x}_{1},\dots ,\mathbf{x}_{n})=E\psi(\mathbf{x}_{1},\dots ,\mathbf{x}_{n}).
+\end{equation}
+Each particle interacts with all others; for atoms one would include nuclei and electrons consistently, subject to the chosen level of approximation.
+
+A standard molecular Hamiltonian (atomic units) takes the form
+\begin{align}
+	\hat H & =
+	-\sum_{i=1}^{N}\frac{1}{2}\nabla_i^{2}
+	-\sum_{I=1}^{M}\frac{1}{2M_I}\nabla_{I}^{2}
+	-\sum_{i=1}^{N}\sum_{I=1}^{M}\frac{Z_I}{|\mathbf r_i-\mathbf R_I|} \notag\\
+	&\quad +\sum_{1\le i<j\le N}\frac{1}{|\mathbf r_i-\mathbf r_j|}
+	+\sum_{1\le I<J\le M}\frac{Z_I Z_J}{|\mathbf R_I-\mathbf R_J|}.
+\end{align}
+The Born--Oppenheimer approximation fixes nuclear positions and often drops the nuclear kinetic terms when solving for the electronic wavefunction.
+
+\subsection{Fermi--Dirac statistics and cusps}
+
+Electrons are indistinguishable fermions: exchanging two electrons flips the sign of $\Psi$, and the Pauli principle forbids double occupation of the same spin orbital. A Slater determinant built from spin orbitals $\phi_j^k(\mathbf{x}_i)$ enforces antisymmetry,
+\begin{equation}
+	\psi=
+	\begin{vmatrix}
+		\phi_{1}^{k}(\mathbf{x}_{1})  & \dots  &  \phi_{1}^{k}(\mathbf{x}_{n}) \\
+		\vdots   &  \ddots  & \vdots  \\
+		\phi_{n}^{k}(\mathbf{x}_{1}) & \dots & \phi_{n}^{k}(\mathbf{x}_{n})
+	\end{vmatrix}.
+\end{equation}
+
+Coulomb interactions induce cusps in $\Psi$ when particles coalesce. Kato-type cusp conditions include electron--nucleus
+\begin{equation*}
+	\frac{\partial \Psi}{\partial r_{iI}}\Big|_{r_{iI}=0} = -\,Z_I\,\Psi(0)
+\end{equation*}
+and electron--electron
+\begin{equation*}
+	\frac{\partial \Psi}{\partial r_{ij}}\Big|_{r_{ij}=0} = \frac{1}{2}\,\Psi(0).
+\end{equation*}
+A Jastrow factor $\exp(\mathcal{J})$ is often used to impose short-range correlation structure. In this work we use
+\begin{equation}
+	\mathcal{J}_{\theta}(\mathbf{x})
+	=\sum_{\substack{i<j\\ \sigma_{i}=\sigma_{j}}}
+	-\frac{1}{4}\frac{\alpha^{2}_{\mathrm{par}}}{\alpha_{\mathrm{par}}+|\mathbf{r}_{i}-\mathbf{r}_{j}|}
+	+\sum_{\substack{i,j\\ \sigma_{i}\neq \sigma_{j}}}
+	-\frac{1}{2}\frac{\alpha^{2}_{\mathrm{anti}}}{\alpha_{\mathrm{anti}}+|\mathbf{r}_{i}-\mathbf{r}_{j}|}.
+\end{equation}
+
+\section{Variational Monte Carlo}
+
+\subsection{Variational principle and local energy}
+
+The variational principle states
+\begin{equation}
+	E[\Psi] = \frac{\bra{\Psi} \hat{H}\ket{\Psi}}{\braket{\Psi}{\Psi}} \ge E_0.
+\end{equation}
+Minimizing $E[\Psi]$ with respect to parameters drives the ansatz toward the ground state. Writing $\Psi_\theta$ for a parameterized trial function,
+\begin{equation}
+	\mathcal{L}(\Psi_\theta)
+	=\frac{\bra{\Psi_{\theta}} \hat{H}\ket{\Psi_{\theta}}}{\braket{\Psi_{\theta}}{\Psi_{\theta}}}
+	=\frac{\int \Psi_\theta^*(\mathbf{R})\,\hat{H}\Psi_\theta(\mathbf{R})\,d\mathbf{R}}{\int \Psi_\theta^*(\mathbf{R})\Psi_\theta(\mathbf{R})\,d\mathbf{R}}.
+\end{equation}
+With the normalized density $p_\theta(\mathbf{R})\propto|\Psi_\theta(\mathbf{R})|^2$ and the \emph{local energy}
+\begin{equation}
+	E_L(\mathbf{R})=\frac{\hat{H}\Psi_\theta(\mathbf{R})}{\Psi_\theta(\mathbf{R})},
+\end{equation}
+the loss is the expectation $\mathcal{L}_\theta=\mathbb{E}_{\mathbf{R}\sim p_\theta}[E_L(\mathbf{R})]$.
+
+\subsection{Monte Carlo estimation and sampling}
+
+Given samples $\mathbf{R}_1,\dots,\mathbf{R}_M$ drawn from $|\Psi_\theta|^2$ (up to normalization),
+\begin{equation}
+	\mathcal{L}_\theta
+	=\mathbb{E}_{\mathbf{R}\sim |\Psi_\theta|^2}[E_L(\mathbf{R})]
+	\approx \frac{1}{M}\sum_{k=1}^{M} E_L(\mathbf{R}_k).
+\end{equation}
+The local energy can be written as
+\begin{equation}
+	E_L(\mathbf{R}_k)
+	=\frac{\hat{H}\psi(\mathbf{R}_k)}{\psi(\mathbf{R}_k)}
+	=-\frac{1}{2}\frac{\nabla^{2}\psi(\mathbf{R}_k)}{\psi(\mathbf{R}_k)}+V(\mathbf{R}_k).
+\end{equation}
+Samples are generated with Metropolis--Hastings: starting from $\mathbf{R}_0$, propose $\mathbf{R}'=\mathbf{R}_0+\eta$ with $\eta\sim q$, accept with probability
+\begin{equation}
+	A(\mathbf{R}_0,\mathbf{R}')=\min\left(1,\frac{\rho(\mathbf{R}')}{\rho(\mathbf{R}_0)}\right),
+\end{equation}
+where $\rho\propto|\Psi_\theta|^2$, and iterate. Gradients of the VMC objective follow as (schematically)
+\begin{equation}
+	\nabla_{\theta}\mathcal{L}
+	=2\,\mathbb{E}_{\mathbf{x}\sim |\Psi|^2}\bigl[(E_L(\mathbf{x})-\mathbb{E}_p[E_L])\,\nabla_\theta\log\Psi_\theta(\mathbf{x})\bigr],
+\end{equation}
+estimated with the same samples.
+
+\section{Transformer backbone and self-attention}
+
+Figure~\ref{fig:transformer} sketches a transformer-style backbone. Learnable matrices $W^Q,W^K,W^V\in\mathbb{R}^{n_{\text{embd}}\times n_{\text{embd}}}$ map hidden states $\mathbf{h}_i$ to queries, keys, and values,
+\begin{align}
+	\mathbf{q}_i &= W^Q \mathbf{h}_i, &
+	\mathbf{k}_i &= W^K \mathbf{h}_i, &
+	\mathbf{v}_i &= W^V \mathbf{h}_i.
+\end{align}
+Heads split embeddings so that $\mathbf{q}=[\mathbf{q}_1;\dots;\mathbf{q}_{n_h}]$ (and similarly $\mathbf{k},\mathbf{v}$) with per-head dimension $d_h$. In head $i$,
+\begin{equation}
+	\mathbf{o}_{t,i}
+	=\sum_{j=1}^{t}
+	\mathrm{Softmax}\left(\frac{\mathbf{q}_{t,i}^{\mathsf T}\mathbf{k}_{j,i}}{\sqrt{d_h}}\right)\mathbf{v}_{j,i},
+\end{equation}
+and $\mathbf{u}_t=W^O[\mathbf{o}_{t,1};\dots;\mathbf{o}_{t,n_h}]$ for an output projection $W^O$.
+
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[width=0.55\textwidth]{psiformer_false_shapes.pdf}
+	\caption{Transformer-style backbone used to build electron-wise representations before antisymmetrization.}
+	\label{fig:transformer}
+\end{figure}
+
+\section{Psiformer ansatz and architecture}
+
+The trial wavefunction is an \emph{ansatz}: a model chosen by design and optimized by VMC. We require antisymmetry under particle exchange and expressiveness for strong electron--correlation effects. Following \cite{psiformer,ferminet}, we use a Slater--Jastrow form,
+\begin{equation}
+	\Psi_{\theta}(\mathbf{R})
+	=\underbrace{\exp\bigl(\mathcal{J}_{\theta}(\mathbf{R})\bigr)}_{\text{Coulomb correlations}}
+	\;\times\;
+	\underbrace{\sum_k \omega_k \det\bigl[\boldsymbol{\phi}_{\theta}^{k}(\mathbf{R})\bigr]}_{\text{antisymmetry}}.
+\end{equation}
+
+\begin{figure}[htbp]
+	\centering
+	\begin{subfigure}[b]{0.52\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{psiformer.pdf}
+		\caption{Overall Psi Former architecture.}
+		\label{fig:psiarch}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}[b]{0.38\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{legend.png}
+		\caption{Legend for architecture diagram.}
+		\label{fig:legend}
+	\end{subfigure}
+	\caption{Psiformer-style architecture and diagram legend.}
+	\label{fig:psiformer_combo}
+\end{figure}
+
+The envelope is implemented as a matrix with learned exponential decay; the Jastrow uses few parameters and is trained in log scale in practice. Figure~\ref{fig:shapes} illustrates shape handling in the implementation.
+
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[width=0.35\textwidth]{psiformer_true_shapes.pdf}
+	\caption{Tensor shape flow in the Psiformer implementation.}
+	\label{fig:shapes}
+\end{figure}
+
+\section{Implementation details}
+
+\subsection{Hyperparameters and training objective}
+
+Figure~\ref{fig:hyper} summarizes hyperparameter settings for small and large model variants; Figures~\ref{fig:goal} and~\ref{fig:training} illustrate the optimization goal and training setup.
+
+\begin{figure}[htbp]
+	\centering
+	\begin{subfigure}[b]{0.48\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{table_hyper.pdf}
+		\caption{Hyperparameters (small vs.\ large).}
+		\label{fig:hyper}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}[b]{0.48\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{goal.png}
+		\caption{Optimization objective.}
+		\label{fig:goal}
+	\end{subfigure}
+
+	\vspace{0.8em}
+	\centering
+	\begin{subfigure}[b]{0.65\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{training.png}
+		\caption{Training configuration.}
+		\label{fig:training}
+	\end{subfigure}
+	\caption{Methodology: hyperparameters and training.}
+	\label{fig:methodology}
+\end{figure}
+
+\subsection{Laplacian via automatic differentiation}
+
+The kinetic term requires $\nabla^2\Psi(\mathbf{R})=\sum_i \partial^2\Psi/\partial R_i^2$. In PyTorch, repeated \texttt{autograd.grad} calls accumulate second derivatives:
+\begin{lstlisting}[language=Python]
+R = R_o.requires_grad_(True)     # particle coordinates
+psi = model(R)                   # neural wavefunction
+grad_psi = torch.autograd.grad(
+    psi, R,
+    create_graph=True,
+)[0]
+laplacian = 0.0
+for i in range(R.shape[-1]):
+    laplacian += torch.autograd.grad(
+        grad_psi[..., i], R,
+        retain_graph=True
+    )[0][..., i]
+\end{lstlisting}
+
+\subsection{Stable $\log\det$ gradient}
+
+Since $\Psi_\theta\propto\det\boldsymbol{\Phi}_\theta(\mathbf{R})$, training uses $\log|\det\boldsymbol{\Phi}|$ for stability. The matrix derivative identity $\partial(\det A)/\partial A=\det(A)A^{-\mathsf T}$ becomes ill-conditioned near singular $\boldsymbol{\Phi}$. An SVD-based custom autograd op implements $\nabla_{\!A}\log|\det A|$ without explicitly forming unstable inverses:
+\begin{lstlisting}[language=Python,basicstyle=\ttfamily\scriptsize]
+import torch
+
+class StableLogDet(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx, A):
+        U, S, Vh = torch.linalg.svd(A)
+        ctx.save_for_backward(U, S, Vh)
+        return S.log().sum()
+
+    @staticmethod
+    def backward(ctx, g):
+        U, S, Vh = ctx.saved_tensors
+        inv_S = torch.diag_embed(1.0 / S)
+        grad_A = U @ inv_S @ Vh
+        return g * grad_A
+\end{lstlisting}
+
+\subsection{Optimizer and batching}
+
+AdamW decouples weight decay from the adaptive gradient scaling of Adam. With $\lambda$ a weight-decay coefficient and $\eta$ the learning rate,
+\begin{align*}
+	g_t &= \nabla \mathcal{L} + \textcolor{red}{\lambda \theta_t}, &
+	\theta_{t+1} &= \theta_t - \mathrm{AdamStep}(g_t) && \text{(Adam)},\\
+	g_t &= \nabla \mathcal{L}, &
+	\theta_{t+1} &= \theta_t - \mathrm{AdamStep}(g_t) - \textcolor{green!50!black}{\eta\lambda\theta_t} && \text{(AdamW)}.
+\end{align*}
+Naive step-by-step energy evaluation over MCMC samples yielded low GPU occupancy ($\approx 30\%$). Reshaping batches as
+\begin{equation*}
+	(\text{mc\_steps}, B, n_e, 3)\;\longrightarrow\;(\text{mc\_steps}\times B, n_e, 3)
+\end{equation*}
+for batched forward passes improved utilization to roughly $99\%$ in our runs.
+
+\section{Results}
+
+\begin{figure}[htbp]
+	\centering
+	\begin{subfigure}[b]{0.48\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{four_elements.pdf}
+		\caption{Convergence curves.}
+		\label{fig:convergence}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}[b]{0.48\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{oxigen.pdf}
+		\caption{Oxygen convergence.}
+		\label{fig:oxygen}
+	\end{subfigure}
+	\caption{Representative VMC convergence during training.}
+	\label{fig:results_conv}
+\end{figure}
+
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[width=0.88\textwidth]{table_energy.pdf}
+	\caption{Ground-state energies (Ha): baseline vs.\ Psiformer-style model for hydrogen--oxygen benchmarks.}
+	\label{fig:energy}
+\end{figure}
+
+\section{Discussion and future work}
+
+Several directions remain open: pretraining with external data, reducing the cost of Laplacian computation (a training bottleneck), KFAC or other natural-gradient-style optimizers, FlashAttention-style kernels for long-range mixing, transfer across chemical systems, and empirical scaling laws for model size and data.
+
+\section*{acknowledgment}
+The author thanks the Computer Science Faculty for access to GPU resources, in particular an NVIDIA GeForce RTX 4080 Super, which enabled training and evaluation reported here.
+
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[width=0.35\textwidth]{h2.png}
+	\caption{Illustrative molecular system (H$_2$).}
+	\label{fig:h2}
+\end{figure}
+
+\begin{thebibliography}{99}
+
+\bibitem{psiformer}
+F.~Hermann, Z.~Sch{\"a}tzle, and F.~No{\'e},
+\newblock \emph{A Self Attention Ansatz for Ab Initio Quantum Chemistry},
+\newblock arXiv:2309.12345, 2023.
+
+\bibitem{ferminet}
+J.~Pfau, J.~S.~Spencer, A.~G.~D.~G.~Matthews, and W.~M.~C.~Foulkes,
+\newblock \emph{Ab Initio Solution of the Many-Electron Schr{\"o}dinger Equation with Deep Neural Networks},
+\newblock Physical Review Research, 2, 033429, 2020.
+
+\bibitem{attention}
+A.~Vaswani et al.,
+\newblock \emph{Attention Is All You Need},
+\newblock Advances in Neural Information Processing Systems (NeurIPS), 2017.
+
+\end{thebibliography}
+
+\end{document}

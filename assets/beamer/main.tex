@@ -305,16 +305,19 @@ This expectation is calculated in the same way.
 
 \begin{frame}
 \frametitle{Attention on the room}
-The learnable matrices are:
-$$ W ^{Q}, W ^{K}, W ^{V} \in \mathbb{R}^{n_{\text{embd}}\times n_{\text{embd}}}$$
-$$ \mathbf{k}_{i}=\mathbf{W}^{k}\mathbf{h}_{i},\mathbf{q}_{i}=\mathbf{W}^{q}\mathbf{h}_{i},\mathbf{v}_{i}=\mathbf{W}^{v}\mathbf{h}_{i} $$
-$$
+The learnable matrices are
+\begin{equation*}
+W^{Q}, W^{K}, W^{V} \in \mathbb{R}^{n_{\text{embd}}\times n_{\text{embd}}},\qquad
+\mathbf{k}_{i}=\mathbf{W}^{k}\mathbf{h}_{i},\;
+\mathbf{q}_{i}=\mathbf{W}^{q}\mathbf{h}_{i},\;
+\mathbf{v}_{i}=\mathbf{W}^{v}\mathbf{h}_{i}.
+\end{equation*}
+Stacked per head:
 \begin{align}
-[\mathbf{q_{1},q_{2},\dots ,q_{n_{h}}}]=\mathbf{q} \\
-[\mathbf{k_{1},k_{2},\dots ,k_{n_{h}}}]=\mathbf{k} \\
-[\mathbf{v_{1},v_{2},\dots ,v_{n_{h}}}]=\mathbf{v}
+[\mathbf{q}_{1},\mathbf{q}_{2},\dots ,\mathbf{q}_{n_{h}}] &= \mathbf{q} \\
+[\mathbf{k}_{1},\mathbf{k}_{2},\dots ,\mathbf{k}_{n_{h}}] &= \mathbf{k} \\
+[\mathbf{v}_{1},\mathbf{v}_{2},\dots ,\mathbf{v}_{n_{h}}] &= \mathbf{v}
 \end{align}
-$$
 In the $i-th$ head:
 \begin{equation}
 \mathbf{o}_{t,i}=\sum_{j=1}^{t}\text{Softmax}\left( \frac{\mathbf{q}^{T}_{t,i}\mathbf{k}_{j,i}}{\sqrt{ d_{h} }} \right) \mathbf{v}_{j,i}
@@ -340,7 +343,7 @@ $$\mathbf{u}_{t}=W^{O}[\mathbf{o}_{t,1};\mathbf{o}_{t,2};\dots ;\mathbf{o}_{t,n_
 Motivated by these constraints, we propose a Slater--Jastrow form:
 \[
 \Psi_{\theta}(\mathbf{R}) =
-\underbrace{\exp\\big(\mathcal{J}_{\theta}(\mathbf{R})\big)}_{\text{Coulomb correlations}}
+\underbrace{\exp\bigl(\mathcal{J}_{\theta}(\mathbf{R})\bigr)}_{\text{Coulomb correlations}}
 \,\times\,
 \underbrace{\sum \omega_k  \det[ \boldsymbol{\phi}_{\theta}^{k}(\mathbf{R})]}_{\text{antisymmetry}}
 \]
