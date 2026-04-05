@@ -6,7 +6,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                IDIOMA, CODIFICACION & FUENTES              %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\usepackage[spanish,USenglish,brazil,es-tabla]{babel}  % 
+\usepackage[provide=*,spanish,USenglish,brazil]{babel}  %
 %\usepackage[brazil]{babel}  % Habilitar para el artículos en portugués
 %\usepackage[spanish, es-tabla]{babel}  % Habilitar para el caso de tablas en español
 %\usepackage[latin1]{inputenc}
@@ -38,7 +38,8 @@
 \usepackage{pgfplotstable}
 \usepackage[all]{xy}
 %\usepackage[caption=false]{subfig}
-\usepackage{pst-node}
+% Keep compilation working on systems without PSTricks.
+\IfFileExists{pst-node.sty}{\usepackage{pst-node}}{}
 	\usetikzlibrary{fadings}
 	\usetikzlibrary{positioning,shapes,fit,arrows}
 	\usetikzlibrary{mindmap,trees}
