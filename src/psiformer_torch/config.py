@@ -74,8 +74,7 @@ class Train_Config():
             mode=self.wand_mode if self.wand_mode in options else "online",
         )
 
-
-Psiformer_Torch_Small_Model = Model_Config(
+PSIFORMER_TORCH_SMALL_MODEL = Model_Config(
     n_layer=1,
     n_head=16,
     n_embd=64,
@@ -86,7 +85,7 @@ Psiformer_Torch_Small_Model = Model_Config(
     nuclear_charge=2  # Change depends on the atom
 )
 
-Psiformer_Torch_Small_Conf = Train_Config(
+PSIFORMER_TORCH_SMALL_CONF = Train_Config(
     # train
     batch_size=2,
     checkpoint_step=33,
@@ -101,7 +100,7 @@ Psiformer_Torch_Small_Conf = Train_Config(
 )
 
 
-Psiformer_Torch_Large_Model = Model_Config(
+PSIFORMER_TORCH_LARGE_MODEL = Model_Config(
     n_layer=4,
     n_head=32,
     n_embd=256,
@@ -112,7 +111,7 @@ Psiformer_Torch_Large_Model = Model_Config(
     nuclear_charge=6  # Change depends on the atom
 )
 
-Psiformer_Torch_Large_Conf = Train_Config(
+PSIFORMER_TORCH_LARGE_CONF = Train_Config(
     # train
     batch_size=2,
     checkpoint_step=50,
@@ -127,7 +126,7 @@ Psiformer_Torch_Large_Conf = Train_Config(
 )
 
 
-Psiformer_Torch_Debug_Model = Model_Config(
+PSIFORMER_TORCH_DEBUG_MODEL = Model_Config(
     n_layer=1,
     n_head=2,
     n_embd=4,
@@ -138,7 +137,7 @@ Psiformer_Torch_Debug_Model = Model_Config(
     nuclear_charge=3  # Change depends on the atom
 )
 
-Psiformer_Torch_Debug_Conf = Train_Config(
+PSIFORMER_TORCH_DEBUG_CONF = Train_Config(
     # train
     batch_size=1,
     checkpoint_step=2,
@@ -152,6 +151,6 @@ Psiformer_Torch_Debug_Conf = Train_Config(
     mh_steps_per_sample=4,
 )
 
-large_conf = (Psiformer_Torch_Large_Model, Psiformer_Torch_Large_Conf)
-small_conf = (Psiformer_Torch_Small_Model, Psiformer_Torch_Small_Conf)
-debug_conf = (Psiformer_Torch_Debug_Model, Psiformer_Torch_Debug_Conf)
+LARGE_CONF = (PSIFORMER_TORCH_LARGE_MODEL, PSIFORMER_TORCH_LARGE_CONF)
+SMALL_CONF = (PSIFORMER_TORCH_SMALL_MODEL, PSIFORMER_TORCH_SMALL_CONF)
+DEBUG_CONF = (PSIFORMER_TORCH_DEBUG_MODEL, PSIFORMER_TORCH_DEBUG_CONF)

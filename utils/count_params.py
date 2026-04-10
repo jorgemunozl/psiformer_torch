@@ -15,8 +15,8 @@ if "wandb" not in sys.modules:
     sys.modules["wandb"] = types.SimpleNamespace(init=lambda *args, **kwargs: None)
 
 from psiformer_torch.config import (  # noqa: E402
-    Psiformer_Torch_Large_Model,
-    Psiformer_Torch_Small_Model,
+    PSIFORMER_TORCH_LARGE_MODEL,
+    PSIFORMER_TORCH_SMALL_MODEL,
 )
 
 
@@ -53,15 +53,19 @@ def count_params_formula(config) -> int:
 
 def main() -> None:
     models = {
-        "small": Psiformer_Torch_Small_Model,
-        "large": Psiformer_Torch_Large_Model,
+        "small": PSIFORMER_TORCH_SMALL_MODEL,
+        "large": PSIFORMER_TORCH_LARGE_MODEL,
     }
 
     for name, config in models.items():
         try:
+            print("Counting parameters from model")
             total, trainable = count_params_from_model(config)
             source = "torch"
-        except ModuleNotFoundError:
+        except ModuleNotFoundError as e:
+            # print the error
+            print("Error: ", e)
+            print("Counting parameters from formula")
             total = count_params_formula(config)
             trainable = total
             source = "formula"

@@ -8,7 +8,7 @@ from psiformer_torch.psiformer import get_device, PsiFormer
 from psiformer_torch.config import Train_Config
 from psiformer_torch.mcmc import MH
 from psiformer_torch.hamiltonian import Hamiltonian
-from psiformer_torch.config import debug_conf, small_conf, large_conf
+from psiformer_torch.config import DEBUG_CONF, SMALL_CONF, LARGE_CONF
 
 
 # torch.autograd.set_detect_anomaly(True)
@@ -208,13 +208,13 @@ def wrapper(
     """
     key = (preset or "debug").lower()
     if key == "large":
-        base_model_config, base_train_config = large_conf
+        base_model_config, base_train_config = LARGE_CONF
         suffix = "_LARGE"
     elif key == "small":
-        base_model_config, base_train_config = small_conf
+        base_model_config, base_train_config = SMALL_CONF
         suffix = "_SMALL"
     elif key in ("debug", ""):
-        base_model_config, base_train_config = debug_conf
+        base_model_config, base_train_config = DEBUG_CONF
         suffix = "_DEBUG"
     else:
         raise ValueError(

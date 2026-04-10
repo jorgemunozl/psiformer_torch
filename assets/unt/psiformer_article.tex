@@ -21,10 +21,10 @@
 %                       CONFIGURACION                        %
 %============================================================%
 
-\title{Solving the Many-Electron Schr\"odinger Equation
+\title{Ab Initio Wave Function Optimization for Light Atoms
 	\\
 	\vspace{0.4cm}
-	{\large With a Transformer Architecture}
+	{\large A PyTorch Framework for the Psiformer Architecture}
 }
 
 \autor{Jorge Muñoz Laredo}{https://orcid.org/0009-0003-3400-582X}{Instituto de Investigaciones,  Universidad de Puebla, Puebla, México ({\tt slepe@upuebla.edu.pe})}
@@ -48,7 +48,23 @@
 \selectlanguage{USenglish}
 
 \begin{abstract}
-The many-electron Schr\"odinger equation is a central problem in \emph{ab initio} quantum chemistry. Variational Monte Carlo (VMC) with flexible neural ans\"atze, as in FermiNet and related architectures, has shown that deep models can approximate ground-state wavefunctions accurately. This work presents a PyTorch-based study of a Slater--Jastrow ansatz in which a transformer-style backbone parameterizes single-particle orbitals entering a Slater determinant, together with a low-parameter Jastrow factor enforcing electron--electron cusp structure. We summarize the governing equations, the VMC objective and Metropolis--Hastings sampling, implementation choices for stable derivatives of the log-determinant via SVD, and batched energy evaluation for high GPU utilization. Representative convergence curves and energy estimates illustrate the behavior of the resulting \emph{Psiformer}-style model on small molecular benchmarks.
+The application of deep neural networks to Variational Quantum Monte Carlo (VQMC) has 
+significantly advanced the numerical approximation of ground-state energies for quantum
+many-body systems. Among these advancements, the Psiformer architecture—which leverages
+self-attention mechanisms to model antisymmetric electron wave functions—has
+demonstrated state-of-the-art accuracy. However, the original implementation is built exclusively within 
+the JAX ecosystem, presenting a barrier to entry for the broader research community
+that predominantly utilizes PyTorch. In the interest of scientific reproducibility and 
+computational accessibility, this paper presents a complete, open-source re-implementation 
+of the Psiformer model using the PyTorch framework. To validate the fidelity of 
+our translation, we evaluate the model by computing the ground-state energies for the 
+first eight elements of the periodic table (Hydrogen through Oxygen). 
+Our computational results confirm that the PyTorch implementation successfully 
+reproduces the high accuracy and stability of the original JAX-based architecture. 
+By bridging this software gap, this work verifies the robustness of the Psiformer model outside 
+its native environment and provides an accessible, validated tool for researchers 
+in computational mathematics, machine learning, and quantum chemistry. 
+The full source code is made publicly available to facilitate future experimentation and development.
 \end{abstract}
 
 \begin{keywords}
@@ -57,51 +73,70 @@ Many-electron Schr\"odinger equation, variational Monte Carlo, transformer, neur
 
 %--------------------------------------------------------------
 \section{Introduction}
+Solving the time-independent many-body Schrödinger equation is one of the central challenges in computational 
+physics and quantum chemistry. Because analytical solutions are impossible for systems with more than one
+electron, highly accurate numerical approximations are required. Traditional ab initio methods,
+such as Hartree-Fock (HF), Density Functional Theory (DFT), and Coupled Cluster (CC) methods,
+ have long been the standard for estimating ground-state energies. 
+However, these methods often face a steep trade-off between computational scalability
+ and the accuracy required to capture complex electron correlation effects.
 
-Computing the ground state of many-electron systems requires solving the electronic Schr\"odinger equation in the presence of Coulomb interactions and fermionic antisymmetry. Deep variational wavefunctions trained with VMC have emerged as a practical route to high-accuracy energies without an explicit basis expansion in the traditional sense \cite{ferminet,psiformer}. Self-attention mechanisms, as introduced for sequence modeling \cite{attention}, motivate architectures that mix information across electrons while respecting permutation structure when combined with a Slater determinant. This article collects the material from an expository slide deck into article form and documents implementation aspects of a Psiformer-style ansatz in PyTorch.
+In recent years, Variational Quantum Monte Carlo (VQMC) methods have been revolutionized
+by the application of deep neural networks.
+By parameterizing the trial wave function using deep learning architectures,
+researchers can capture complex many-body correlations without relying on traditional,
+fixed basis sets. A major breakthrough in this domain was the introduction of
+neural network wave functions such as FermiNet [Insert FermiNet citation] and, subsequently,
+the Psiformer architecture developed by DeepMind[Insert Psiformer citation].
+Psiformer utilizes a transformer-based mechanism with self-attention to model the
+antisymmetric wave function of electrons, achieving state-of-the-art
+accuracy on various molecular and atomic systems.
 
-\section{The Schr\"odinger wave function and physical constraints}
+Despite the profound theoretical and empirical contributions of the Psiformer architecture,
+independent replication and modification of such models can be challenging. 
+DeepMind’s official implementations are natively built within the JAX ecosystem.
+While JAX is highly efficient, PyTorch remains the dominant framework in the broader deep
+learning and applied mathematics communities. Translating complex,
+physics-informed architectures across frameworks is not a trivial task,
+yet it is a crucial step for scientific reproducibility,
+cross-validation, and democratizing access to advanced computational tools.
 
-\subsection{Schr\"odinger equation}
+In this paper, we present a complete, open-source re-implementation of
+the Psiformer architecture using the PyTorch framework. 
+Our primary objective is to validate the reproducibility of 
+the original model's claims outside of its native software ecosystem.
+To demonstrate the fidelity of our implementation, we evaluate
+the model on the ground-state energy estimation for the first
+eight atoms of the periodic table (Hydrogen through Oxygen).
+Our results indicate that the PyTorch implementation successfully captures
+the underlying physics, yielding ground-state energies that are
+highly competitive and consistent with the original findings.
 
-In 1926 Schr\"odinger formulated the time-dependent Schr\"odinger equation (TDSE),
+By providing a working, validated PyTorch implementation of Psiformer, 
+this work aims to lower the barrier to entry for researchers
+in computational mathematics, machine learning, and quantum
+chemistry who wish to experiment with transformer-based wave functions.
+The complete source code, including training routines and hyperparameters for the
+ evaluated atoms, is publicly available at: \url{https://github.com/jorgemunozl/psiformer_torch.git}.
+
+The remainder of this paper is organized as 
+follows: Section 2 presents a compact mathematical formulation of the electronic
+ground-state problem and the Variational Monte Carlo (VMC) optimization objective.
+Section 3 describes the structural choices of our Psiformer-style ansatz and its
+PyTorch implementation. Section 4 reports numerical results for the first eight
+atoms (hydrogen through oxygen), and Section 5 discusses limitations and future work.
+
+%============================================================%
+%                   Mathematical Formulation                   %
+%============================================================%
+\section{Mathematical formulation}
+
+\subsection{Problem setup and Hamiltonian}
+We seek the ground state of the stationary many-electron Schr\"odinger eigenproblem
 \begin{equation}
-	i\,\hbar\,\partial_t \Psi = \hat{H}\,\Psi.
+	\hat{H}\psi(\mathbf{x}_{1},\dots,\mathbf{x}_{N})=E\,\psi(\mathbf{x}_{1},\dots,\mathbf{x}_{N}),
 \end{equation}
-Here $\Psi \in \mathcal{H}$ is the \textbf{wave function}, $\hat{H}$ is the \textbf{Hamiltonian}, and the state depends on spatial coordinates and time. The quantity $|\Psi|^2$ is interpreted as a probability density (normalized to integrate to one).
-
-In the position representation,
-\begin{equation}
-	\hat{H}=\frac{\hat{\vec{P}}^{2}}{2m}+\hat{V}
-	=-\frac{\hbar^{2}}{2m}\nabla^{2}+\hat{V}.
-\end{equation}
-
-Separating $\psi(\vec{\mathbf{r}},t)=R(\vec{\mathbf{r}})T(t)$ leads to
-\begin{equation}
-	T(t)=e^{-iEt/\hbar}, \qquad \hat{H}R(\vec{\mathbf{r}})=ER(\vec{\mathbf{r}}),
-\end{equation}
-with $E$ the total energy. The stationary problem is to find $\psi$ such that
-\begin{equation}
-	\left[-\frac{\hbar^{2}}{2m}\nabla^{2}+V(\mathbf{r},t)\right]\psi(\vec{\mathbf{r}})= E \psi(\vec{\mathbf{r}}),
-\end{equation}
-given the potential $V$ of the system.
-
-\begin{figure}[htbp]
-	\centering
-	\includegraphics[width=0.5\textwidth]{prob.png}
-	\caption{$|\Psi(\mathbf{R})|^2$ as the probability density for finding particles near configuration $\mathbf{R}$.}
-	\label{fig:prob}
-\end{figure}
-
-\subsection{Many-body Hamiltonian}
-
-For $n$ electrons (and clamped nuclei in the Born--Oppenheimer approximation), collective coordinates $\mathbf{x}_i=(\mathbf{r}_i,\sigma_i)$ combine position $\mathbf{r}_i\in\mathbb{R}^3$ and spin $\sigma_i\in\{\uparrow,\downarrow\}$. The eigenproblem reads
-\begin{equation}
-	\hat{H}\psi(\mathbf{x}_{1},\dots ,\mathbf{x}_{n})=E\psi(\mathbf{x}_{1},\dots ,\mathbf{x}_{n}).
-\end{equation}
-Each particle interacts with all others; for atoms one would include nuclei and electrons consistently, subject to the chosen level of approximation.
-
-A standard molecular Hamiltonian (atomic units) takes the form
+where $\mathbf{x}_i=(\mathbf{r}_i,\sigma_i)$ collects the position $\mathbf{r}_i\in\mathbb{R}^3$ and spin $\sigma_i\in\{\uparrow,\downarrow\}$. We work in atomic units and adopt the Born--Oppenheimer approximation (clamped nuclei). A standard molecular Hamiltonian is
 \begin{align}
 	\hat H & =
 	-\sum_{i=1}^{N}\frac{1}{2}\nabla_i^{2}
@@ -110,11 +145,14 @@ A standard molecular Hamiltonian (atomic units) takes the form
 	&\quad +\sum_{1\le i<j\le N}\frac{1}{|\mathbf r_i-\mathbf r_j|}
 	+\sum_{1\le I<J\le M}\frac{Z_I Z_J}{|\mathbf R_I-\mathbf R_J|}.
 \end{align}
-The Born--Oppenheimer approximation fixes nuclear positions and often drops the nuclear kinetic terms when solving for the electronic wavefunction.
+Under Born--Oppenheimer, nuclear positions $\{\mathbf{R}_I\}$ are fixed and one typically drops the nuclear kinetic terms when solving the electronic problem.
 
-\subsection{Fermi--Dirac statistics and cusps}
+%============================================================%
+%                   Fermi--Dirac statistics and cusps                    %
+%============================================================%
+\subsection{Antisymmetry and cusp constraints}
 
-Electrons are indistinguishable fermions: exchanging two electrons flips the sign of $\Psi$, and the Pauli principle forbids double occupation of the same spin orbital. A Slater determinant built from spin orbitals $\phi_j^k(\mathbf{x}_i)$ enforces antisymmetry,
+Electrons are indistinguishable fermions, so $\psi$ must be antisymmetric under exchange of same-spin particles. A Slater determinant built from spin orbitals $\phi_j^k(\mathbf{x}_i)$ provides a canonical antisymmetric form,
 \begin{equation}
 	\psi=
 	\begin{vmatrix}
@@ -132,18 +170,9 @@ and electron--electron
 \begin{equation*}
 	\frac{\partial \Psi}{\partial r_{ij}}\Big|_{r_{ij}=0} = \frac{1}{2}\,\Psi(0).
 \end{equation*}
-A Jastrow factor $\exp(\mathcal{J})$ is often used to impose short-range correlation structure. In this work we use
-\begin{equation}
-	\mathcal{J}_{\theta}(\mathbf{x})
-	=\sum_{\substack{i<j\\ \sigma_{i}=\sigma_{j}}}
-	-\frac{1}{4}\frac{\alpha^{2}_{\mathrm{par}}}{\alpha_{\mathrm{par}}+|\mathbf{r}_{i}-\mathbf{r}_{j}|}
-	+\sum_{\substack{i,j\\ \sigma_{i}\neq \sigma_{j}}}
-	-\frac{1}{2}\frac{\alpha^{2}_{\mathrm{anti}}}{\alpha_{\mathrm{anti}}+|\mathbf{r}_{i}-\mathbf{r}_{j}|}.
-\end{equation}
+A Jastrow factor $\exp(\mathcal{J})$ is often used to impose short-range correlation structure; our specific choice is part of the ansatz design in Section~3.
 
-\section{Variational Monte Carlo}
-
-\subsection{Variational principle and local energy}
+\subsection{Variational Monte Carlo objective}
 
 The variational principle states
 \begin{equation}
@@ -161,7 +190,7 @@ With the normalized density $p_\theta(\mathbf{R})\propto|\Psi_\theta(\mathbf{R})
 \end{equation}
 the loss is the expectation $\mathcal{L}_\theta=\mathbb{E}_{\mathbf{R}\sim p_\theta}[E_L(\mathbf{R})]$.
 
-\subsection{Monte Carlo estimation and sampling}
+\subsection{Monte Carlo estimation, sampling, and gradients}
 
 Given samples $\mathbf{R}_1,\dots,\mathbf{R}_M$ drawn from $|\Psi_\theta|^2$ (up to normalization),
 \begin{equation}
@@ -186,7 +215,12 @@ where $\rho\propto|\Psi_\theta|^2$, and iterate. Gradients of the VMC objective 
 \end{equation}
 estimated with the same samples.
 
-\section{Transformer backbone and self-attention}
+%============================================================%
+%                     Structural choices                      %
+%============================================================%
+\section{Structural choices}
+
+\subsection{Transformer backbone and self-attention}
 
 Figure~\ref{fig:transformer} sketches a transformer-style backbone. Learnable matrices $W^Q,W^K,W^V\in\mathbb{R}^{n_{\text{embd}}\times n_{\text{embd}}}$ map hidden states $\mathbf{h}_i$ to queries, keys, and values,
 \begin{align}
@@ -209,7 +243,7 @@ and $\mathbf{u}_t=W^O[\mathbf{o}_{t,1};\dots;\mathbf{o}_{t,n_h}]$ for an output 
 	\label{fig:transformer}
 \end{figure}
 
-\section{Psiformer ansatz and architecture}
+\subsection{Psiformer ansatz and architecture}
 
 The trial wavefunction is an \emph{ansatz}: a model chosen by design and optimized by VMC. We require antisymmetry under particle exchange and expressiveness for strong electron--correlation effects. Following \cite{psiformer,ferminet}, we use a Slater--Jastrow form,
 \begin{equation}
@@ -217,6 +251,15 @@ The trial wavefunction is an \emph{ansatz}: a model chosen by design and optimiz
 	=\underbrace{\exp\bigl(\mathcal{J}_{\theta}(\mathbf{R})\bigr)}_{\text{Coulomb correlations}}
 	\;\times\;
 	\underbrace{\sum_k \omega_k \det\bigl[\boldsymbol{\phi}_{\theta}^{k}(\mathbf{R})\bigr]}_{\text{antisymmetry}}.
+\end{equation}
+
+We use a simple, parameter-efficient Jastrow to enforce short-range cusp structure, separated by spin alignment,
+\begin{equation}
+	\mathcal{J}_{\theta}(\mathbf{R})
+	=\sum_{\substack{i<j\\ \sigma_{i}=\sigma_{j}}}
+	-\frac{1}{4}\frac{\alpha^{2}_{\mathrm{par}}}{\alpha_{\mathrm{par}}+|\mathbf{r}_{i}-\mathbf{r}_{j}|}
+	+\sum_{\substack{i,j\\ \sigma_{i}\neq \sigma_{j}}}
+	-\frac{1}{2}\frac{\alpha^{2}_{\mathrm{anti}}}{\alpha_{\mathrm{anti}}+|\mathbf{r}_{i}-\mathbf{r}_{j}|}.
 \end{equation}
 
 \begin{figure}[htbp]
@@ -247,9 +290,9 @@ The envelope is implemented as a matrix with learned exponential decay; the Jast
 	\label{fig:shapes}
 \end{figure}
 
-\section{Implementation details}
+\subsection{Implementation details}
 
-\subsection{Hyperparameters and training objective}
+\subsubsection{Hyperparameters and training objective}
 
 Figure~\ref{fig:hyper} summarizes hyperparameter settings for small and large model variants; Figures~\ref{fig:goal} and~\ref{fig:training} illustrate the optimization goal and training setup.
 
@@ -281,7 +324,7 @@ Figure~\ref{fig:hyper} summarizes hyperparameter settings for small and large mo
 	\label{fig:methodology}
 \end{figure}
 
-\subsection{Laplacian via automatic differentiation}
+\subsubsection{Laplacian via automatic differentiation}
 
 The kinetic term requires $\nabla^2\Psi(\mathbf{R})=\sum_i \partial^2\Psi/\partial R_i^2$. In PyTorch, repeated \texttt{autograd.grad} calls accumulate second derivatives:
 \begin{lstlisting}[language=Python]
@@ -299,8 +342,7 @@ for i in range(R.shape[-1]):
     )[0][..., i]
 \end{lstlisting}
 
-\subsection{Stable $\log\det$ gradient}
-
+\subsubsection{Stable $\log\det$ gradient}
 Since $\Psi_\theta\propto\det\boldsymbol{\Phi}_\theta(\mathbf{R})$, training uses $\log|\det\boldsymbol{\Phi}|$ for stability. The matrix derivative identity $\partial(\det A)/\partial A=\det(A)A^{-\mathsf T}$ becomes ill-conditioned near singular $\boldsymbol{\Phi}$. An SVD-based custom autograd op implements $\nabla_{\!A}\log|\det A|$ without explicitly forming unstable inverses:
 \begin{lstlisting}[language=Python,basicstyle=\ttfamily\scriptsize]
 import torch
@@ -320,7 +362,7 @@ class StableLogDet(torch.autograd.Function):
         return g * grad_A
 \end{lstlisting}
 
-\subsection{Optimizer and batching}
+\subsubsection{Optimizer and batching}
 
 AdamW decouples weight decay from the adaptive gradient scaling of Adam. With $\lambda$ a weight-decay coefficient and $\eta$ the learning rate,
 \begin{align*}

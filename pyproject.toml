@@ -3,39 +3,17 @@ name = "psiformer-torch"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.13"
 dependencies = [
-    "flax>=0.12.3",
-    "huggingface-hub>=1.2.3",
-    "jax>=0.9.0",
-    "matplotlib>=3.10.7",
-    "numpy>=2.3.3",
-    "pytest>=9.0.2",
-    "torchviz>=0.0.3",
-    "wandb>=0.23.0",
+    "huggingface-hub",
+    "numpy>=2.4.4",
+    "torch>=2.11.0",
 ]
 
-[dependency-groups]
-# On the GPU box: install this group to get CUDA PyTorch
-cuda = [
-    "torch>=2.9.1",
-]
-
-# You can keep this, but right now it's identical to `cuda`.
-# If later you want a CPU-only build for laptop, we’d point it to a CPU index instead.
-laptop = [
-    "torch>=2.9.1",
-]
-
-
-# CUDA 12.8 wheels from the official PyTorch index
 [[tool.uv.index]]
-name = "pytorch-cu128"
+name = "pytorch-cpu"
 url = "https://download.pytorch.org/whl/cpu"
 explicit = true
 
 [tool.uv.sources]
-# Force torch to be resolved from the CUDA 12.8 index
-torch = [
-  { index = "pytorch-cu128" },
-]
+torch = { index = "pytorch-cpu" }
