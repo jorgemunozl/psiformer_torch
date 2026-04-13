@@ -36,26 +36,26 @@
 
 \maketitle
 \begin{center}
-\textcolor{red}{\large \bf Special Issue: Workshop on Optimization and Operator Learning - SaC3 - Perú}	
+\textcolor{red}{\large \bf Special Issue: Workshop on Optimization and Operator Learning - SaC3 - Perú}
 \end{center}
 \vspace{1cm}
 
 \selectlanguage{USenglish}
 
 \begin{abstract}
-The application of deep neural networks to Variational Quantum Monte Carlo (VQMC) has 
+The application of deep neural networks to Variational Quantum Monte Carlo (VQMC) has
 significantly advanced the numerical approximation of ground-state energies for quantum
 many-body systems. Among these advancements, the Psiformer architecture—which leverages
 self-attention mechanisms to model antisymmetric electron wave functions—has
-demonstrated state-of-the-art accuracy. However, the original implementation is built exclusively within 
+demonstrated state-of-the-art accuracy. However, the original implementation is built exclusively within
 the JAX ecosystem, presenting a barrier to entry for the broader research community
-that predominantly utilizes PyTorch. In the interest of scientific reproducibility and computational accessibility, we present an independent open-source PyTorch implementation of the Psiformer architecture. The model design follows von Glehn, Spencer, and Pfau (2023); the code and numerical experiments reported here are the author's own. To validate the implementation, we compute ground-state energies for helium through oxygen and compare them to a Hartree--Fock baseline. 
-Our results demonstrate that the PyTorch Psiformer consistently recovers significant 
-electron correlation energy across all tested atoms, confirming that the architecture 
-is correctly implemented and behaves as expected from variational theory. 
-By making the framework openly available, this work lowers the barrier for researchers 
-in computational mathematics, machine learning, and quantum chemistry who wish to 
-experiment with transformer-based wave functions. 
+that predominantly utilizes PyTorch. In the interest of scientific reproducibility and computational accessibility, we present an independent open-source PyTorch implementation of the Psiformer architecture. The model design follows von Glehn, Spencer, and Pfau (2023); the code and numerical experiments reported here are the author's own. To validate the implementation, we compute ground-state energies for helium through oxygen and compare them to a Hartree--Fock baseline.
+Our results demonstrate that the PyTorch Psiformer consistently recovers significant
+electron correlation energy across all tested atoms, confirming that the architecture
+is correctly implemented and behaves as expected from variational theory.
+By making the framework openly available, this work lowers the barrier for researchers
+in computational mathematics, machine learning, and quantum chemistry who wish to
+experiment with transformer-based wave functions.
 The full source code is made publicly available to facilitate future experimentation and development.
 \end{abstract}
 
@@ -65,7 +65,7 @@ Many-electron Schr\"odinger equation, variational Monte Carlo, transformer, neur
 
 %--------------------------------------------------------------
 \section{Introduction}
-Solving the time-independent many-body Schr\"odinger equation is one of the central challenges in computational 
+Solving the time-independent many-body Schr\"odinger equation is one of the central challenges in computational
 physics and quantum chemistry. Because analytical solutions are impossible for systems with more than one
 electron, highly accurate numerical approximations are required. Traditional ab initio methods,
 such as Hartree-Fock (HF), Density Functional Theory (DFT), and Coupled Cluster (CC) methods,
@@ -84,7 +84,7 @@ antisymmetric wave function of electrons, achieving state-of-the-art
 accuracy on various molecular and atomic systems.
 
 Despite the profound theoretical and empirical contributions of the Psiformer architecture,
-independent replication and modification of such models can be challenging. 
+independent replication and modification of such models can be challenging.
 DeepMind’s official implementations are natively built within the JAX ecosystem.
 While JAX is highly efficient, PyTorch remains the dominant framework in the broader deep
 learning and applied mathematics communities. Translating complex,
@@ -93,7 +93,7 @@ yet it is a crucial step for scientific reproducibility,
 cross-validation, and democratizing access to advanced computational tools.
 
 In this paper, we present a complete, open-source PyTorch implementation of the Psiformer ansatz~\cite{psiformer}. The architectural design and theoretical formulation follow von Glehn, Spencer, and Pfau; the codebase, training pipeline, and experiments reported here were developed independently by the author.
-Our primary objective is to validate that this PyTorch implementation 
+Our primary objective is to validate that this PyTorch implementation
 correctly captures the underlying physics of the Psiformer architecture.
 To this end, we evaluate the model by computing ground-state energies for
 helium through oxygen (seven atoms), using Hartree--Fock energies as a baseline.
@@ -101,14 +101,14 @@ Our results show that the model consistently recovers electron correlation energ
 well below the baseline for every atom tested, demonstrating correct
 variational behaviour and successful implementation of the architecture.
 
-By providing a working, validated PyTorch implementation of Psiformer, 
+By providing a working, validated PyTorch implementation of Psiformer,
 this work aims to lower the barrier to entry for researchers
 in computational mathematics, machine learning, and quantum
 chemistry who wish to experiment with transformer-based wave functions.
 The complete source code, including training routines and hyperparameters for the
 evaluated atoms, is publicly available at: \url{https://github.com/jorgemunozl/psiformer_torch.git}.
 
-The remainder of this paper is organized as 
+The remainder of this paper is organized as
 follows: Section 2 presents a compact mathematical formulation of the electronic
 ground-state problem and the Variational Monte Carlo (VMC) optimization objective.
 Section 3 describes the structural choices of our Psiformer-style ansatz and its
@@ -233,7 +233,7 @@ We use a simple, parameter-efficient Jastrow to enforce short-range cusp structu
 
 \begin{figure}[htbp]
 	\centering
-	\includegraphics[width=0.65\textwidth]{psiformer.pdf}
+	\includegraphics[width=0.45\textwidth]{psiformer.pdf}
 	\caption{Psiformer-style architecture.}
 	\label{fig:psiarch}
 \end{figure}
@@ -329,7 +329,7 @@ Figure~\ref{fig:results_conv} shows representative training curves for selected 
 		\label{fig:convergence}
 	\end{subfigure}
 	\hfill
-	\begin{subfigure}[b]{0.48\textwidth}
+	\begin{subfigure}[b]{0.38\textwidth}
 		\centering
 		\includegraphics[width=\textwidth]{oxigen.pdf}
 		\caption{Oxygen: small vs.\ large model (8 electrons).}
