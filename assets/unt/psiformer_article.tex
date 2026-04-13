@@ -21,7 +21,7 @@
 	{\large A PyTorch Framework for the Psiformer Architecture}
 }
 
-\autor{Jorge Muñoz Laredo}{https://orcid.org/0009-0003-3400-582X}{Escuela Profesional De Fisica,  Universidad Nacional De Ingeniería ({\tt jorge.munoz.l@uni.pe})}
+\autor{Jorge Muñoz Laredo}{https://orcid.org/0009-0003-3400-582X}{Escuela Profesional de Física, Universidad Nacional de Ingeniería ({\tt jorge.munoz.l@uni.pe})}
 
 % Here goes something
 \edition{2026}{TBD}{1}{20}
@@ -29,7 +29,8 @@
 %\received{...}
 %\accepted{...}
 %\doi{...}
-%\howtocite{Munoz J.}{Solving the Many-Electron Schr\"odinger Equation with a Transformer Architecture}
+% When the journal assigns a DOI, uncomment and set e.g. \doi{10.xxxx/xxxxx}
+\howtocite{Muñoz Laredo J.}{Ab initio wave function optimization for light atoms: a PyTorch framework for the Psiformer architecture}
 
 \begin{document}
 
@@ -48,10 +49,7 @@ many-body systems. Among these advancements, the Psiformer architecture—which 
 self-attention mechanisms to model antisymmetric electron wave functions—has
 demonstrated state-of-the-art accuracy. However, the original implementation is built exclusively within 
 the JAX ecosystem, presenting a barrier to entry for the broader research community
-that predominantly utilizes PyTorch. In the interest of scientific reproducibility and 
-computational accessibility, this paper presents an independent, open-source PyTorch implementation 
-of the Psiformer architecture: the published model design is due to von Glehn, Spencer, and Pfau, while the code and experiments reported here are the author's own. To validate the implementation, we evaluate the model by computing ground-state energies for 
-helium through oxygen and comparing them against a Hartree--Fock baseline. 
+that predominantly utilizes PyTorch. In the interest of scientific reproducibility and computational accessibility, we present an independent open-source PyTorch implementation of the Psiformer architecture. The model design follows von Glehn, Spencer, and Pfau (2023); the code and numerical experiments reported here are the author's own. To validate the implementation, we compute ground-state energies for helium through oxygen and compare them to a Hartree--Fock baseline. 
 Our results demonstrate that the PyTorch Psiformer consistently recovers significant 
 electron correlation energy across all tested atoms, confirming that the architecture 
 is correctly implemented and behaves as expected from variational theory. 
@@ -67,13 +65,12 @@ Many-electron Schr\"odinger equation, variational Monte Carlo, transformer, neur
 
 %--------------------------------------------------------------
 \section{Introduction}
-Solving the time-independent many-body Schrödinger equation is one of the central challenges in computational 
+Solving the time-independent many-body Schr\"odinger equation is one of the central challenges in computational 
 physics and quantum chemistry. Because analytical solutions are impossible for systems with more than one
 electron, highly accurate numerical approximations are required. Traditional ab initio methods,
 such as Hartree-Fock (HF), Density Functional Theory (DFT), and Coupled Cluster (CC) methods,
 have long been the standard for estimating ground-state energies.
-However, these methods often face a steep trade-off between computational scalability
- and the accuracy required to capture complex electron correlation effects.
+However, these methods often face a steep trade-off between computational scalability and the accuracy required to capture complex electron correlation effects.
 
 In recent years, Variational Quantum Monte Carlo (VQMC) methods~\cite{foulkes} have been revolutionized
 by the application of deep neural networks.
@@ -143,9 +140,9 @@ where the four terms are, respectively, the electron kinetic energy, the electro
 %============================================================%
 \subsection{Antisymmetry and cusp constraints}
 
-Electrons are indistinguishable fermions, so $\psi$ must be antisymmetric under exchange of same-spin particles. A Slater determinant built from spin orbitals $\phi_j^k(\mathbf{x}_i)$ provides a canonical antisymmetric form,
+Electrons are indistinguishable fermions, so $\Psi$ must be antisymmetric under exchange of same-spin particles. A Slater determinant built from spin orbitals $\phi_j^k(\mathbf{x}_i)$ provides a canonical antisymmetric form,
 \begin{equation}
-	\psi=
+	\Psi=
 	\begin{vmatrix}
 		\phi_{1}^{k}(\mathbf{x}_{1})  & \dots  &  \phi_{1}^{k}(\mathbf{x}_{n}) \\
 		\vdots   &  \ddots  & \vdots  \\
@@ -192,8 +189,8 @@ Given samples $\mathbf{R}_1,\dots,\mathbf{R}_M$ drawn from $|\Psi_\theta|^2$ (up
 The local energy can be written as
 \begin{equation}
 	E_L(\mathbf{R}_k)
-	=\frac{\hat{H}\psi(\mathbf{R}_k)}{\psi(\mathbf{R}_k)}
-	=-\frac{1}{2}\frac{\nabla^{2}\psi(\mathbf{R}_k)}{\psi(\mathbf{R}_k)}+V(\mathbf{R}_k).
+	=\frac{\hat{H}\Psi_\theta(\mathbf{R}_k)}{\Psi_\theta(\mathbf{R}_k)}
+	=-\frac{1}{2}\frac{\nabla^{2}\Psi_\theta(\mathbf{R}_k)}{\Psi_\theta(\mathbf{R}_k)}+V(\mathbf{R}_k).
 \end{equation}
 Samples are generated with Metropolis--Hastings~\cite{metropolis}: starting from $\mathbf{R}_0$, propose $\mathbf{R}'=\mathbf{R}_0+\eta$ with $\eta\sim q$, accept with probability
 \begin{equation}
@@ -202,7 +199,7 @@ Samples are generated with Metropolis--Hastings~\cite{metropolis}: starting from
 where $\rho\propto|\Psi_\theta|^2$, and iterate. Gradients of the VMC objective follow as (schematically)
 \begin{equation}
 	\nabla_{\theta}\mathcal{L}
-	=2\,\mathbb{E}_{\mathbf{x}\sim |\Psi|^2}\bigl[(E_L(\mathbf{x})-\mathbb{E}_p[E_L])\,\nabla_\theta\log\Psi_\theta(\mathbf{x})\bigr],
+	=2\,\mathbb{E}_{\mathbf{x}\sim |\Psi_\theta|^2}\bigl[(E_L(\mathbf{x})-\mathbb{E}_p[E_L])\,\nabla_\theta\log\Psi_\theta(\mathbf{x})\bigr],
 \end{equation}
 estimated with the same samples.
 
@@ -219,7 +216,7 @@ The backbone applies multi-head self-attention~\cite{attention} to a sequence of
 
 The trial wavefunction is an \emph{ansatz}: a model chosen by design and optimized by VMC. We require antisymmetry under particle exchange and expressiveness for strong electron--correlation effects. Following \cite{psiformer,ferminet}, we use a Slater--Jastrow form,
 \begin{equation}
-	\Psi_{\theta}(\mathbf{R})
+	\Psi_\theta(\mathbf{R})
 	=\underbrace{\exp\bigl(\mathcal{J}_{\theta}(\mathbf{R})\bigr)}_{\text{Coulomb correlations}}
 	\;\times\;
 	\underbrace{\sum_k \omega_k \det\bigl[\boldsymbol{\phi}_{\theta}^{k}(\mathbf{R})\bigr]}_{\text{antisymmetry}}
@@ -258,7 +255,6 @@ We benchmark two model scales; Table~\ref{tab:hyper} summarizes the correspondin
 		Model Dim $d$ & 256 & 512 \\
 		MLP Dim $d_{\mathrm{ff}}$ & 1024 & 2048 \\
 		Determinants $K$ & 1 & 2 \\
-		Learning rate & \num{2e-4} & \num{1e-4} \\
 		Total trainable parameters & \num{50.4e3} & \num{3.16e6} \\
 		\bottomrule
 	\end{tabular}
@@ -291,7 +287,7 @@ We benchmark two model scales; Table~\ref{tab:hyper} summarizes the correspondin
 
 \subsubsection{Hyperparameters and training objective}
 
-Training minimizes the variational Monte Carlo expectation of the local energy. Table~\ref{tab:hyper} lists the model architecture hyperparameters for each variant, and Table~\ref{tab:training} gives the full training and MCMC configuration.
+Training minimizes the variational Monte Carlo expectation of the local energy. Table~\ref{tab:hyper} lists architectural hyperparameters (width, depth, determinants, parameter counts); Table~\ref{tab:training} gives learning rates, optimizer settings, and the full MCMC configuration.
 
 \subsubsection{Laplacian via automatic differentiation}
 
@@ -329,14 +325,14 @@ Figure~\ref{fig:results_conv} shows representative training curves for selected 
 	\begin{subfigure}[b]{0.48\textwidth}
 		\centering
 		\includegraphics[width=\textwidth]{four_elements.pdf}
-		\caption{Energy convergence for H, He, Li, and Be.}
+		\caption{Energy convergence for Beryllium-4, Carbon-6, Nitrogen-7, and Borum-8 electrons).}
 		\label{fig:convergence}
 	\end{subfigure}
 	\hfill
 	\begin{subfigure}[b]{0.48\textwidth}
 		\centering
 		\includegraphics[width=\textwidth]{oxigen.pdf}
-		\caption{Oxygen convergence (8 electrons).}
+		\caption{Oxygen: small vs.\ large model (8 electrons).}
 		\label{fig:oxygen}
 	\end{subfigure}
 	\caption{VMC energy as a function of training iteration. Shaded bands indicate $\pm1$ standard deviation of the local-energy estimator across walkers.}
@@ -380,7 +376,7 @@ Table~\ref{tab:energy} reports the converged ground-state energies obtained with
 
 \section{Discussion and future work}
 
-The results above demonstrate that the PyTorch Psiformer implementation produces physically correct variational behaviour: both model variants systematically lower the ground-state energy below the Hartree--Fock baseline for every atom from helium through oxygen, recovering tens of mHa of electron correlation energy. The consistent improvement from the small to the large variant (54.0 vs.\ 55.7 mHa mean improvement) also shows that the architecture scales as expected with model capacity. A direct numerical comparison with the original JAX implementation~\cite{psiformer} is left for future work, as it requires running both codebases under identical hardware, random seeds, and training budgets; however, the qualitative behaviour and energy ordering observed here are consistent with what variational theory and the original paper predict.
+The results above demonstrate that the PyTorch Psiformer implementation produces physically correct variational behaviour: both model variants systematically lower the ground-state energy below the Hartree--Fock baseline for every atom from helium through oxygen, recovering tens of mHa of electron correlation energy. The consistent improvement from the small to the large variant (54.0 vs.\ 55.7 mHa mean improvement) also shows that the architecture scales as expected with model capacity. A direct numerical comparison with the published Psiformer reference code (JAX) is left for future work, as it requires running both implementations under identical hardware, random seeds, and training budgets; nevertheless, the qualitative behaviour and energy ordering observed here are consistent with variational theory and with the trends reported in~\cite{psiformer}.
 
 Several directions remain open for future work: (i)~pretraining on Hartree--Fock or DFT orbitals to accelerate convergence, (ii)~reducing the cost of Laplacian computation, which dominates training time, (iii)~adopting KFAC or other natural-gradient optimisers for more efficient parameter updates, (iv)~integrating FlashAttention-style kernels for improved memory and speed scaling, (v)~transfer learning across chemical systems to amortise training cost, and (vi)~empirical scaling laws relating model size and sample budget to final energy accuracy.
 
