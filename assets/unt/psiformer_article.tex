@@ -33,29 +33,29 @@
 
 \maketitle
 \begin{center}
-\textcolor{red}{\large \bf Special Issue: Workshop on Optimization and Operator Learning - SaC3 - Perú}	
+\textcolor{red}{\large \bf Special Issue: Workshop on Optimization and Operator Learning - SaC3 - Perú}
 \end{center}
 \vspace{1cm}
 
 \selectlanguage{USenglish}
 
 \begin{abstract}
-The application of deep neural networks to Variational Quantum Monte Carlo (VQMC) has 
+The application of deep neural networks to Variational Quantum Monte Carlo (VQMC) has
 significantly advanced the numerical approximation of ground-state energies for quantum
 many-body systems. Among these advancements, the Psiformer architecture—which leverages
 self-attention mechanisms to model antisymmetric electron wave functions—has
-demonstrated state-of-the-art accuracy. However, the original implementation is built exclusively within 
+demonstrated state-of-the-art accuracy. However, the original implementation is built exclusively within
 the JAX ecosystem, presenting a barrier to entry for the broader research community
-that predominantly utilizes PyTorch. In the interest of scientific reproducibility and 
-computational accessibility, this paper presents a complete, open-source re-implementation 
-of the Psiformer model using the PyTorch framework. To validate the fidelity of 
-our translation, we evaluate the model by computing the ground-state energies for the 
-first eight elements of the periodic table (Hydrogen through Oxygen). 
-Our computational results confirm that the PyTorch implementation successfully 
-reproduces the high accuracy and stability of the original JAX-based architecture. 
-By bridging this software gap, this work verifies the robustness of the Psiformer model outside 
-its native environment and provides an accessible, validated tool for researchers 
-in computational mathematics, machine learning, and quantum chemistry. 
+that predominantly utilizes PyTorch. In the interest of scientific reproducibility and
+computational accessibility, this paper presents a complete, open-source re-implementation
+of the Psiformer model using the PyTorch framework. To validate the fidelity of
+our translation, we evaluate the model by computing the ground-state energies for the
+first eight elements of the periodic table (Hydrogen through Oxygen).
+Our computational results confirm that the PyTorch implementation successfully
+reproduces the high accuracy and stability of the original JAX-based architecture.
+By bridging this software gap, this work verifies the robustness of the Psiformer model outside
+its native environment and provides an accessible, validated tool for researchers
+in computational mathematics, machine learning, and quantum chemistry.
 The full source code is made publicly available to facilitate future experimentation and development.
 \end{abstract}
 
@@ -65,11 +65,11 @@ Many-electron Schr\"odinger equation, variational Monte Carlo, transformer, neur
 
 %--------------------------------------------------------------
 \section{Introduction}
-Solving the time-independent many-body Schrödinger equation is one of the central challenges in computational 
+Solving the time-independent many-body Schrödinger equation is one of the central challenges in computational
 physics and quantum chemistry. Because analytical solutions are impossible for systems with more than one
 electron, highly accurate numerical approximations are required. Traditional ab initio methods,
 such as Hartree-Fock (HF), Density Functional Theory (DFT), and Coupled Cluster (CC) methods,
- have long been the standard for estimating ground-state energies. 
+ have long been the standard for estimating ground-state energies.
 However, these methods often face a steep trade-off between computational scalability
  and the accuracy required to capture complex electron correlation effects.
 
@@ -85,7 +85,7 @@ antisymmetric wave function of electrons, achieving state-of-the-art
 accuracy on various molecular and atomic systems.
 
 Despite the profound theoretical and empirical contributions of the Psiformer architecture,
-independent replication and modification of such models can be challenging. 
+independent replication and modification of such models can be challenging.
 DeepMind’s official implementations are natively built within the JAX ecosystem.
 While JAX is highly efficient, PyTorch remains the dominant framework in the broader deep
 learning and applied mathematics communities. Translating complex,
@@ -94,8 +94,8 @@ yet it is a crucial step for scientific reproducibility,
 cross-validation, and democratizing access to advanced computational tools.
 
 In this paper, we present a complete, open-source re-implementation of
-the Psiformer architecture using the PyTorch framework. 
-Our primary objective is to validate the reproducibility of 
+the Psiformer architecture using the PyTorch framework.
+Our primary objective is to validate the reproducibility of
 the original model's claims outside of its native software ecosystem.
 To demonstrate the fidelity of our implementation, we evaluate
 the model on the ground-state energy estimation for the first
@@ -104,14 +104,14 @@ Our results indicate that the PyTorch implementation successfully captures
 the underlying physics, yielding ground-state energies that are
 highly competitive and consistent with the original findings.
 
-By providing a working, validated PyTorch implementation of Psiformer, 
+By providing a working, validated PyTorch implementation of Psiformer,
 this work aims to lower the barrier to entry for researchers
 in computational mathematics, machine learning, and quantum
 chemistry who wish to experiment with transformer-based wave functions.
 The complete source code, including training routines and hyperparameters for the
  evaluated atoms, is publicly available at: \url{https://github.com/jorgemunozl/psiformer_torch.git}.
 
-The remainder of this paper is organized as 
+The remainder of this paper is organized as
 follows: Section 2 presents a compact mathematical formulation of the electronic
 ground-state problem and the Variational Monte Carlo (VMC) optimization objective.
 Section 3 describes the structural choices of our Psiformer-style ansatz and its
@@ -137,50 +137,63 @@ where $\mathbf{x}_i=(\mathbf{r}_i,\sigma_i)$ collects the position $\mathbf{r}_i
 	&\quad +\sum_{1\le i<j\le N}\frac{1}{|\mathbf r_i-\mathbf r_j|}
 	+\sum_{1\le I<J\le M}\frac{Z_I Z_J}{|\mathbf R_I-\mathbf R_J|}.
 \end{align}
-Under Born--Oppenheimer, nuclear positions $\{\mathbf{R}_I\}$ are fixed and one typically drops the nuclear kinetic terms when solving the electronic problem.
+Under Born--Oppenheimer, nuclear positions $\{\mathbf{R}_I\}$ are fixed and one typically drops the nuclear kinetic terms when solving the electronic problem.  Henceforth we denote the remaining electronic Hamiltonian by $\hat{H}_{\text{el}}$.
+\begin{equation}
+	\hat{H}_{\text{el}} =
+	-\sum_{i=1}^{N}\frac{1}{2}\nabla_i^{2}
+	-\sum_{i=1}^{N}\sum_{I=1}^{M}\frac{Z_I}{|\mathbf r_i-\mathbf R_I|}
+	+\sum_{1\le i<j\le N}\frac{1}{|\mathbf r_i-\mathbf r_j|}
+	+\sum_{1\le I<J\le M}\frac{Z_I Z_J}{|\mathbf R_I-\mathbf R_J|},
+	\ref{eq:el_hamiltonian}
+\end{equation}
+where the nuclear kinetic term and the nuclear repulsion constant have been separated; the latter simply adds a constant shift to the energy.
 
 %============================================================%
 %                   Fermi--Dirac statistics and cusps                    %
 %============================================================%
 \subsection{Antisymmetry and cusp constraints}
 
-Electrons are indistinguishable fermions, so $\psi$ must be antisymmetric under exchange of same-spin particles. A Slater determinant built from spin orbitals $\phi_j^k(\mathbf{x}_i)$ provides a canonical antisymmetric form,
+Electrons are indistinguishable fermions and therefore obey the Pauli exclusion principle: the many-body wavefunction must change sign under the exchange of any two same-spin electrons. This requirement, known as the antisymmetry condition, can be enforced by constructing the wavefunction as a Slater determinant (or a linear combination thereof). A determinant changes sign whenever two rows or two columns are interchanged, which exactly mimics the fermionic exchange symmetry. Given a set of single-particle spin orbitals $\phi_j(\mathbf{x}_i)$, where $\mathbf{x}_i=(\mathbf{r}_i,\sigma_i)$ collects the position and spin of the $i$-th electron, the simplest antisymmetric form is
 \begin{equation}
-	\psi=
+	\psi(\mathbf{x}_1,\dots,\mathbf{x}_N)=
+	\frac{1}{\sqrt{N!}}
 	\begin{vmatrix}
-		\phi_{1}^{k}(\mathbf{x}_{1})  & \dots  &  \phi_{1}^{k}(\mathbf{x}_{n}) \\
+		\phi_{1}(\mathbf{x}_{1})  & \dots  &  \phi_{1}(\mathbf{x}_{N}) \\
 		\vdots   &  \ddots  & \vdots  \\
-		\phi_{n}^{k}(\mathbf{x}_{1}) & \dots & \phi_{n}^{k}(\mathbf{x}_{n})
+		\phi_{N}(\mathbf{x}_{1}) & \dots & \phi_{N}(\mathbf{x}_{N})
 	\end{vmatrix}.
 \end{equation}
+In practical neural-network ans\"atze, the orbitals are learned functions of the electron coordinates, and the single-determinant form is generalized to a weighted sum over multiple determinants, as will be introduced in Section~3.
 
-Coulomb interactions induce cusps in $\Psi$ when particles coalesce. Kato-type cusp conditions include electron--nucleus
+The Coulomb potential diverges when particles coincide. To keep the total energy finite, the kinetic energy operator must produce a compensating divergence, which forces the wavefunction to have a non-differentiable cusp at each coalescence point. Kato's theorem \cite{Kato1957EigenfunctionsManyParticle} provides exact expressions for the spherical-average logarithmic derivative at these singularities. For an electron--nucleus coalescence one has
 \begin{equation*}
-	\frac{\partial \Psi}{\partial r_{iI}}\Big|_{r_{iI}=0} = -\,Z_I\,\Psi(0)
+	\lim_{r_{iI}\to 0}
+	\frac{\partial \ln\Psi}{\partial r_{iI}} = -Z_I,
 \end{equation*}
-and electron--electron
+where $r_{iI}=|\mathbf{r}_i-\mathbf{R}_I|$ and $Z_I$ is the nuclear charge. For an electron--electron coalescence the analogous condition reads
 \begin{equation*}
-	\frac{\partial \Psi}{\partial r_{ij}}\Big|_{r_{ij}=0} = \frac{1}{2}\,\Psi(0).
+	\lim_{r_{ij}\to 0}
+	\frac{\partial \ln\Psi}{\partial r_{ij}} = \frac{1}{2},
 \end{equation*}
-A Jastrow factor $\exp(\mathcal{J})$ is often used to impose short-range correlation structure; our specific choice is part of the ansatz design in Section~3.
+with $r_{ij}=|\mathbf{r}_i-\mathbf{r}_j|$. These constraints must be built into any trial wavefunction to obtain accurate variational energies. A common approach is to multiply the antisymmetric part by a Jastrow factor $\exp(\mathcal{J})$, a positive-definite function designed to capture short-range correlations and, in particular, to satisfy the electron--electron cusp conditions. Our specific choice of $\mathcal{J}$ is described in Section~3.
 
 \subsection{Variational Monte Carlo objective}
 
-The variational principle states
+The variational principle provides an upper bound on the ground-state energy: for any trial wavefunction $\Psi$,
 \begin{equation}
-	E[\Psi] = \frac{\bra{\Psi} \hat{H}\ket{\Psi}}{\braket{\Psi}{\Psi}} \ge E_0.
+	E[\Psi] = \frac{\bra{\Psi} \hat{H}_{\text{el}}\ket{\Psi}}{\braket{\Psi}{\Psi}} \ge E_0,
 \end{equation}
-Minimizing $E[\Psi]$ with respect to parameters drives the ansatz toward the ground state. Writing $\Psi_\theta$ for a parameterized trial function,
+where $E_0$ is the exact ground-state energy and $\hat{H}_{\text{el}}$ denotes the electronic Hamiltonian obtained after the Born--Oppenheimer approximation (Eq.~\ref{eq:el_hamiltonian}). Minimising $E[\Psi]$ with respect to variational parameters drives the trial function toward the true ground state. Writing $\Psi_\theta$ for a parameterised ansatz, the objective becomes
 \begin{equation}
-	\mathcal{L}(\Psi_\theta)
-	=\frac{\bra{\Psi_{\theta}} \hat{H}\ket{\Psi_{\theta}}}{\braket{\Psi_{\theta}}{\Psi_{\theta}}}
-	=\frac{\int \Psi_\theta^*(\mathbf{R})\,\hat{H}\Psi_\theta(\mathbf{R})\,d\mathbf{R}}{\int \Psi_\theta^*(\mathbf{R})\Psi_\theta(\mathbf{R})\,d\mathbf{R}}.
+	\mathcal{L}(\theta)
+	=\frac{\bra{\Psi_{\theta}} \hat{H}_{\text{el}}\ket{\Psi_{\theta}}}{\braket{\Psi_{\theta}}{\Psi_{\theta}}}
+	=\frac{\int \Psi_\theta^*(\mathbf{R})\,\hat{H}_{\text{el}}\Psi_\theta(\mathbf{R})\,d\mathbf{R}}{\int \Psi_\theta^*(\mathbf{R})\Psi_\theta(\mathbf{R})\,d\mathbf{R}}.
 \end{equation}
-With the normalized density $p_\theta(\mathbf{R})\propto|\Psi_\theta(\mathbf{R})|^2$ and the \emph{local energy}
+Introducing the normalised probability density $p_\theta(\mathbf{R})\propto|\Psi_\theta(\mathbf{R})|^2$ and the \emph{local energy}
 \begin{equation}
-	E_L(\mathbf{R})=\frac{\hat{H}\Psi_\theta(\mathbf{R})}{\Psi_\theta(\mathbf{R})},
+	E_L(\mathbf{R})=\frac{\hat{H}_{\text{el}}\Psi_\theta(\mathbf{R})}{\Psi_\theta(\mathbf{R})},
 \end{equation}
-the loss is the expectation $\mathcal{L}_\theta=\mathbb{E}_{\mathbf{R}\sim p_\theta}[E_L(\mathbf{R})]$.
+the loss reduces to the expectation value $\mathcal{L}(\theta)=\mathbb{E}_{\mathbf{R}\sim p_\theta}[E_L(\mathbf{R})]$.
 
 \subsection{Monte Carlo estimation, sampling, and gradients}
 
@@ -301,18 +314,14 @@ Since $\Psi_\theta\propto\det\boldsymbol{\Phi}_\theta(\mathbf{R})$, training use
 
 \subsubsection{Optimizer and batching}
 
-AdamW decouples weight decay from the adaptive gradient scaling of Adam. With $\lambda$ a weight-decay coefficient and $\eta$ the learning rate,
-\begin{align*}
-	g_t &= \nabla \mathcal{L} + \textcolor{red}{\lambda \theta_t}, &
-	\theta_{t+1} &= \theta_t - \mathrm{AdamStep}(g_t) && \text{(Adam)},\\
-	g_t &= \nabla \mathcal{L}, &
-	\theta_{t+1} &= \theta_t - \mathrm{AdamStep}(g_t) - \textcolor{green!50!black}{\eta\lambda\theta_t} && \text{(AdamW)}.
-\end{align*}
-Naive step-by-step energy evaluation over MCMC samples yielded low GPU occupancy ($\approx 30\%$). Reshaping batches as
-\begin{equation*}
-	(\text{mc\_steps}, B, n_e, 3)\;\longrightarrow\;(\text{mc\_steps}\times B, n_e, 3)
-\end{equation*}
-for batched forward passes improved utilization to roughly $99\%$ in our runs.
+Parameters are optimised with AdamW~\cite{loshchilov2019decoupled}, which decouples weight decay from the adaptive gradient scaling of Adam. Compared to standard Adam, AdamW applies the weight-decay term directly to the parameters rather than incorporating it into the gradient, an empirical choice that often improves generalisation in over-parameterised models.
+
+To improve GPU utilisation, we avoid evaluating the local energy one MCMC step at a time. Instead, we flatten the sampling dimension: given a batch of $B$ chains with $M$ Metropolis--Hastings steps each and $n_e$ electrons, the configuration tensor of shape
+\begin{equation}
+	(M,\, B,\, n_e,\, 3)
+	\label{eq:batching}
+\end{equation}
+is reshaped into $(M\times B,\, n_e,\, 3)$ before the forward pass. This simple batching strategy raised GPU occupancy from approximately $30\%$ to $99\%$ in our runs.
 
 \section{Results}
 
@@ -358,7 +367,7 @@ The results above demonstrate that a faithful PyTorch re-implementation of the P
 
 Several directions remain open for future work: (i)~pretraining on Hartree--Fock or DFT orbitals to accelerate convergence, (ii)~reducing the cost of Laplacian computation, which dominates training time, (iii)~adopting KFAC or other natural-gradient optimisers for more efficient parameter updates, (iv)~integrating FlashAttention-style kernels for improved memory and speed scaling, (v)~transfer learning across chemical systems to amortise training cost, and (vi)~empirical scaling laws relating model size and sample budget to final energy accuracy.
 
-\section*{acknowledgment}
+\section*{Acknowledgments}
 The author thanks the Computer Science Faculty for access to GPU resources, in particular an NVIDIA GeForce RTX 4080 Super, which enabled the training and evaluation reported here.
 
 \begin{thebibliography}{99}
@@ -377,6 +386,16 @@ J.~Pfau, J.~S.~Spencer, A.~G.~D.~G.~Matthews, and W.~M.~C.~Foulkes,
 A.~Vaswani et al.,
 \newblock \emph{Attention Is All You Need},
 \newblock Advances in Neural Information Processing Systems (NeurIPS), 2017.
+
+\bibitem{Kato1957EigenfunctionsManyParticle}
+T.~Kato,
+\newblock \emph{On the eigenfunctions of many\-particle systems in quantum mechanics},
+\newblock Communications on Pure and Applied Mathematics, 10(2), 151--177, 1957.
+
+\bibitem{loshchilov2019decoupled}
+I.~Loshchilov and F.~Hutter,
+\newblock \emph{Decoupled Weight Decay Regularization},
+\newblock Proceedings of the International Conference on Learning Representations (ICLR), 2019.
 
 \end{thebibliography}
 
