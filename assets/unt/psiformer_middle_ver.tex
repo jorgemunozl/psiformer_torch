@@ -125,7 +125,6 @@ We seek the ground state of the stationary many-electron Schr\"odinger eigenprob
 \begin{equation}
 	\hat{H}_{\mathrm{el}}\,\Psi(\mathbf{x}_{1},\dots,\mathbf{x}_{N})=E\,\Psi(\mathbf{x}_{1},\dots,\mathbf{x}_{N}),
 \end{equation}
-<<<<<<< HEAD:assets/unt/psiformer_middle_ver.tex
 where $\mathbf{x}_i=(\mathbf{r}_i,\sigma_i)$ collects the position $\mathbf{r}_i\in\mathbb{R}^3$ and spin $\sigma_i\in\{\uparrow,\downarrow\}$. We work in atomic units and adopt the Born--Oppenheimer approximation (clamped nuclei). A standard molecular Hamiltonian is
 \begin{align}
 	\hat H & =
@@ -145,33 +144,16 @@ Under Born--Oppenheimer, nuclear positions $\{\mathbf{R}_I\}$ are fixed and one 
 	\ref{eq:el_hamiltonian}
 \end{equation}
 where the nuclear kinetic term and the nuclear repulsion constant have been separated; the latter simply adds a constant shift to the energy.
-=======
-where $\mathbf{x}_i=(\mathbf{r}_i,\sigma_i)$ collects the spatial coordinate $\mathbf{r}_i\in\mathbb{R}^3$ and spin $\sigma_i\in\{\uparrow,\downarrow\}$ of the $i$-th electron. We work in atomic units throughout and adopt the Born--Oppenheimer approximation, treating the $M$ nuclear positions $\{\mathbf{R}_I\}$ as fixed parameters. The electronic Hamiltonian for $N$ electrons and $M$ nuclei with charges $\{Z_I\}$ is then
-\begin{equation}
-	\hat{H}_{\mathrm{el}}
-	= -\sum_{i=1}^{N}\frac{1}{2}\nabla_i^{2}
-	  -\sum_{i=1}^{N}\sum_{I=1}^{M}\frac{Z_I}{|\mathbf{r}_i-\mathbf{R}_I|}
-	  +\sum_{i<j}\frac{1}{|\mathbf{r}_i-\mathbf{r}_j|}
-	  +\sum_{I<J}\frac{Z_I Z_J}{|\mathbf{R}_I-\mathbf{R}_J|},
-\end{equation}
-where the four terms are, respectively, the electron kinetic energy, the electron--nucleus attraction, the electron--electron repulsion, and the (constant) nucleus--nucleus repulsion.
->>>>>>> 5dcdace7a64d399d74d184ecedfb27de62a89405:assets/unt/psiformer_article.tex
 
 %============================================================%
 %                   Fermi--Dirac statistics and cusps                    %
 %============================================================%
 \subsection{Antisymmetry and cusp constraints}
 
-<<<<<<< HEAD:assets/unt/psiformer_middle_ver.tex
 Electrons are indistinguishable fermions and therefore obey the Pauli exclusion principle: the many-body wavefunction must change sign under the exchange of any two same-spin electrons. This requirement, known as the antisymmetry condition, can be enforced by constructing the wavefunction as a Slater determinant (or a linear combination thereof). A determinant changes sign whenever two rows or two columns are interchanged, which exactly mimics the fermionic exchange symmetry. Given a set of single-particle spin orbitals $\phi_j(\mathbf{x}_i)$, where $\mathbf{x}_i=(\mathbf{r}_i,\sigma_i)$ collects the position and spin of the $i$-th electron, the simplest antisymmetric form is
 \begin{equation}
 	\psi(\mathbf{x}_1,\dots,\mathbf{x}_N)=
 	\frac{1}{\sqrt{N!}}
-=======
-Electrons are indistinguishable fermions, so $\Psi$ must be antisymmetric under exchange of same-spin particles. A Slater determinant built from spin orbitals $\phi_j^k(\mathbf{x}_i)$ provides a canonical antisymmetric form,
-\begin{equation}
-	\Psi=
->>>>>>> 5dcdace7a64d399d74d184ecedfb27de62a89405:assets/unt/psiformer_article.tex
 	\begin{vmatrix}
 		\phi_{1}(\mathbf{x}_{1})  & \dots  &  \phi_{1}(\mathbf{x}_{N}) \\
 		\vdots   &  \ddots  & \vdots  \\
@@ -180,11 +162,7 @@ Electrons are indistinguishable fermions, so $\Psi$ must be antisymmetric under 
 \end{equation}
 In practical neural-network ans\"atze, the orbitals are learned functions of the electron coordinates, and the single-determinant form is generalized to a weighted sum over multiple determinants, as will be introduced in Section~3.
 
-<<<<<<< HEAD:assets/unt/psiformer_middle_ver.tex
 The Coulomb potential diverges when particles coincide. To keep the total energy finite, the kinetic energy operator must produce a compensating divergence, which forces the wavefunction to have a non-differentiable cusp at each coalescence point. Kato's theorem \cite{Kato1957EigenfunctionsManyParticle} provides exact expressions for the spherical-average logarithmic derivative at these singularities. For an electron--nucleus coalescence one has
-=======
-Coulomb interactions induce cusps in $\Psi$ when particles coalesce~\cite{kato}. Kato-type cusp conditions include electron--nucleus
->>>>>>> 5dcdace7a64d399d74d184ecedfb27de62a89405:assets/unt/psiformer_article.tex
 \begin{equation*}
 	\lim_{r_{iI}\to 0}
 	\frac{\partial \ln\Psi}{\partial r_{iI}} = -Z_I,
@@ -338,7 +316,6 @@ Since $\Psi_\theta \propto \sum_k \omega_k \det\boldsymbol{\Phi}_\theta^k$, trai
 
 \subsubsection{Optimizer and batching}
 
-<<<<<<< HEAD:assets/unt/psiformer_middle_ver.tex
 Parameters are optimised with AdamW~\cite{loshchilov2019decoupled}, which decouples weight decay from the adaptive gradient scaling of Adam. Compared to standard Adam, AdamW applies the weight-decay term directly to the parameters rather than incorporating it into the gradient, an empirical choice that often improves generalisation in over-parameterised models.
 
 To improve GPU utilisation, we avoid evaluating the local energy one MCMC step at a time. Instead, we flatten the sampling dimension: given a batch of $B$ chains with $M$ Metropolis--Hastings steps each and $n_e$ electrons, the configuration tensor of shape
@@ -347,20 +324,6 @@ To improve GPU utilisation, we avoid evaluating the local energy one MCMC step a
 	\label{eq:batching}
 \end{equation}
 is reshaped into $(M\times B,\, n_e,\, 3)$ before the forward pass. This simple batching strategy raised GPU occupancy from approximately $30\%$ to $99\%$ in our runs.
-=======
-AdamW~\cite{adamw} decouples weight decay from the adaptive gradient scaling of Adam~\cite{adam}. With $\lambda$ a weight-decay coefficient and $\eta$ the learning rate,
-\begin{align*}
-	g_t &= \nabla \mathcal{L} + \textcolor{red}{\lambda \theta_t}, &
-	\theta_{t+1} &= \theta_t - \mathrm{AdamStep}(g_t) && \text{(Adam)},\\
-	g_t &= \nabla \mathcal{L}, &
-	\theta_{t+1} &= \theta_t - \mathrm{AdamStep}(g_t) - \textcolor{green!50!black}{\eta\lambda\theta_t} && \text{(AdamW)}.
-\end{align*}
-Naive step-by-step energy evaluation over MCMC samples yielded low GPU occupancy ($\approx 30\%$). Reshaping batches as
-\begin{equation*}
-	(\text{mc\_steps}, B, n_e, 3)\;\longrightarrow\;(\text{mc\_steps}\times B, n_e, 3)
-\end{equation*}
-for batched forward passes improved utilization to roughly $99\%$ in our runs. The full optimizer and scheduler settings are summarised in Table~\ref{tab:training}.
->>>>>>> 5dcdace7a64d399d74d184ecedfb27de62a89405:assets/unt/psiformer_article.tex
 
 \section{Results}
 
