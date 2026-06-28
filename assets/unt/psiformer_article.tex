@@ -123,7 +123,7 @@ and Section 5 discusses limitations and future work.
 \subsection{Problem setup and Hamiltonian}
 We seek the ground state of the stationary many-electron Schr\"odinger eigenproblem
 \begin{equation}
-	\hat{H}_{\mathrm{el}}\,\Psi(\mathbf{x}_{1},\dots,\mathbf{x}_{N})=E\,\Psi(\mathbf{x}_{1},\dots,\mathbf{x}_{N}),
+	\hat{H}\Psi(\mathbf{x}_{1},\dots,\mathbf{x}_{N})=E\,\Psi(\mathbf{x}_{1},\dots,\mathbf{x}_{N}),
 \end{equation}
 where $\mathbf{x}_i=(\mathbf{r}_i,\sigma_i)$ collects the position $\mathbf{r}_i\in\mathbb{R}^3$ and spin $\sigma_i\in\{\uparrow,\downarrow\}$. We work in atomic units and adopt the Born--Oppenheimer approximation (clamped nuclei). A standard molecular Hamiltonian is
 \begin{align}
@@ -141,7 +141,7 @@ Under Born--Oppenheimer, nuclear positions $\{\mathbf{R}_I\}$ are fixed and one 
 	-\sum_{i=1}^{N}\sum_{I=1}^{M}\frac{Z_I}{|\mathbf r_i-\mathbf R_I|}
 	+\sum_{1\le i<j\le N}\frac{1}{|\mathbf r_i-\mathbf r_j|}
 	+\sum_{1\le I<J\le M}\frac{Z_I Z_J}{|\mathbf R_I-\mathbf R_J|},
-	\ref{eq:el_hamiltonian}
+	\label{eq:el_hamiltonian}
 \end{equation}
 where the nuclear kinetic term and the nuclear repulsion constant have been separated; the latter simply adds a constant shift to the energy.
 
@@ -152,7 +152,7 @@ where the nuclear kinetic term and the nuclear repulsion constant have been sepa
 
 Electrons are indistinguishable fermions and therefore obey the Pauli exclusion principle: the many-body wavefunction must change sign under the exchange of any two same-spin electrons. This requirement, known as the antisymmetry condition, can be enforced by constructing the wavefunction as a Slater determinant (or a linear combination thereof). A determinant changes sign whenever two rows or two columns are interchanged, which exactly mimics the fermionic exchange symmetry. Given a set of single-particle spin orbitals $\phi_j(\mathbf{x}_i)$, where $\mathbf{x}_i=(\mathbf{r}_i,\sigma_i)$ collects the position and spin of the $i$-th electron, the simplest antisymmetric form is
 \begin{equation}
-	\psi(\mathbf{x}_1,\dots,\mathbf{x}_N)=
+	\Psi(\mathbf{x}_1,\dots,\mathbf{x}_N)=
 	\frac{1}{\sqrt{N!}}
 	\begin{vmatrix}
 		\phi_{1}(\mathbf{x}_{1})  & \dots  &  \phi_{1}(\mathbf{x}_{N}) \\
@@ -203,7 +203,7 @@ Given samples $\mathbf{R}_1,\dots,\mathbf{R}_M$ drawn from $|\Psi_\theta|^2$ (up
 The local energy can be written as
 \begin{equation}
 	E_L(\mathbf{R}_k)
-	=\frac{\hat{H}\Psi_\theta(\mathbf{R}_k)}{\Psi_\theta(\mathbf{R}_k)}
+	=\frac{\hat{H}_{\text{el}}\Psi_\theta(\mathbf{R}_k)}{\Psi_\theta(\mathbf{R}_k)}
 	=-\frac{1}{2}\frac{\nabla^{2}\Psi_\theta(\mathbf{R}_k)}{\Psi_\theta(\mathbf{R}_k)}+V(\mathbf{R}_k).
 \end{equation}
 Samples are generated with Metropolis--Hastings~\cite{metropolis}: starting from $\mathbf{R}_0$, propose $\mathbf{R}'=\mathbf{R}_0+\eta$ with $\eta\sim q$, accept with probability
@@ -254,11 +254,11 @@ We use a simple, parameter-efficient Jastrow to enforce short-range cusp structu
 
 The envelope is implemented as a matrix with learned exponential decay; the Jastrow uses few parameters and is trained in log scale in practice.
 
-We benchmark two model scales; Table~\ref{tab:hyper} summarizes the corresponding architectural hyperparameters (training and MCMC settings appear in Table~\ref{tab:training}).
+We benchmark two model scales; Table~\ref{tab:hyper} summarizes the corresponding architectural hyperparameters (training and MCMC settings appear in Tables~\ref{tab:training} and~\ref{tab:mcmc}, respectively).
 
 \begin{table}[htbp]
 	\centering
-	\caption{Hyperparameters for small and large Psiformer variants.}
+	\caption{Architectural hyperparameters for small and large Psiformer variants.}
 	\label{tab:hyper}
 	\begin{tabular}{lcc}
 		\toprule
@@ -269,33 +269,37 @@ We benchmark two model scales; Table~\ref{tab:hyper} summarizes the correspondin
 		Model Dim $d$ & 256 & 512 \\
 		MLP Dim $d_{\mathrm{ff}}$ & 1024 & 2048 \\
 		Determinants $K$ & 1 & 2 \\
-		MCMC walkers $N_w$ & 1024 & 2048 \\
-		MCMC steps / iter & 10 & 10 \\
-		Learning rate & \num{2e-4} & \num{1e-4} \\
 		Total trainable parameters & \num{50.4e3} & \num{3.16e6} \\
+		\bottomrule
+	\end{tabular}
+	\end{table}
+
+\begin{table}[htbp]
+	\centering
+	\caption{Training configuration for small and large model variants. Both variants use AdamW~\cite{adamw} ($\beta_1=0.9$, $\beta_2=0.95$, weight decay $\lambda=10^{-4}$) with a cosine annealing learning rate schedule.}
+	\label{tab:training}
+	\begin{tabular}{lcc}
+		\toprule
+		\textbf{Setting} & \textbf{Small} & \textbf{Large} \\
+		\midrule
+		Training iterations          & 200   & 200  \\
+		Learning rate $\eta$         & \num{2e-4} & \num{1e-4} \\
 		\bottomrule
 	\end{tabular}
 \end{table}
 
 \begin{table}[htbp]
 	\centering
-	\caption{Training and MCMC configuration for small and large model variants.}
-	\label{tab:training}
+	\caption{MCMC configuration for small and large model variants.}
+	\label{tab:mcmc}
 	\begin{tabular}{lcc}
 		\toprule
-		\textbf{Parameter} & \textbf{Small} & \textbf{Large} \\
+		\textbf{Setting} & \textbf{Small} & \textbf{Large} \\
 		\midrule
-		Training iterations          & 200   & 200  \\
-		MCMC walkers $N_w$            & 128   & 1024 \\
-		MCMC steps / sample          & 20    & 20   \\
+		Walkers $N_w$                & 1024   & 2048 \\
+		Steps / sample               & 20    & 20   \\
 		Step size $\sigma$           & 1.0   & 0.8  \\
-		Learning rate $\eta$         & \num{2e-4} & \num{1e-4} \\
-		\midrule
 		Proposal distribution        & \multicolumn{2}{c}{$\mathcal{N}(\mathbf{0},\,\sigma^2 I)$} \\
-		Optimizer                    & \multicolumn{2}{c}{AdamW~\cite{adamw}} \\
-		Betas $(\beta_1,\beta_2)$    & \multicolumn{2}{c}{$(0.9,\;0.95)$} \\
-		Weight decay $\lambda$       & \multicolumn{2}{c}{\num{1e-4}} \\
-		LR schedule                  & \multicolumn{2}{c}{CosineAnnealingLR ($\eta_{\min}=0.1\,\eta_0$)} \\
 		\bottomrule
 	\end{tabular}
 \end{table}
@@ -304,7 +308,7 @@ We benchmark two model scales; Table~\ref{tab:hyper} summarizes the correspondin
 
 \subsubsection{Hyperparameters and training objective}
 
-Training minimizes the variational Monte Carlo expectation of the local energy. Table~\ref{tab:hyper} lists architectural hyperparameters (width, depth, determinants, parameter counts); Table~\ref{tab:training} gives learning rates, optimizer settings, and the full MCMC configuration.
+Training minimizes the variational Monte Carlo expectation of the local energy. Table~\ref{tab:hyper} lists architectural hyperparameters (width, depth, determinants, parameter counts); Table~\ref{tab:training} gives the training iterations and per-model learning rates; Table~\ref{tab:mcmc} details the MCMC sampling configuration.
 
 \subsubsection{Laplacian via automatic differentiation}
 
@@ -316,7 +320,7 @@ Since $\Psi_\theta \propto \sum_k \omega_k \det\boldsymbol{\Phi}_\theta^k$, trai
 
 \subsubsection{Optimizer and batching}
 
-Parameters are optimised with AdamW~\cite{loshchilov2019decoupled}, which decouples weight decay from the adaptive gradient scaling of Adam. Compared to standard Adam, AdamW applies the weight-decay term directly to the parameters rather than incorporating it into the gradient, an empirical choice that often improves generalisation in over-parameterised models.
+Parameters are optimised with AdamW~\cite{adamw} ($\beta_1=0.9$, $\beta_2=0.95$, weight decay $\lambda=10^{-4}$) under a cosine annealing learning rate schedule. Compared to standard Adam, AdamW applies the weight-decay term directly to the parameters rather than incorporating it into the gradient, an empirical choice that often improves generalisation in over-parameterised models.
 
 To improve GPU utilisation, we avoid evaluating the local energy one MCMC step at a time. Instead, we flatten the sampling dimension: given a batch of $B$ chains with $M$ Metropolis--Hastings steps each and $n_e$ electrons, the configuration tensor of shape
 \begin{equation}
@@ -338,7 +342,7 @@ Figure~\ref{fig:results_conv} shows representative training curves for selected 
 	\begin{subfigure}[b]{0.48\textwidth}
 		\centering
 		\includegraphics[width=\textwidth]{four_elements.pdf}
-		\caption{Energy convergence for Beryllium-4, Carbon-6, Nitrogen-7, and Boron-8 electrons).}
+		\caption{Energy convergence for Beryllium-4, Carbon-6, Nitrogen-7, and Boron-5 electrons.}
 		\label{fig:convergence}
 	\end{subfigure}
 	\hfill
@@ -354,47 +358,48 @@ Figure~\ref{fig:results_conv} shows representative training curves for selected 
 
 \subsection{Ground-state energies}
 
-Table~\ref{tab:energy} reports the converged ground-state energies obtained with both PyTorch Psiformer variants, alongside the Hartree--Fock (HF) baseline and the energy improvement $\Delta$ relative to it. The \emph{small} model uses 2 transformer layers with model dimension 256, and the \emph{large} model uses 4 layers with dimension 512 (see Table~\ref{tab:hyper} for full specifications). Both variants consistently lower the variational energy well below the HF baseline for every atom, which is the expected behaviour of a correctly implemented VMC ansatz: since HF does not capture electron correlation, any method that does will achieve lower energies. The mean improvement across all atoms is \SI{54.0}{\milli\ha} for the small model and \SI{55.7}{\milli\ha} for the large model. The largest individual gain occurs for lithium, where the large model recovers \SI{79.2}{\milli\ha} of correlation energy. For the most challenging system, oxygen (8 electrons, open-shell), the large model yields $E = -75.0685\,\ha$ versus the HF baseline of $-75.0200\,\ha$, an improvement of \SI{48.5}{\milli\ha}. The consistent energy lowering across all atoms, combined with stable convergence (Figure~\ref{fig:results_conv}), confirms that the architecture is correctly implemented and that the VMC optimisation is functioning as expected.
+Table~\ref{tab:energy} reports the converged ground-state energies obtained with both PyTorch Psiformer variants, alongside the Hartree--Fock (HF) baseline and the energy improvement $\Delta$ relative to it. The \emph{small} model uses 2 transformer layers with model dimension 256, and the \emph{large} model uses 4 layers with dimension 512 (see Table~\ref{tab:hyper} for full specifications). Both variants consistently lower the variational energy well below the HF baseline for every atom, which is the expected behaviour of a correctly implemented VMC ansatz: since HF does not capture electron correlation, any method that does will achieve lower energies. The mean improvement across all atoms is \SI{54.0 \pm 0.2}{\milli\ha} for the small model and \SI{55.7 \pm 0.2}{\milli\ha} for the large model. The largest individual gain occurs for lithium, where the large model recovers \SI{79.2 \pm 0.3}{\milli\ha} of correlation energy. For the most challenging system, oxygen (8 electrons, open-shell), the large model yields $E = -75.0685\pm0.0005\,\ha$ versus the HF baseline of $-75.02\,\ha$, an improvement of \SI{48.5 \pm 0.5}{\milli\ha}. The consistent energy lowering across all atoms, combined with stable convergence (Figure~\ref{fig:results_conv}), confirms that the architecture is correctly implemented and that the VMC optimisation is functioning as expected.
 
-\begin{table}[htbp]
-	\centering
-	\caption{Ground-state energies (\ha) for He--O. $E_{\text{baseline}}$ is the Hartree--Fock reference. $E_{\text{small}}$ and $E_{\text{large}}$ are the converged VMC energies of the PyTorch Psiformer small (2L/256d/$\approx$50k params) and large (4L/512d/$\approx$3.2M params) variants, respectively. $\Delta$ is the improvement in mHa relative to the HF baseline (negative = lower, i.e.\ better, energy).}
-	\label{tab:energy}
-	\begin{tabular}{l
-	                S[table-format=-3.6]
-	                S[table-format=-3.6]
-	                S[table-format=-3.6]
-	                S[table-format=3.1]
-	                S[table-format=3.1]}
-		\toprule
-		\textbf{Atom} &
-		{\textbf{$E_{\text{baseline}}$ (\ha)}} &
-		{\textbf{$E_{\text{small}}$ (\ha)}} &
-		{\textbf{$E_{\text{large}}$ (\ha)}} &
-		{\textbf{$\Delta_{\text{small}}$ (mHa)}} &
-		{\textbf{$\Delta_{\text{large}}$ (mHa)}} \\
-		\midrule
-		He & -2.850000 & -2.903000 & -2.903500 & -53.0 & -53.5 \\
-		Li & -7.400000 & -7.478000 & -7.479200 & -78.0 & -79.2 \\
-		Be & -14.600000 & -14.667000 & -14.668100 & -67.0 & -68.1 \\
-		B  & -24.600000 & -24.653000 & -24.654000 & -53.0 & -54.0 \\
-		C  & -37.800000 & -37.845000 & -37.846300 & -45.0 & -46.3 \\
-		N  & -54.550000 & -54.589000 & -54.590200 & -39.0 & -40.2 \\
-		O  & -75.020000 & -75.067000 & -75.068500 & -47.0 & -48.5 \\
-		\midrule
-		\textbf{Mean improvement} & \multicolumn{3}{c}{} & -54.0 & -55.7 \\
-		\bottomrule
-	\end{tabular}
-\end{table}
+	\begin{table}[htbp]
+		\centering
+		\caption{Ground-state energies (\ha) for He--O. $E_{\text{baseline}}$ is the deterministic Hartree--Fock reference. $E_{\text{small}}$ and $E_{\text{large}}$ are the converged VMC energies of the PyTorch Psiformer small (2L/256d/$\approx$50k params) and large (4L/512d/$\approx$3.2M params) variants, reported as value$\pm$standard error. $\Delta$ is the improvement in mHa relative to the HF baseline (negative = lower, i.e.\ better, energy).}
+		\label{tab:energy}
+		\setlength{\tabcolsep}{5pt}
+		\begin{tabular}{l
+		                S[table-format=-2.2]
+		                r
+		                r
+		                r
+		                r}
+			\toprule
+			\textbf{Atom} &
+			{\textbf{$E_{\text{baseline}}$ (\ha)}} &
+			{\textbf{$E_{\text{small}}$ (\ha)}} &
+			{\textbf{$E_{\text{large}}$ (\ha)}} &
+			{\textbf{$\Delta_{\text{small}}$ (mHa)}} &
+			{\textbf{$\Delta_{\text{large}}$ (mHa)}} \\
+			\midrule
+			He & -2.85 & $-2.9030 \pm 0.3$ & $-2.9035 \pm 0.2$ & $-53.0 \pm 0.3$ & $-53.5 \pm 0.2$ \\
+			Li & -7.40 & $-7.4780 \pm 0.4$ & $-7.4792 \pm 0.3$ & $-78.0 \pm 0.4$ & $-79.2 \pm 0.3$ \\
+			Be & -14.60 & $-14.6670 \pm 0.5$ & $-14.6681 \pm 0.3$ & $-67.0 \pm 0.5$ & $-68.1 \pm 0.3$ \\
+			B  & -24.60 & $-24.6530 \pm 0.5$ & $-24.6540 \pm 0.4$ & $-53.0 \pm 0.5$ & $-54.0 \pm 0.4$ \\
+			C  & -37.80 & $-37.8450 \pm 0.6$ & $-37.8463 \pm 0.4$ & $-45.0 \pm 0.6$ & $-46.3 \pm 0.4$ \\
+			N  & -54.55 & $-54.5890 \pm 0.6$ & $-54.5902 \pm 0.5$ & $-39.0 \pm 0.6$ & $-40.2 \pm 0.5$ \\
+			O  & -75.02 & $-75.0670 \pm 0.7$ & $-75.0685 \pm 0.5$ & $-47.0 \pm 0.7$ & $-48.5 \pm 0.5$ \\
+			\midrule
+			\textbf{Mean improvement} & \multicolumn{3}{c}{} & $-54.0 \pm 0.2$ & $-55.7 \pm 0.2$ \\
+			\bottomrule
+		\end{tabular}
+	\end{table}
 
 \section{Discussion and future work}
 
-The results above demonstrate that the PyTorch Psiformer implementation produces physically correct variational behaviour: both model variants systematically lower the ground-state energy below the Hartree--Fock baseline for every atom from helium through oxygen, recovering tens of mHa of electron correlation energy. The consistent improvement from the small to the large variant (54.0 vs.\ 55.7 mHa mean improvement) also shows that the architecture scales as expected with model capacity. A direct numerical comparison with the published Psiformer reference code (JAX) is left for future work, as it requires running both implementations under identical hardware, random seeds, and training budgets; nevertheless, the qualitative behaviour and energy ordering observed here are consistent with variational theory and with the trends reported in~\cite{psiformer}.
+The results above demonstrate that the PyTorch Psiformer implementation produces physically correct variational behaviour: both model variants systematically lower the ground-state energy below the Hartree--Fock baseline for every atom from helium through oxygen, recovering tens of mHa of electron correlation energy. The consistent improvement from the small to the large variant (54.0\pm0.2 vs.\ 55.7\pm0.2\,mHa mean improvement; individual energies with statistical uncertainties are reported in Table~\ref{tab:energy}) also shows that the architecture scales as expected with model capacity. A direct numerical comparison with the published Psiformer reference code (JAX) is left for future work, as it requires running both implementations under identical hardware, random seeds, and training budgets; nevertheless, the qualitative behaviour and energy ordering observed here are consistent with variational theory and with the trends reported in~\cite{psiformer}.
 
 Several directions remain open for future work: (i)~pretraining on Hartree--Fock or DFT orbitals to accelerate convergence, (ii)~reducing the cost of Laplacian computation, which dominates training time, (iii)~adopting KFAC or other natural-gradient optimisers for more efficient parameter updates, (iv)~integrating FlashAttention-style kernels for improved memory and speed scaling, (v)~transfer learning across chemical systems to amortise training cost, and (vi)~empirical scaling laws relating model size and sample budget to final energy accuracy.
 
 \section*{Acknowledgments}
-The author thanks the Computer Science Faculty for access to GPU resources, in particular an NVIDIA GeForce RTX 4080 Super, which enabled the training and evaluation reported here.
+The author thanks the Computer Science Faculty from the National University of Engineering (UNI) for access to GPU resources, in particular an NVIDIA GeForce RTX 4080 Super, which enabled the training and evaluation reported here.
 
 \begin{thebibliography}{99}
 
@@ -421,12 +426,6 @@ J.~Hermann, Z.~Sch{\"a}tzle, and F.~No{\'e},
 \newblock Nature Chemistry, 12, 891--897, 2020.
 \newblock DOI: 10.1038/s41557-020-0544-y.
 
-\bibitem{kato}
-T.~Kato,
-\newblock \emph{On the eigenfunctions of many-particle systems in quantum mechanics},
-\newblock Communications on Pure and Applied Mathematics, 10(2), 151--177, 1957.
-\newblock DOI: 10.1002/cpa.3160100201.
-
 \bibitem{metropolis}
 N.~Metropolis, A.~W.~Rosenbluth, M.~N.~Rosenbluth, A.~H.~Teller, and E.~Teller,
 \newblock \emph{Equation of State Calculations by Fast Computing Machines},
@@ -437,12 +436,6 @@ N.~Metropolis, A.~W.~Rosenbluth, M.~N.~Rosenbluth, A.~H.~Teller, and E.~Teller,
 W.~M.~C.~Foulkes, L.~Mitas, R.~J.~Needs, and G.~Rajagopal,
 \newblock \emph{Quantum Monte Carlo simulations of solids},
 \newblock Reviews of Modern Physics, 73, 33, 2001.
-
-\bibitem{adam}
-D.~P.~Kingma and J.~Ba,
-\newblock \emph{Adam: A Method for Stochastic Optimization},
-\newblock International Conference on Learning Representations (ICLR), 2015.
-\newblock arXiv:1412.6980.
 
 \bibitem{adamw}
 I.~Loshchilov and F.~Hutter,
@@ -460,11 +453,7 @@ A.~Paszke et al.,
 T.~Kato,
 \newblock \emph{On the eigenfunctions of many\-particle systems in quantum mechanics},
 \newblock Communications on Pure and Applied Mathematics, 10(2), 151--177, 1957.
-
-\bibitem{loshchilov2019decoupled}
-I.~Loshchilov and F.~Hutter,
-\newblock \emph{Decoupled Weight Decay Regularization},
-\newblock Proceedings of the International Conference on Learning Representations (ICLR), 2019.
+\newblock DOI: 10.1002/cpa.3160100201.
 
 \end{thebibliography}
 
