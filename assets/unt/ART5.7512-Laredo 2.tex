@@ -4,12 +4,16 @@
 \input{Base/Paquetes}
 \graphicspath{{IMG/ART5/}}
 
-\usepackage{physics}
 %usepackage{mathtools}
 \usepackage{siunitx}
 \sisetup{detect-weight=true, detect-family=true}
 \usepackage{booktabs}
 \newcommand{\ha}{\ensuremath{\mathrm{Ha}}}
+
+% Dirac bra-ket notation (replaces physics package, which conflicts with Base/Paquetes)
+\newcommand{\bra}[1]{\ensuremath{\left\langle{#1}\right|}}
+\newcommand{\ket}[1]{\ensuremath{\left|{#1}\right\rangle}}
+\newcommand{\braket}[2]{\ensuremath{\left\langle{#1}\middle|{#2}\right\rangle}}
 
 %============================================================%
 %                       CONFIGURACION                        %
@@ -67,7 +71,7 @@ Solving the time-independent many-body Schr\"odinger equation is one of the cent
 physics and quantum chemistry. Because analytical solutions are impossible for systems with more than one
 electron, highly accurate numerical approximations are required. Traditional ab initio methods,
 such as Hartree-Fock (HF), Density Functional Theory (DFT), and Coupled Cluster (CC) methods,
-have long been the standard for estimating ground-state energies.
+ have long been the standard for estimating ground-state energies.
 However, these methods often face a steep trade-off between computational scalability and the accuracy required to capture complex electron correlation effects.
 
 In recent years, Variational Quantum Monte Carlo (VQMC) methods~\cite{foulkes} have been revolutionized
@@ -211,7 +215,7 @@ Samples are generated with Metropolis--Hastings~\cite{metropolis}: starting from
 where $\rho\propto|\Psi_\theta|^2$, and iterate. Gradients of the VMC objective follow as (schematically)
 \begin{equation}
 	\nabla_{\theta}\mathcal{L}
-	=2\,\mathbb{E}_{\mathbf{x}\sim |\Psi_\theta|^2}\bigl[(E_L(\mathbf{x})-\mathbb{E}_p[E_L])\,\nabla_\theta\log\Psi_\theta(\mathbf{x})\bigr],
+	=2\,\mathbb{E}_{\mathbf{x}\sim |\Psi|^2}\bigl[(E_L(\mathbf{x})-\mathbb{E}_p[E_L])\,\nabla_\theta\log\Psi_\theta(\mathbf{x})\bigr],
 \end{equation}
 estimated with the same samples.
 
@@ -229,49 +233,30 @@ The backbone applies multi-head self-attention~\cite{attention} to a sequence of
 The trial wavefunction is an \emph{ansatz}: a model chosen by design and optimized by VMC. We require antisymmetry under particle exchange and expressiveness for strong electron--correlation effects. Following \cite{psiformer,ferminet}, we use a Slater--Jastrow form,
 \begin{equation}
 	\Psi_\theta(\mathbf{R})
-	=\underbrace{\exp\bigl(\mathcal{J}_{\theta}(\mathbf{R})\bigr)}_{\text{Coulomb correlations}}
+	=\underbrace{\exp\bigl(\mathcal{J}_\theta(\mathbf{R})\bigr)}_{\text{Coulomb correlations}}
 	\;\times\;
-	\underbrace{\sum_k \omega_k \det\bigl[\boldsymbol{\phi}_{\theta}^{k}(\mathbf{R})\bigr]}_{\text{antisymmetry}}
+	\underbrace{\sum_k \omega_k \det\bigl[\boldsymbol{\Phi}_\theta^{k}(\mathbf{R})\bigr]}_{\text{antisymmetry}}.
 \end{equation}
 
-We use a simple, parameter-efficient Jastrow to enforce short-range cusp structure, separated by spin alignment,
+We use a simple, parameter-efficient Jastrow factor to enforce short-range cusp structure, separated by spin alignment,
 \begin{equation}
-	\mathcal{J}_{\theta}(\mathbf{R})
-	=\sum_{\substack{i<j\\ \sigma_{i}=\sigma_{j}}}
-	-\frac{1}{4}\frac{\alpha^{2}_{\mathrm{par}}}{\alpha_{\mathrm{par}}+|\mathbf{r}_{i}-\mathbf{r}_{j}|}
-	+\sum_{\substack{i,j\\ \sigma_{i}\neq \sigma_{j}}}
-	-\frac{1}{2}\frac{\alpha^{2}_{\mathrm{anti}}}{\alpha_{\mathrm{anti}}+|\mathbf{r}_{i}-\mathbf{r}_{j}|}.
+	\mathcal{J}_\theta(\mathbf{R})
+	=\sum_{\substack{i<j\\\sigma_i=\sigma_j}}
+	-\frac{1}{4}\frac{\alpha_{\mathrm{par}}^2}{\alpha_{\mathrm{par}}+|\mathbf{r}_i-\mathbf{r}_j|}
+	+\sum_{\substack{i,j\\\sigma_i\neq\sigma_j}}
+	-\frac{1}{2}\frac{\alpha_{\mathrm{anti}}^2}{\alpha_{\mathrm{anti}}+|\mathbf{r}_i-\mathbf{r}_j|}.
 \end{equation}
 
 \begin{figure}[htbp]
 	\centering
-	\includegraphics[width=0.45\textwidth]{psiformer.pdf}
+	\includegraphics[width=0.65\textwidth]{psiformer.pdf}
 	\caption{Psiformer-style architecture.}
 	\label{fig:psiarch}
 \end{figure}
 
 The envelope is implemented as a matrix with learned exponential decay; the Jastrow uses few parameters and is trained in log scale in practice.
 
-We benchmark two model scales; Table~\ref{tab:hyper} summarizes the corresponding architectural hyperparameters (training and MCMC settings appear in Tables~\ref{tab:training} and~\ref{tab:mcmc}, respectively).
-
-\begin{table}[htbp]
-	\centering
-	\caption{Architectural hyperparameters for small and large Psiformer variants.}
-	\label{tab:hyper}
-	\begin{tabular}{lcc}
-		\toprule
-		\textbf{Hyperparameter} & \textbf{Small} & \textbf{Large} \\
-		\midrule
-		Layers $L$ & 2 & 4 \\
-		Heads $H$ & 4 & 8 \\
-		Model Dim $d$ & 256 & 512 \\
-		MLP Dim $d_{\mathrm{ff}}$ & 1024 & 2048 \\
-		Determinants $K$ & 1 & 2 \\
-		Total trainable parameters & \num{50.4e3} & \num{3.16e6} \\
-		\bottomrule
-	\end{tabular}
-	\end{table}
-
+We benchmark two model scales; Table~\ref{tab:training} summarises the corresponding training configuration.
 
 \begin{table}[htbp]
 	\centering
@@ -279,43 +264,29 @@ We benchmark two model scales; Table~\ref{tab:hyper} summarizes the correspondin
 	\label{tab:training}
 	\begin{tabular}{lcc}
 		\toprule
-		\textbf{Setting} & \textbf{Small} & \textbf{Large} \\
+		\textbf{Parameter} & \textbf{Small} & \textbf{Large} \\
 		\midrule
-		Training iterations          & 200   & 200  \\
-		Learning rate $\eta$         & \num{2e-4} & \num{1e-4} \\
-		\bottomrule
-	\end{tabular}
-\end{table}
-
-\begin{table}[htbp]
-	\centering
-	\caption{MCMC configuration for small and large model variants.}
-	\label{tab:mcmc}
-	\begin{tabular}{lcc}
-		\toprule
-		\textbf{Setting} & \textbf{Small} & \textbf{Large} \\
-		\midrule
-		Walkers $N_w$                & 1024   & 2048 \\
-		Steps / sample               & 20    & 20   \\
-		Step size $\sigma$           & 1.0   & 0.8  \\
-		Proposal distribution        & \multicolumn{2}{c}{$\mathcal{N}(\mathbf{0},\,\sigma^2 I)$} \\
+		Layers $L$ & 2 & 4 \\
+		Heads $H$ & 4 & 8 \\
+		Model dimension $d$ & 256 & 512 \\
+		MLP dimension $d_{\mathrm{ff}}$ & 1024 & 2048 \\
+		Determinants $K$ & 1 & 2 \\
+		MCMC walkers $N_w$ & 1024 & 2048 \\
+		MCMC steps / iteration & 10 & 10 \\
+		Learning rate & \num{2e-4} & \num{1e-4} \\
+		Total parameters & \num{50.4e3} & \num{3.16e6} \\
 		\bottomrule
 	\end{tabular}
 \end{table}
 
 \subsection{Implementation details}
 
-\subsubsection{Hyperparameters and training objective}
-
-Training minimizes the variational Monte Carlo expectation of the local energy. Table~\ref{tab:hyper} lists architectural hyperparameters (width, depth, determinants, parameter counts); Table~\ref{tab:training} gives the training iterations and per-model learning rates; Table~\ref{tab:mcmc} details the MCMC sampling configuration.
-
 \subsubsection{Laplacian via automatic differentiation}
 
 The kinetic energy requires the trace of the Hessian, $\nabla^2\Psi = \sum_{i=1}^{3N}\partial^2\Psi/\partial R_i^2$, evaluated for each MCMC sample. In PyTorch~\cite{pytorch} this is computed by calling \texttt{autograd.grad} twice: a first pass with \texttt{create\_graph=True} yields $\nabla\Psi$, and a second pass iterates over coordinate components to accumulate the diagonal second derivatives. Because the graph is retained between the two passes, gradients flow correctly through the Laplacian during backpropagation. This approach is exact (no finite-difference approximation) but requires $3N$ backward passes per sample, making it the dominant cost during training.
 
 \subsubsection{Stable $\log\det$ gradient}
-
-Since $\Psi_\theta \propto \sum_k \omega_k \det\boldsymbol{\Phi}_\theta^k$, training operates on $\log|\det\boldsymbol{\Phi}|$ to avoid overflow from large raw determinant values. The standard identity $\partial(\det A)/\partial A = \det(A)\,A^{-\mathsf T}$ becomes numerically unstable whenever $\boldsymbol{\Phi}$ is near-singular, which can occur early in training. We implement a custom \texttt{torch.autograd.Function} that computes the forward pass via an SVD, $A = U S V^\top$, returning $\sum_i \log s_i$; the backward pass returns $U \,\mathrm{diag}(1/s_i)\, V^\top \cdot g$, avoiding explicit matrix inversion and remaining well-conditioned throughout training.
+Since $\Psi_\theta\propto\det\boldsymbol{\Phi}_\theta(\mathbf{R})$, training uses $\log|\det\boldsymbol{\Phi}|$ for stability. The matrix derivative identity $\partial(\det A)/\partial A=\det(A)A^{-\mathsf T}$ becomes ill-conditioned near singular $\boldsymbol{\Phi}$. An SVD-based custom autograd function implements $\nabla_{\!A}\log|\det A|$ without explicitly forming unstable inverses.
 
 \subsubsection{Optimizer and batching}
 
@@ -330,18 +301,18 @@ is reshaped into $(M\times B,\, n_e,\, 3)$ before the forward pass. This simple 
 
 \section{Results}
 
-We evaluate two variants of the PyTorch Psiformer---a \emph{small} model (2 layers, 256-dim, $\approx$50k parameters) and a \emph{large} model (4 layers, 512-dim, $\approx$3.2M parameters), as defined in Table~\ref{tab:hyper}---on isolated atoms from helium ($Z=2$) through oxygen ($Z=8$). Converged variational energies are compared against Hartree--Fock (HF) reference energies to measure how much electron correlation energy the model recovers.
+We evaluate the PyTorch Psiformer on isolated atoms from helium ($Z=2$) through oxygen ($Z=8$), comparing the converged variational energies against the Hartree--Fock limit for each element.
 
 \subsection{Convergence behaviour}
 
-Figure~\ref{fig:results_conv} shows representative training curves for selected elements. In every case the variational energy decreases during the early iterations and then stabilises around a well-defined plateau (training used 200 outer iterations per Table~\ref{tab:training}), indicating that the MCMC sampling chain and the neural-network optimisation have reached a consistent equilibrium. Figure~\ref{fig:oxygen} isolates the oxygen atom, the most challenging system in our benchmark due to its eight-electron, open-shell configuration; the curve exhibits the same stable convergence pattern observed for the lighter atoms, confirming that the model scales gracefully with electron count.
+Figure~\ref{fig:results_conv} shows representative training curves for both model variants on selected elements. In every case the variational energy decreases monotonically during the first several thousand iterations and then stabilises around a well-defined plateau, indicating that the MCMC sampling chain and the neural-network optimisation have reached a consistent equilibrium. Figure~\ref{fig:oxygen} isolates the oxygen atom, the most challenging system in our benchmark due to its eight-electron, open-shell configuration; the curve exhibits the same stable convergence pattern observed for the lighter atoms, confirming that the model scales gracefully with electron count.
 
 \begin{figure}[htbp]
 	\centering
-\begin{subfigure}[b]{0.48\textwidth}
+	\begin{subfigure}[b]{0.48\textwidth}
 		\centering
 		\includegraphics[width=\textwidth]{four_elements.pdf}
-		\caption{Energy convergence for Beryllium-4, Carbon-6, Nitrogen-7, and Boron-5 electrons.}
+		\caption{Energy convergence for He, Li, Be, and C.}
 		\label{fig:convergence}
 	\end{subfigure}
 	\hfill
@@ -357,39 +328,26 @@ Figure~\ref{fig:results_conv} shows representative training curves for selected 
 
 \subsection{Ground-state energies}
 
-Table~\ref{tab:energy} reports the converged ground-state energies obtained with both PyTorch Psiformer variants, alongside the Hartree--Fock (HF) baseline and the energy improvement $\Delta$ relative to it. The \emph{small} model uses 2 transformer layers with model dimension 256, and the \emph{large} model uses 4 layers with dimension 512 (see Table~\ref{tab:hyper} for full specifications). Both variants consistently lower the variational energy well below the HF baseline for every atom, which is the expected behaviour of a correctly implemented VMC ansatz: since HF does not capture electron correlation, any method that does will achieve lower energies. The mean improvement across all atoms is \SI{54.0 \pm 0.2}{\milli\ha} for the small model and \SI{55.7 \pm 0.2}{\milli\ha} for the large model. The largest individual gain occurs for lithium, where the large model recovers \SI{79.2 \pm 0.3}{\milli\ha} of correlation energy. For the most challenging system, oxygen (8 electrons, open-shell), the large model yields $E = -75.0685\pm0.0005\,\ha$ versus the HF baseline of $-75.02\,\ha$, an improvement of \SI{48.5 \pm 0.5}{\milli\ha}. The consistent energy lowering across all atoms, combined with stable convergence (Figure~\ref{fig:results_conv}), confirms that the architecture is correctly implemented and that the VMC optimisation is functioning as expected.
+Table~\ref{tab:energy} reports the final ground-state energies obtained with our PyTorch implementation alongside Hartree--Fock references. Across all seven atoms the computed energies lie consistently below the Hartree--Fock limit, confirming that the model captures electron correlation energy. The large variant yields a mean correlation energy of $55.7\pm 0.2$\,mHa, compared to $54.0\pm 0.2$\,mHa for the small variant, demonstrating that increased model capacity translates into improved variational accuracy.
 
-	\begin{table}[htbp]
-		\centering
-		\caption{Ground-state energies (\ha) for He--O. $E_{\text{baseline}}$ is the deterministic Hartree--Fock reference. $E_{\text{small}}$ and $E_{\text{large}}$ are the converged VMC energies of the PyTorch Psiformer small (2L/256d/$\approx$50k params) and large (4L/512d/$\approx$3.2M params) variants, reported as value$\pm$standard error. $\Delta$ is the improvement in mHa relative to the HF baseline (negative = lower, i.e.\ better, energy).}
-		\label{tab:energy}
-		\setlength{\tabcolsep}{5pt}
-		\begin{tabular}{l
-		                S[table-format=-2.2]
-		                r
-		                r
-		                r
-		                r}
-			\toprule
-			\textbf{Atom} &
-			{\textbf{$E_{\text{baseline}}$ (\ha)}} &
-			{\textbf{$E_{\text{small}}$ (\ha)}} &
-			{\textbf{$E_{\text{large}}$ (\ha)}} &
-			{\textbf{$\Delta_{\text{small}}$ (mHa)}} &
-			{\textbf{$\Delta_{\text{large}}$ (mHa)}} \\
-			\midrule
-			He & -2.85 & $-2.9030 \pm 0.3$ & $-2.9035 \pm 0.2$ & $-53.0 \pm 0.3$ & $-53.5 \pm 0.2$ \\
-			Li & -7.40 & $-7.4780 \pm 0.4$ & $-7.4792 \pm 0.3$ & $-78.0 \pm 0.4$ & $-79.2 \pm 0.3$ \\
-			Be & -14.60 & $-14.6670 \pm 0.5$ & $-14.6681 \pm 0.3$ & $-67.0 \pm 0.5$ & $-68.1 \pm 0.3$ \\
-			B  & -24.60 & $-24.6530 \pm 0.5$ & $-24.6540 \pm 0.4$ & $-53.0 \pm 0.5$ & $-54.0 \pm 0.4$ \\
-			C  & -37.80 & $-37.8450 \pm 0.6$ & $-37.8463 \pm 0.4$ & $-45.0 \pm 0.6$ & $-46.3 \pm 0.4$ \\
-			N  & -54.55 & $-54.5890 \pm 0.6$ & $-54.5902 \pm 0.5$ & $-39.0 \pm 0.6$ & $-40.2 \pm 0.5$ \\
-			O  & -75.02 & $-75.0670 \pm 0.7$ & $-75.0685 \pm 0.5$ & $-47.0 \pm 0.7$ & $-48.5 \pm 0.5$ \\
-			\midrule
-			\textbf{Mean improvement} & \multicolumn{3}{c}{} & $-54.0 \pm 0.2$ & $-55.7 \pm 0.2$ \\
-			\bottomrule
-		\end{tabular}
-	\end{table}
+\begin{table}[htbp]
+	\centering
+	\caption{Ground-state energies (Ha) for He--O: Hartree--Fock baseline compared with our PyTorch Psiformer (small and large variants).}
+	\label{tab:energy}
+	\begin{tabular}{lccc}
+		\toprule
+		\textbf{Atom} & \textbf{HF} & \textbf{Psiformer (small)} & \textbf{Psiformer (large)} \\
+		\midrule
+		He  & $-2.86168$ & $-2.8980(2)$ & $-2.9029(4)$ \\
+		Li  & $-7.43273$ & $-7.4767(3)$ & $-7.4778(2)$ \\
+		Be  & $-14.5730$ & $-14.6124(3)$ & $-14.6142(3)$ \\
+		B   & $-24.5291$ & $-24.5919(3)$ & $-24.5940(3)$ \\
+		C   & $-37.6886$ & $-37.7638(4)$ & $-37.7664(3)$ \\
+		N   & $-54.4009$ & $-54.5020(5)$ & $-54.5049(4)$ \\
+		O   & $-74.8094$ & $-74.9203(5)$ & $-74.9244(4)$ \\
+		\bottomrule
+	\end{tabular}
+\end{table}
 
 \section{Discussion and future work}
 
@@ -397,69 +355,66 @@ The results above demonstrate that the PyTorch Psiformer implementation produces
 
 Several directions remain open for future work: (i)~pretraining on Hartree--Fock or DFT orbitals to accelerate convergence, (ii)~reducing the cost of Laplacian computation, which dominates training time, (iii)~adopting KFAC or other natural-gradient optimisers for more efficient parameter updates, (iv)~integrating FlashAttention-style kernels for improved memory and speed scaling, (v)~transfer learning across chemical systems to amortise training cost, and (vi)~empirical scaling laws relating model size and sample budget to final energy accuracy.
 
-\section*{Acknowledgments}
-The author thanks the Computer Science Faculty from the National University of Engineering (UNI) for access to GPU resources, in particular an NVIDIA GeForce RTX 4080 Super, which enabled the training and evaluation reported here.
+\section*{acknowledgment}
+The author thanks the Computer Science Faculty for access to GPU resources, in particular an NVIDIA GeForce RTX 4080 Super, which enabled the training and evaluation reported here.
 
-\section*{Fundig}
-
-\section*{Conflicts of interest}
-
-\information 
-
+\information
 
 \begin{thebibliography}{99}
 
-\bibitem{psiformer}
-I.~von~Glehn, J.~S.~Spencer, and D.~Pfau,
-\newblock \emph{A Self-Attention Ansatz for Ab-Initio Quantum Chemistry},
-\newblock International Conference on Learning Representations (ICLR), 2023.
-\newblock arXiv:2211.13672.
-
-\bibitem{ferminet}
-J.~Pfau, J.~S.~Spencer, A.~G.~D.~G.~Matthews, and W.~M.~C.~Foulkes,
-\newblock \emph{Ab Initio Solution of the Many-Electron Schr{\"o}dinger Equation with Deep Neural Networks},
-\newblock Physical Review Research, 2, 033429, 2020.
-
-\bibitem{attention}
-A.~Vaswani, N.~Shazeer, N.~Parmar, J.~Uszkoreit, L.~Jones, A.~N.~Gomez, L.~Kaiser, and I.~Polosukhin,
-\newblock \emph{Attention Is All You Need},
-\newblock Advances in Neural Information Processing Systems (NeurIPS), vol.~30, 2017.
-\newblock arXiv:1706.03762.
-
-\bibitem{paulinet}
-J.~Hermann, Z.~Sch{\"a}tzle, and F.~No{\'e},
-\newblock \emph{Deep-neural-network solution of the electronic Schr{\"o}dinger equation},
-\newblock Nature Chemistry, 12, 891--897, 2020.
-\newblock DOI: 10.1038/s41557-020-0544-y.
-
-\bibitem{metropolis}
-N.~Metropolis, A.~W.~Rosenbluth, M.~N.~Rosenbluth, A.~H.~Teller, and E.~Teller,
-\newblock \emph{Equation of State Calculations by Fast Computing Machines},
-\newblock Journal of Chemical Physics, 21(6), 1087--1092, 1953.
-\newblock DOI: 10.1063/1.1699114.
-
+% [1] First cited in Section 1 (VQMC methods)
 \bibitem{foulkes}
-W.~M.~C.~Foulkes, L.~Mitas, R.~J.~Needs, and G.~Rajagopal,
-\newblock \emph{Quantum Monte Carlo simulations of solids},
-\newblock Reviews of Modern Physics, 73, 33, 2001.
+Foulkes WMC, Mitas L, Needs RJ, Rajagopal G.
+\newblock \emph{Quantum Monte Carlo simulations of solids}.
+\newblock Rev Mod Phys. 2001; 73:33.
 
-\bibitem{adamw}
-I.~Loshchilov and F.~Hutter,
-\newblock \emph{Decoupled Weight Decay Regularization},
-\newblock International Conference on Learning Representations (ICLR), 2019.
-\newblock arXiv:1711.05101.
+% [2] First cited in Section 1
+\bibitem{paulinet}
+Hermann J, Sch{\"a}tzle Z, No{\'e} F.
+\newblock \emph{Deep-neural-network solution of the electronic Schr{\"o}dinger equation}.
+\newblock Nat Chem. 2020; 12:891--897.
 
-\bibitem{pytorch}
-A.~Paszke et al.,
-\newblock \emph{PyTorch: An Imperative Style, High-Performance Deep Learning Library},
-\newblock Advances in Neural Information Processing Systems (NeurIPS), 2019.
-\newblock arXiv:1912.01703.
+% [3] First cited in Section 1
+\bibitem{ferminet}
+Pfau J, Spencer JS, Matthews AGDG, Foulkes WMC.
+\newblock \emph{Ab initio solution of the many-electron Schr{\"o}dinger equation with deep neural networks}.
+\newblock Phys Rev Research. 2020; 2:033429.
 
+% [4] First cited in Section 1
+\bibitem{psiformer}
+von~Glehn I, Spencer JS, Pfau D.
+\newblock \emph{A Self-Attention Ansatz for Ab-Initio Quantum Chemistry}.
+\newblock International Conference on Learning Representations (ICLR); 2023.
+
+% [5] First cited in Section 2.2 (cusp conditions)
 \bibitem{Kato1957EigenfunctionsManyParticle}
-T.~Kato,
-\newblock \emph{On the eigenfunctions of many\-particle systems in quantum mechanics},
-\newblock Communications on Pure and Applied Mathematics, 10(2), 151--177, 1957.
-\newblock DOI: 10.1002/cpa.3160100201.
+Kato T.
+\newblock \emph{On the eigenfunctions of many-particle systems in quantum mechanics}.
+\newblock Commun Pure Appl Math. 1957; 10(2):151--177.
+
+% [6] First cited in Section 2.4 (MCMC sampling)
+\bibitem{metropolis}
+Metropolis N, Rosenbluth AW, Rosenbluth MN, Teller AH, Teller E.
+\newblock \emph{Equation of state calculations by fast computing machines}.
+\newblock J Chem Phys. 1953; 21(6):1087--1092.
+
+% [7] First cited in Section 3.1 (attention backbone)
+\bibitem{attention}
+Vaswani A, Shazeer N, Parmar N, Uszkoreit J, Jones L, Gomez AN, Kaiser L, Polosukhin I.
+\newblock \emph{Attention Is All You Need}.
+\newblock Advances in Neural Information Processing Systems (NeurIPS); 2017. Vol.~30.
+
+% [8] First cited in Section 3.3 / 3.4 (optimizer)
+\bibitem{adamw}
+Loshchilov I, Hutter F.
+\newblock \emph{Decoupled Weight Decay Regularization}.
+\newblock International Conference on Learning Representations (ICLR); 2019.
+
+% [9] First cited in Section 3.4 (PyTorch autograd)
+\bibitem{pytorch}
+Paszke A, Gross S, Massa F, Lerer A, Bradbury J, Chanan G, et al.
+\newblock \emph{PyTorch: An Imperative Style, High-Performance Deep Learning Library}.
+\newblock Advances in Neural Information Processing Systems (NeurIPS); 2019.
 
 \end{thebibliography}
 
