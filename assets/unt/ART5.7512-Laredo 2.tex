@@ -1,6 +1,5 @@
 % Selecciones Matem\'aticas (UNT) article.
 % Build: run pdflatex (or latexmk) twice from this directory (assets/unt/) so Base/Paquetes resolves.
-% Figures: \includegraphics names are resolved via IMG/ART1/ and ../beamer/img/ (add your slide assets there).
 \input{Base/Paquetes}
 \graphicspath{{IMG/ART5/}}
 
@@ -10,14 +9,10 @@
 \usepackage{booktabs}
 \newcommand{\ha}{\ensuremath{\mathrm{Ha}}}
 
-% Dirac bra-ket notation (replaces physics package, which conflicts with Base/Paquetes)
 \newcommand{\bra}[1]{\ensuremath{\left\langle{#1}\right|}}
 \newcommand{\ket}[1]{\ensuremath{\left|{#1}\right\rangle}}
 \newcommand{\braket}[2]{\ensuremath{\left\langle{#1}\middle|{#2}\right\rangle}}
 
-%============================================================%
-%                       CONFIGURACION                        %
-%============================================================%
 
 \title{Ab Initio Wave Function Optimization for Light Atoms
 	\\
@@ -65,7 +60,6 @@ The full source code is made publicly available to facilitate future experimenta
 Many-electron Schr\"odinger equation, variational Monte Carlo, transformer, neural wavefunction, Slater determinant, quantum chemistry.
 \end{keywords}
 
-%--------------------------------------------------------------
 \section{Introduction}
 Solving the time-independent many-body Schr\"odinger equation is one of the central challenges in computational
 physics and quantum chemistry. Because analytical solutions are impossible for systems with more than one
@@ -117,9 +111,6 @@ Section 3 describes the structural choices of our Psiformer-style ansatz and its
 PyTorch implementation. Section 4 reports numerical results for helium through oxygen,
 and Section 5 discusses limitations and future work.
 
-%============================================================%
-%                   Mathematical Formulation                   %
-%============================================================%
 \section{Mathematical formulation}
 
 \subsection{Problem setup and Hamiltonian}
@@ -147,9 +138,6 @@ Under Born--Oppenheimer, nuclear positions $\{\mathbf{R}_I\}$ are fixed and one 
 \end{equation}
 where the nuclear kinetic term and the nuclear repulsion constant have been separated; the latter simply adds a constant shift to the energy.
 
-%============================================================%
-%                   Fermi--Dirac statistics and cusps                    %
-%============================================================%
 \subsection{Antisymmetry and cusp constraints}
 
 Electrons are indistinguishable fermions and therefore obey the Pauli exclusion principle: the many-body wavefunction must change sign under the exchange of any two same-spin electrons. This requirement, known as the antisymmetry condition, can be enforced by constructing the wavefunction as a Slater determinant (or a linear combination thereof). A determinant changes sign whenever two rows or two columns are interchanged, which exactly mimics the fermionic exchange symmetry. Given a set of single-particle spin orbitals $\phi_j(\mathbf{x}_i)$, where $\mathbf{x}_i=(\mathbf{r}_i,\sigma_i)$ collects the position and spin of the $i$-th electron, the simplest antisymmetric form is
@@ -219,9 +207,6 @@ where $\rho\propto|\Psi_\theta|^2$, and iterate. Gradients of the VMC objective 
 \end{equation}
 estimated with the same samples.
 
-%============================================================%
-%                     Structural choices                      %
-%============================================================%
 \section{Structural choices}
 
 \subsection{Transformer backbone and self-attention}
